@@ -1,0 +1,15 @@
+#!/bin/sh
+UNIX_PERL=y:/bin/perl
+UNIX_RM=y:/bin/rm
+PERL_RIBEDIT=y:/usr/local/bin/ribEdit
+
+RIB=$1
+EDIT_ARGS=$2
+if [ "$EDIT_ARGS" != "" ]
+then
+	$UNIX_PERL $PERL_RIBEDIT $RIB > $RIB-
+	prman $RIB-
+	$UNIX_RM -f $RIB-
+else
+	prman -Progress $RIB
+fi

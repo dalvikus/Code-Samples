@@ -1,0 +1,18 @@
+2005/04/21 - 1.d.0
+----------------
+
+1. __gmTLS__가 정의된 경우에,
+인증서 저장고를 열 때, CertOpenSystemStore대신에 CertOpenStore를 호출한다.
+TLS에 사용되는 인증서는 사용자(예를 들어 관리자)의 저장고에 들어있지 않고, 시스템의 저장고에 들어있어야
+웹서버가 찾을 수 있다.
+
+2. gmPseudoTCP::mf__SendMsg에서 TCPSENDMSG__WSASEND_IN_PROGRESS의 경우에
+큐에 넣지 않도록 했다. 이 함수를 호출한 응용프로그램에서 이 경우를 처리하도록 하기 위해서이다.
+예를 들어, 주어진 시간동안 몇 번 이 함수를 호출하기를 시도해서
+그래도 계속 이 경우가 나오면 그 때는 연결을 끊는다.
+gmPseudoTCP::SendMessage함수를 보라.
+
+3. gmPseudoTCP::SendMessage함수에서 TCPSENDMSG__WSASEND_IN_PROGRESS의 경우에
+단순히 Loop을 반복하지 않고, 주어진 시간동안 Sleep하도록 했다.
+즉 SENDMESSAGE_MAXLOOPCOUNTER동안 시도하고, 다음 시도를 하기 전에 SENDMESSAGE_INTERVAL밀리초동안 기다린다.
+(gmTCPDef.h에 각각 10회, 10ms로 정의되어 있다.)

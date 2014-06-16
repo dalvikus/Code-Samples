@@ -1,0 +1,20 @@
+#!/bin/bash
+
+if [ "$#" -lt 2 ]
+then
+	echo -e "\nUsage: $0 TIF_pathname TEX_path [arguments]"
+	echo -e "\nEx:\tConvert v*.tif into v*.tex in ./tmp_path/"
+	echo -e "\t\t$0 v\*.tif ./tmp_path/"
+	echo -e "\tNote \\"
+	echo -ne "\n"
+	exit
+fi
+TIFs=$1
+TIFs=`cygpath -u "$1"`
+DEST_DIR=$2
+shift 2
+for x in $TIFs
+do
+	y=`basename $x tif`tex
+	txmake $* `cygpath -w "$x"` `cygpath -w $DEST_DIR/"$y"`
+done

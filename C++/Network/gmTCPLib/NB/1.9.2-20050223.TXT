@@ -1,0 +1,145 @@
+2005/02/23 - 1.9.2
+----------------
+
+gmPseudoTCP::mf__IOCPRecvContinue의 리턴값을 보고,
+만약 리턴값이 -2(큐가 찬 경우)를 제외한 0, 1의 경우에는
+메인쓰레드에서 해당 플래그를 리셋시키려고 했다.
+하지만 이 둘은 동시에 이루어져야 한다.
+그렇지 않으면 워커쓰레드에서 gmPseudoTCP::mf__IOCPRecvContinue에서
+호출한 WSARecv의 결과를 먼저 받아으나 여전히 큐가 찼기 때문에
+나중에 메인쓰레드에서 참고하라고 설정한 플래그가 다시 리셋이 되기 때문에
+다시는 WSARecv를 호출할 기회를 갖지 못한다.
+(괜히 건들였다. 찾는 데 거의 한나절을 다 보냈다. 휴~)
+
+
+네크워크 라이브러리를 이용하는 절차는 다음과 같다.
+(서버의 경우에는 gmIocpS, 클라이언트의 경우에는 gmIocpC를 참고하라.)
+
+[단계 1] 소켓초기화
+{
+	WSADATA	wsaData;
+	if (WSAStartup(MAKEWORD(2, 2), &wsaData)) {
+		RomeoMustDie();
+	}
+}
+
+[단계 2] 네크워크 연결
+	gmTCPServer		*glpTCPServer = new gmTCPServer(...);	// 서버
+//	gmTCPClient		*glpTCPClient = new gmTCPClient(...);	// 클라이언트
+
+[단계 3] 다음 구조체를 이용해서 메시지를 보내거나 받는다.
+	CHAR	buf[MAX_TCPMSGSIZE];
+	TCPBUF	TCPBuf;
+	TCPBuf.lpBuf	= buf;
+	// 레퍼런스를 통해서 구조체의 멤버를 접근한다.
+	USHORT&	hType	= TCPBuf.hType;
+	USHORT&	hBytes	= TCPBuf.hBytes;
+[단계 3 - 1] 메시지 받음(gmPseudoTCP::mf__GetMessage, gmPseudoTCP::mf__PeekMessage)
+	// gmPseudoTCP::mf__GetMessage를 이용하는 경우
+	// gmQueue::mf__ShiftEx의 리턴값과 같다.
+	// 각 함수의 리턴값(TCPBUF__XXX)은 gmTCPDef.h를 보라.
+	gmPseudoTCP	*gmhTCP;
+	g__lpTCPClient->mf__iterReset();			// 연결된 TCP를 찾기위해 초기화한다.
+	while ((gmhTCP = g__lpTCPClient->mf__nextTCP())) {	// 연결되는 TCP를 찾는다.
+		if (gmhTCP->mf__bDisconnect()) {	// 연결이 끊어졌다.
+			// 받는쪽은 이미 닫혔다.
+			if (gmhTCP->mf__closeSend() != 0) {
+				RomeoMustDie();
+			}
+			continue;	// 다음 연결을 알아보자.
+		}
+
+		hBytes = MAX_TCPMSGSIZE;	// [IN/OUT]이므로, 항상 새로 설정해야 한다!!!
+		switch (gmhTCP->mf__GetMessage(&TCPBuf)) {	// gmQueue::mf__ShiftEx의 리턴값과 같다.
+		case TCPBUF__OK:
+			// 데이터를 이용하자.
+			break;
+		case TCPBUF__NO_HEADER:
+		case TCPBUF__PARTIAL_DATA:
+			// 다음에 가져올 수 밖에...
+			break;
+		case TCPBUF__NOT_ENOUGH:
+			// TCPBUF.hBytes값을 제대로 설정했나?
+			// 아니면 들어오는 데이터가 제대로 된 것인가?
+			RomeoMustDie();
+			break;
+		default:
+			// 이럴 수가???
+			RomeoMustDie();
+			break;
+		}
+		// 큐가 가득차서 중단된 상태라면(TCPBUF__OK일 때),
+		// 적어도 하나의 메시지는 처리하여 큐를 비웠으므로
+		// 다음 데이터를 받아들일 수 있다.
+		// 한꺼번에 읽어 처리해서 한 번에 큐를 비우며 좋을텐데...
+		if (gmhTCP->mf__bPaused()) {
+			// 큐를 비웠으므로 다시 받을 수 있도록 하자.
+
+			// gmPseudoTCP::mf__IOCPRecvContinue의 리턴값은
+			// gmPseudoTCP::mf__IOCPRecv의 리턴값과 같다.
+			// -1인 경우에는 문제가 있다.
+			if (gmhTCP->mf__IOCPRecvContinue() == -1) {
+				(void) gmhTCP->mf__disconnect();
+			}
+		}
+	}
+[단계 3 - 2] 메시지 보냄(gmPseudoTCP::mf__PostMessage, gmPseudoTCP::mf__SendMessage, gmPseudoTCP::mf__SendMessageEx)
+	// gmPseudoTCP::mf__PostMessage를 이용하는 경우
+	// 각 함수의 리턴값(TCPPOSTMSG__XXX, TCPSENDMSG__XXX, TCPSENDMSGEX__XXX)에 대한 설명은 gmTCPDef.h를 보라.
+// 메시지를 보낸다.
+////////////////////////////////////////
+	strcpy(buf, "hello, world");
+	hType	= 1024;
+	hBytes	= strlen("hello, world") + 1;	// 1 for '\0'
+	switch (gmhTCP->mf__SendMessage(&TCPBuf)) {
+	case TCPSENDMSG__NOT_ESTABLISHED:
+		// 연결이 끊어졌다. (정상적으로)
+		break;
+	case TCPSENDMSG__NOT_ENOUGH:
+		// 큐에 이 메시지를 저장할 공간이 없다.
+		// C: 큐가 가득찼거나 아니면 이 메시지의 크기가 너무 크든가 둘 중에 하나다.
+		// 큐가 가득찼다면 다음에 보내자.
+		break;
+	case TCPSENDMSG__WSASEND_IN_PROGRESS:
+		// 이전에 호출한 WSASend가 진행 중이다.
+		// 다음에 보내자.
+		break;
+	case TCPSENDMSG__OK_IMMEDIATELY:
+		// WSASend에서 곧 바로 데이터를 보냈다.
+		// 데이터를 다 보냈다.
+		break;
+	case TCPSENDMSG__OK:
+		// WSASend에서 데이터를 보내는 중이다.
+		// Q: 다 보냈는 지 어떻게 알지?
+		// A: BOOL gmPseudoTCP::mf__bIOCPSendInProgress(VOID)를 호출하자.
+		break;
+	case TCPSENDMSG__ERROR:
+		// WSASend에서 문제 발생
+		if (
+			lpTCPClient->mf__GetWSALastErrorCode() == WSAECONNRESET
+				||
+			lpTCPClient->mf__GetWSALastErrorCode() == WSAECONNABORTED
+		) {
+			// 이미 연결이 끊어졌다. (비정상적으로)
+			lpTCPClient->mf__fprintf(lpTCPClient->m__CONERR,
+				"gmPseudoTCP::mf__SendMessage: WSAECONNRESET\n"
+			);
+		} else {
+			RomeoMustDie();
+		}
+		break;
+	default:
+		// 이럴 수가???
+		RomeoMustDie();
+		break;
+	}
+////////////////////////////////////////
+
+[단계 4] 네트워크 해제
+	delete glpTCPServer;	// 서버
+//	delete glpTCPClient;	// 클라이언트
+
+[단계 5] 소켓정리
+	if (WSACleanup()) {
+		RomeoMustDie();
+	}

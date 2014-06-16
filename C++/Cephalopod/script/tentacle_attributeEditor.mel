@@ -1,0 +1,974 @@
+// 주어진 (유일한) 파라미터에 대해 editorTemplate 의 -callCustom 을 사용하여 UI 를 만들 때,
+// CTParameterNew/CTParameterReplace 를 호출하는 데 사용하는 인자를 얻는다;
+// typo 방지하거나 코드를 정리하기위하여...
+global proc	string[] CTGetParameterSliderCallArguments(string $key)
+{
+	string	$args[3];
+	// $args[0]: ...New	key type checkBox_attribute	checkBox_label slider_label type min max step default
+	// $args[1]: ...Replace	key type checkBox_attribute
+	// $args[2]: slider_attribute
+	// $args[0] 과 $args[1] 에서 (key, type, checkBox_attribute) 는 항상 같아야 한다;
+	// 원래 checkBox_attribute 가 "" 이 아닌 경우도 고려했으나 현재는 항상 "" 이다.
+
+	$args[0] = "CTParameterNew";
+	$args[1] = "CTParameterReplace";
+	int	$type;		// 0:= floatSlider, 1:= intSlider
+	string	$common;	// ($key, $type, $checkBox_attribute)
+	switch ($key) {
+	// Tentacle	// {
+	case "tpLEN_val":	// (float)	[1.0, 30.0; 0.1]	(10.0)
+		$type = 0;
+		$common = $key + " " + $type + " " + "\"\"";
+		$args[0] = $args[0] + " " + $common + " \"\" \"Length\" " + "1.0 30.0 0.1 10.0";
+		$args[1] = $args[1] + " " + $common;
+		$args[2] = "tentacleLength_val";
+		break;
+	case "tpCSMR_val":	// (float)	[0.0, 4.0; 0.1]	(1.0)
+		$type = 0;
+		$common = $key + " " + $type + " " + "\"\"";
+		$args[0] = $args[0] + " " + $common + " \"\" \"Cross Section Major Radius\" " + "0.0 4.0 0.1 1.0";
+		$args[1] = $args[1] + " " + $common;
+		$args[2] = "tentacleCrossSectionMajorRadius_val";
+		break;
+	case "tpCSE_val":	// (float)	[0.0, 1.0; 0.01]	(0.0)
+		$type = 0;
+		$common = $key + " " + $type + " " + "\"\"";
+		$args[0] = $args[0] + " " + $common + " \"\" \"Cross Section Eccentricity\" " + "0.0 1.0 0.01 0.0";
+		$args[1] = $args[1] + " " + $common;
+		$args[2] = "tentacleCrossSectionEccentricity_val";
+		break;
+	case "tpCSR_val":	// (int)	[0, 360; 1]	(0)
+		$type = 1;
+		$common = $key + " " + $type + " " + "\"\"";
+		$args[0] = $args[0] + " " + $common + " \"\" \"Cross Section Rotation\" " + "0 360 1 0";
+		$args[1] = $args[1] + " " + $common;
+		$args[2] = "tentacleCrossSectionRotation_val";
+		break;
+	// Cut
+// #if 1	// MANUAL_CUT
+	case "tpCUT_frame":	// (int)	[0, 24]		(0)
+		$type = 1;
+		$common = $key + " " + $type + " " + "\"\"";
+		$args[0] = $args[0] + " " + $common + " \"\" \"frame\" " + "0 24 1 0";
+		$args[1] = $args[1] + " " + $common;
+		$args[2] = "tentacleCut_frame";
+		break;
+// #endif	// MANUAL_CUT
+	case "tpCUT_t":	// (float)	[0.0, 1.0; 0.01]	(0.5)
+		$type = 0;
+		$common = $key + " " + $type + " " + "\"\"";
+		$args[0] = $args[0] + " " + $common + " \"\" \"position parameter, t\" " + "0.0 1.0 0.01 0.5";
+		$args[1] = $args[1] + " " + $common;
+		$args[2] = "tentacleCut_t";
+		break;
+	case "tpCUT_polar":	// (int)	[0, 180; 1]	(0)
+		$type = 1;
+		$common = $key + " " + $type + " " + "\"\"";
+		$args[0] = $args[0] + " " + $common + " \"\" \"polar angle\" " + "0 180 1 0";
+		$args[1] = $args[1] + " " + $common;
+		$args[2] = "tentacleCut_polar";
+		break;
+	case "tpCUT_azimuthal":	// (int)	[0, 360; 1]	(0)
+		$type = 1;
+		$common = $key + " " + $type + " " + "\"\"";
+		$args[0] = $args[0] + " " + $common + " \"\" \"azimuthal angle\" " + "0 360 1 0";
+		$args[1] = $args[1] + " " + $common;
+		$args[2] = "tentacleCut_azimuthal";
+		break;
+	// Tentacle	// }
+	case "spITS":	// (int)	[10, 1000; 1]	(300)
+		$type = 1;
+		$common = $key + " " + $type + " " + "\"\"";
+		$args[0] = $args[0] + " " + $common + " \"\" \"Inverse Time Step\" " + "10 1000 1 240";
+		$args[1] = $args[1] + " " + $common;
+		$args[2] = "InverseTimeStep";
+		break;
+	case "spYM":	// (float)	[0, 4: 0.1]	(1.0)
+		$type = 0;
+		$common = $key + " " + $type + " " + "\"\"";
+		$args[0] = $args[0] + " " + $common + " \"\" \"Young Modulus\" " + "0.0 4.0 0.1 1.0";
+		$args[1] = $args[1] + " " + $common;
+		$args[2] = "YoungModulus";
+		break;
+	case "spAR":	// (float)	[10.0, 100.0, 1.0]; (* 1.e-4)	(50)
+		$type = 0;
+		$common = $key + " " + $type + " " + "\"\"";
+		$args[0] = $args[0] + " " + $common + " \"\" \"Average Radius\" " + "10.0 100.0 1.0 50";
+		$args[1] = $args[1] + " " + $common;
+		$args[2] = "fAverageRadius";
+		break;
+	case "spE":	// (float)	[1.0, 2.0, 0.1]		(1.0)
+		$type = 0;
+		$common = $key + " " + $type + " " + "\"\"";
+		$args[0] = $args[0] + " " + $common + " \"\" \"Ellipticity\" " + "1.0 2.0 0.1 1.0";
+		$args[1] = $args[1] + " " + $common;
+		$args[2] = "fEllipticity";
+		break;
+	case "spVD":	// (float)	[0.5, 4.0, 0.1]		(1.3)
+		$type = 0;
+		$common = $key + " " + $type + " " + "\"\"";
+		$args[0] = $args[0] + " " + $common + " \"\" \"Volume Density\" " + "0.5 4.0 0.1 1.3";
+		$args[1] = $args[1] + " " + $common;
+		$args[2] = "fVolumeDensity";
+		break;
+	case "spK0":	// (float)	[0.0, 2.0, 0.1]		(0.0)
+		$type = 0;
+		$common = $key + " " + $type + " " + "\"\"";
+		$args[0] = $args[0] + " " + $common + " \"\" \"Helix K0 Step\" " + "0.0 2.0 0.1 0.0";
+		$args[1] = $args[1] + " " + $common;
+		$args[2] = "fHelixK0STep";
+		break;
+	case "spK1":	// (float)	[0.0, 10.0, 0.1]	(0.0)
+		$type = 0;
+		$common = $key + " " + $type + " " + "\"\"";
+		$args[0] = $args[0] + " " + $common + " \"\" \"Helix K1 Curvature\" " + "0.0 10.0 0.1 0.0";
+		$args[1] = $args[1] + " " + $common;
+		$args[2] = "fHelixK1Curvature";
+		break;
+	case "spK0in":	// (float)	[0.0, 2.0, 0.1]		(0.0)
+		$type = 0;
+		$common = $key + " " + $type + " " + "\"\"";
+		$args[0] = $args[0] + " " + $common + " \"\" \"inHelixK0STep\" " + "0.0 2.0 0.1 0.0";
+		$args[1] = $args[1] + " " + $common;
+		$args[2] = "inHelixK0STep";
+		break;
+	case "spK1in":	// (float)	[0.0, 10.0, 0.1]	(0.0)
+		$type = 0;
+		$common = $key + " " + $type + " " + "\"\"";
+		$args[0] = $args[0] + " " + $common + " \"\" \"inHelixK1Curvature\" " + "0.0 10.0 0.1 0.0";
+		$args[1] = $args[1] + " " + $common;
+		$args[2] = "inHelixK1Curvature";
+		break;
+	case "spLF":	// (float)	[0.1, 4, 0.1]		(1.0)
+		$type = 0;
+		$common = $key + " " + $type + " " + "\"\"";
+		$args[0] = $args[0] + " " + $common + " \"\" \"Length Factor\" " + "0.1 4.0 0.1 1.0";
+		$args[1] = $args[1] + " " + $common;
+		$args[2] = "fLengthFactor";
+		break;
+	case "spG":	// (int)	[-10, 10: 1] 	(1)
+		$type = 1;
+		$common = $key + " " + $type + " " + "\"\"";
+		$args[0] = $args[0] + " " + $common + " \"\" \"Gravity\" " + "-10 10 1 1";
+		$args[1] = $args[1] + " " + $common;
+		$args[2] = "GravityParameter";
+		break;
+	case "spAF":	// (int)	[1, 100: 1]	(10)
+		$type = 1;
+		$common = $key + " " + $type + " " + "\"\"";
+		$args[0] = $args[0] + " " + $common + " \"\" \"Air Friction Parameter\" " + "1 100 1 10";
+		$args[1] = $args[1] + " " + $common;
+		$args[2] = "AirFrictionParameter";
+		break;
+	case "spDLP":	// (float)	[0.01, 1: 0.01]	(0.30)
+		$type = 0;
+		$common = $key + " " + $type + " " + "\"\"";
+		$args[0] = $args[0] + " " + $common + " \"\" \"Dissipation Lambda Parameter\" " + "0.01 1.00 0.01 0.30";
+		$args[1] = $args[1] + " " + $common;
+		$args[2] = "DissipationLambdaParameter";
+		break;
+	case "spDGP":	// (float)	[0.01, 1: 0.01]	(0.10)
+		$type = 0;
+		$common = $key + " " + $type + " " + "\"\"";
+		$args[0] = $args[0] + " " + $common + " \"\" \"Dissipation Gamma Parameter\" " + "0.01 1.00 0.01 0.10";
+		$args[1] = $args[1] + " " + $common;
+		$args[2] = "DissipationGammaParameter";
+		break;
+	case "spWR":	// (int)	[-5, 5: 1]	(1)
+		$type = 1;
+		$common = $key + " " + $type + " " + "\"\"";
+		$args[0] = $args[0] + " " + $common + " \"\" \"Wind Ratio\" " + "-5 5 1 1";
+		$args[1] = $args[1] + " " + $common;
+		$args[2] = "WindRatio";
+		break;
+	case "spWD2D":	// (int)	[0, 360: 1]	(90)
+		$type = 0;
+		$common = $key + " " + $type + " " + "\"\"";
+		$args[0] = $args[0] + " " + $common + " \"\" \"Wind Direction2D (phi; in degree)\" " + "0 360 1 90";
+		$args[1] = $args[1] + " " + $common;
+		$args[2] = "WindDirection2D";
+		break;
+
+	// (int, int)
+	case "spWD3D0":	// (int)	[0, 180; 1]	(90)
+		$type = 0;
+		$common = $key + " " + $type + " " + "\"\"";
+		$args[0] = $args[0] + " " + $common + " \"\" \"Wind Direction3D(theta; in degree)\" " + "0 180 1 90";
+		$args[1] = $args[1] + " " + $common;
+		$args[2] = "WindDirection3D0";
+		break;
+	case "spWD3D1":	// (int)	[0, 360; 1]	(90)
+		$type = 0;
+		$common = $key + " " + $type + " " + "\"\"";
+		$args[0] = $args[0] + " " + $common + " \"\" \"Wind Direction3D(phi; in degree)\" " + "0 360 1 90";
+		$args[1] = $args[1] + " " + $common;
+		$args[2] = "WindDirection3D1";
+		break;
+
+	// (float, float)	[0, 1: 0.01]	(0.30, 0.50)
+	case "spHBC0":
+		$type = 0;
+		$common = $key + " " + $type + " " + "\"\"";
+		$args[0] = $args[0] + " " + $common + " \"\" \"HBC Parameter: ratio\" " + "0.00 1.00 0.01 0.30";
+		$args[1] = $args[1] + " " + $common;
+		$args[2] = "HBCParameter0";
+		break;
+	case "spHBC1":
+		$type = 0;
+		$common = $key + " " + $type + " " + "\"\"";
+		$args[0] = $args[0] + " " + $common + " \"\" \"HBC Parameter: criticalDepth\" " + "0.00 1.00 0.01 0.50";
+		$args[1] = $args[1] + " " + $common;
+		$args[2] = "HBCParameter1";
+		break;
+
+	case "spHHC":	// (float)	[0, 1: 0.01]	(0.30)
+		$type = 0;
+		$common = $key + " " + $type + " " + "\"\"";
+		$args[0] = $args[0] + " " + $common + " \"\" \"HHC Parameter\" " + "0.00 1.00 0.01 0.30";
+		$args[1] = $args[1] + " " + $common;
+		$args[2] = "HHCParameter";
+		break;
+	default:
+		error ("|" + $key + "|: Unknown Key");
+	}
+
+//	print "----\n";
+//	print $args;
+//	print "----\n";
+	return $args;
+}
+
+global proc	AEtentacleShapeNodeTemplate(string $node_name)
+{
+	global int	$plugin__AETemplate_DEBUG;
+
+	// 표시되어야 할 것들을 먼저 말하고...
+	editorTemplate -beginScrollLayout;	// All; // {
+
+		editorTemplate -beginLayout "Display" -collapse false;
+			editorTemplate -label "wakes" -addControl "wakes";
+			editorTemplate -label "ramp" -addControl "rampDisplay";
+		editorTemplate -endLayout;
+
+		// Tentacle
+		editorTemplate -beginLayout "Tentacle Parameter" -collapse true;	// {
+			// Length
+			editorTemplate -beginLayout "Length" -collapse true;	// {
+				editorTemplate -label "sync/apply(on) with selection" -addControl "tentacleLength_sync";
+				editorTemplate -addSeparator;
+				editorTemplate -callCustom `CTGetParameterSliderCallArguments("tpLEN_val")`;
+			editorTemplate -endLayout;				// Tentacle: Length // }
+
+			editorTemplate -beginLayout "Cross Section" -collapse true;	// {
+				// Cross Section Major Radius
+				editorTemplate -beginLayout "Major Radius" -collapse true;	// {
+					editorTemplate -label "sync/apply(on) with selection" -addControl "tentacleCrossSectionMajorRadius_sync";
+					editorTemplate -addSeparator;
+					editorTemplate -callCustom `CTGetParameterSliderCallArguments("tpCSMR_val")`;
+					editorTemplate -addSeparator;
+					editorTemplate -callCustom ("CTWakesNew \"tCSMR_scale_wakes\"") ("CTCakesReplace \"tCSMR_scale_wakes\"") "tentacleCrossSectionMajorRadius_scale_wakes";
+	//				editorTemplate -label "show graph in OpenGL" -addControl "tentacleCrossSectionMajorRadius_scale_wakes";
+					// AEaddRampControl 에서 Layout 을 만드는 데, Layout 의 이름을 정해줄 수가 없다;
+					// 속성이름을 사용한다 (AETemplates/AEaddRampControl.mel)
+					AEaddRampControl2 ($node_name + ".tentacleCrossSectionMajorRadius_scale") "Scale";
+				editorTemplate -endLayout;				// Tentacle: Cross Section Major Radius // }
+
+				// Cross Section Eccentricity
+				editorTemplate -beginLayout "Eccentricity" -collapse true;	// {
+					editorTemplate -label "sync/apply(on) with selection" -addControl "tentacleCrossSectionEccentricity_sync";
+					editorTemplate -addSeparator;
+					editorTemplate -callCustom `CTGetParameterSliderCallArguments("tpCSE_val")`;
+					editorTemplate -addSeparator;
+					editorTemplate -callCustom ("CTWakesNew \"tCSE_scale_wakes\"") ("CTCakesReplace \"tCSE_scale_wakes\"") "tentacleCrossSectionEccentricity_scale_wakes";
+	//				editorTemplate -label "show graph in OpenGL" -addControl "tentacleCrossSectionEccentricity_scale_wakes";
+					AEaddRampControl2 ($node_name + ".tentacleCrossSectionEccentricity_scale") "Scale";
+				editorTemplate -endLayout;				// Tentacle: Cross Section Eccentricity // }
+
+				// Cross Section Rotation
+				editorTemplate -beginLayout "Global Rotation" -collapse true;	// {
+					editorTemplate -label "sync/apply(on) with selection" -addControl "tentacleCrossSectionRotation_sync";
+					editorTemplate -addSeparator;
+					editorTemplate -callCustom `CTGetParameterSliderCallArguments("tpCSR_val")`;
+					editorTemplate -addSeparator;
+					editorTemplate -callCustom ("CTWakesNew \"tCSR_local_wakes\"") ("CTCakesReplace \"tCSR_local_wakes\"") "tentacleCrossSectionRotation_local_wakes";
+	//				editorTemplate -label "show graph in OpenGL" -addControl "tentacleCrossSectionRotation_local_wakes";
+					AEaddRampControl2 ($node_name + ".tentacleCrossSectionRotation_local") "Local Rotation";
+				editorTemplate -endLayout;				// Tentacle: Cross Section Rotation // }
+			editorTemplate -endLayout;				// Tentacle: Cross Section // }
+
+			// Cut
+			editorTemplate -beginLayout "Cut" -collapse true;	// {
+				editorTemplate -label "sync/apply(on) with selection" -addControl "tentacleCut_sync";
+				editorTemplate -addSeparator;
+// #if 1	// MANUAL_CUT
+				editorTemplate -callCustom `CTGetParameterSliderCallArguments("tpCUT_frame")`;
+// #else	// MANUAL_CUT/!MANUAL_CUT
+//				editorTemplate -label "have cut" -addControl "tentacleCut_have";
+// #endif	// !MANUAL_CUT
+				editorTemplate -callCustom `CTGetParameterSliderCallArguments("tpCUT_t")`;
+// #if 0	// MANUAL_CUT
+//				editorTemplate -callCustom `CTGetParameterSliderCallArguments("tpCUT_polar")`;
+//				editorTemplate -callCustom `CTGetParameterSliderCallArguments("tpCUT_azimuthal")`;
+// #endif	// MANUAL_CUT
+			editorTemplate -endLayout;				// Tentacle: Cut // }
+		editorTemplate -endLayout;				// Tentacle // }
+
+		editorTemplate -beginLayout "Simulation" -collapse false;	// {
+//			editorTemplate -label "Strand ID List" -addControl "StrandIdList";
+
+//			editorTemplate -addSeparator;
+
+//			editorTemplate -label "External File Read Only" -addControl "externalFileReadOnly";
+			editorTemplate -addControl "SimulationStatus";
+//			editorTemplate -addControl "Dynamics";
+
+			// File Cache
+			editorTemplate -beginLayout "File Cache" -collapse false;	// {
+				editorTemplate -callCustom
+					// ...New unique_name label mode
+					"CTSimulationParameterFileNew fileCacheRead \"Load\" 0"
+					// ...Replace unique_name mode
+					"CTSimulationParameterFileReplace fileCacheRead 0"
+					// Attribute
+				"FileCacheRead";
+				editorTemplate -callCustom
+					// ...New unique_name label mode
+					"CTSimulationParameterFileNew fileCacheWrite \"Save\" 1"
+					// ...Replace unique_name mode
+					"CTSimulationParameterFileReplace fileCacheWrite 1"
+					// Attribute
+				"FileCacheWrite";
+			editorTemplate -endLayout;					// File Cache // }
+
+//			editorTemplate -callCustom `CTSimulationGetParameterSliderCallArguments("spITS")`;
+
+			editorTemplate -beginLayout "Simulation Parameters" -collapse true;	// {
+
+				editorTemplate -beginLayout "Parameter File" -collapse true;	// {
+					editorTemplate -callCustom
+						// ...New unique_name label mode
+						"CTSimulationParameterFileNew parameterFileRead \"Load\" 0"
+						// ...Replace unique_name mode
+						"CTSimulationParameterFileReplace parameterFileRead 0"
+						// Attribute
+					"ParameterFileRead";
+					editorTemplate -callCustom
+						// ...New unique_name label mode
+						"CTSimulationParameterFileNew parameterFileWrite \"Save\" 1"
+						// ...Replace unique_name mode
+						"CTSimulationParameterFileReplace parameterFileWrite 1"
+						// Attribute
+					"ParameterFileWrite";
+				editorTemplate -endLayout;	// Simulation Parameter (FILE); // }
+
+				editorTemplate -beginLayout "Race" -collapse true;	// {
+					// (enum)	ShSimParameter::numRaceType	(RACE_ASIAN)
+					editorTemplate -addControl "RaceType";
+//#if 1	// {
+					// (bool)	On/Off (On)
+					editorTemplate -addControl "IncludeStiffness";
+					editorTemplate -callCustom `CTSimulationGetParameterSliderCallArguments("spYM")`;
+					editorTemplate -callCustom `CTSimulationGetParameterSliderCallArguments("spAR")`;
+					editorTemplate -callCustom `CTSimulationGetParameterSliderCallArguments("spE")`;
+					editorTemplate -callCustom `CTSimulationGetParameterSliderCallArguments("spVD")`;
+					editorTemplate -callCustom `CTSimulationGetParameterSliderCallArguments("spK0")`;
+					editorTemplate -callCustom `CTSimulationGetParameterSliderCallArguments("spK1")`;
+					editorTemplate -callCustom `CTSimulationGetParameterSliderCallArguments("spK0in")`;
+					editorTemplate -callCustom `CTSimulationGetParameterSliderCallArguments("spK1in")`;
+					editorTemplate -callCustom `CTSimulationGetParameterSliderCallArguments("spLF")`;
+//#else
+//					editorTemplate -callCustom
+//						("AS_parameterNew stiffness \"Include Stiffness\" \"Young Modulus\" 0 0.0 4.0 0.1 1.0 IncludeStiffness")
+//						("AS_parameterReplace stiffness 0 IncludeStiffness")
+//					"YoungModulus";
+//#endif	// }
+				editorTemplate -endLayout;	// Race; // }
+
+				editorTemplate -beginLayout "External Forces" -collapse true;	// {
+					// (bool)	On/Off	(On)
+					editorTemplate -addControl "IncludeGravityAndInertia";
+					editorTemplate -callCustom `CTSimulationGetParameterSliderCallArguments("spG")`;
+
+					// (bool)	On/Off	(On)
+					editorTemplate -addControl "IncludeAirFriction";
+					editorTemplate -callCustom `CTSimulationGetParameterSliderCallArguments("spAF")`;
+
+					editorTemplate -beginLayout "Wind" -collapse true;	// {
+						// (enum)	ShSimParameter::numWindMode	(NOWIND)
+						editorTemplate -addControl "WindMode";
+						editorTemplate -callCustom `CTSimulationGetParameterSliderCallArguments("spWR")`;
+						editorTemplate -addSeparator;
+						editorTemplate -callCustom `CTSimulationGetParameterSliderCallArguments("spWD2D")`;
+						editorTemplate -callCustom `CTSimulationGetParameterSliderCallArguments("spWD3D0")`;
+						editorTemplate -callCustom `CTSimulationGetParameterSliderCallArguments("spWD3D1")`;
+					editorTemplate -endLayout;	// Wind; // }
+				editorTemplate -endLayout;	// External Force; // }
+
+				editorTemplate -beginLayout "Dissipation" -collapse true;	// {
+					// (enum)	ShSimParameter::numDissipationMode	(LAMBDA)
+					editorTemplate -addControl "DissipationMode";
+					editorTemplate -callCustom `CTSimulationGetParameterSliderCallArguments("spDLP")`;
+					editorTemplate -callCustom `CTSimulationGetParameterSliderCallArguments("spDGP")`;
+				editorTemplate -endLayout;	// Dissipation; // }
+
+				editorTemplate -beginLayout "Collision" -collapse true;	// {
+					// (bool)	On/Off	(Off)
+					editorTemplate -addControl "IncludeTentacleBodyOptimalCollision";
+					editorTemplate -addSeparator;
+					// (bool)	On/Off	(Off)
+					editorTemplate -addControl "IncludeTentacleBodyCollision";
+					editorTemplate -callCustom `CTSimulationGetParameterSliderCallArguments("spHBC0")`;
+					editorTemplate -callCustom `CTSimulationGetParameterSliderCallArguments("spHBC1")`;
+
+					editorTemplate -addSeparator;
+
+					// (bool)	On/Off	(Off)
+					editorTemplate -addControl "IncludeTentacleTentacleCollision";
+					editorTemplate -callCustom `CTSimulationGetParameterSliderCallArguments("spHHC")`;
+				editorTemplate -endLayout;	// Collision // }
+			editorTemplate -endLayout;	// Simulation Parameter; // }
+		editorTemplate -endLayout;	// Simulation; // }
+
+		// Create an "Extras" section and also add controls for any
+		// attributes we have not explicitly mentioned.
+		editorTemplate -addExtraControls;
+
+	editorTemplate -endScrollLayout;	// All; // }
+
+	// 나머지는 표시하지 않도록 한다.
+	string	$xArray[] = {
+// Tentacle // {
+		"tentacleCrossSectionMajorRadius",
+		"tentacleCrossSectionEccentricity",
+		"tentacleCrossSectionRotation",
+		"tentacleCut",
+		"tentacleParameter",
+
+		"rampWakes",
+//		"transversal",
+		"drawTentacleRoot",
+		"tentacleRemovedIndex",
+		"tentacleArray",
+		"tentacleDoAction",
+		"tentacleRoot",
+
+		"selectBy",
+		"time",
+// Tentacle // }
+
+		"caching",
+		"nodeState",
+		"visibility",
+		"intermediateObject",
+		"template",
+		"ghosting",
+		"instObjGroups",
+		"useObjectColor",
+		"objectColor",
+		"drawOverride",
+		"lodVisibility",
+		"renderInfo",
+		"renderLayerInfo",
+		"ghostingControl",
+		"ghostCustomSteps",
+		"ghostPreSteps",
+		"ghostPostSteps",
+		"ghostStepSize",
+		"ghostFrames",
+		"ghostRangeStart",
+		"ghostRangeEnd",
+		"ghostDriver",
+		"motionBlur",
+		"visibleInReflections",
+		"visibleInRefractions",
+		"castsShadows",
+		"receiveShadows",
+		"maxVisibilitySamplesOverride",
+		"maxVisibilitySamples",
+		"geometryAntialiasingOverride",
+		"antialiasingLevel",
+		"shadingSamplesOverride",
+		"shadingSamples",
+		"maxShadingSamples",
+		"volumeSamplesOverride",
+		"volumeSamples",
+		"depthJitter",
+		"ignoreSelfShadowing",
+		"primaryVisibility",
+		"tweak",
+		"relativeTweak",
+		"compInstObjGroups",
+		"controlPoints",
+		"weights",
+		"uvSet",
+		"currentUVSet",
+		"displayImmediate",
+		"displayColors",
+		"displayColorChannel",
+		"currentColorSet",
+		"colorSet",
+		"ignoreHwShader",
+		"doubleSided",
+		"opposite",
+		"smoothShading",
+		"boundingBoxScale",
+		"featureDisplacement",
+		"initialSampleRate",
+		"extraSampleRate",
+		"textureThreshold",
+		"normalThreshold",
+		"displayHWEnvironment",
+		"collisionOffsetVelocityIncrement",
+		"collisionDepthVelocityIncrement",
+		"collisionOffsetVelocityMultiplier",
+		"collisionDepthVelocityMultiplier",
+		"inputSurface",
+		"bboxCorner1",
+		"bboxCorner2",
+		"cachedSurface",
+		"guide",
+		"numPointsInGuide",
+		"seglen",
+		"worldMeshConnected"
+	};
+	for ($x in $xArray) {
+		editorTemplate -suppress $x;
+	}
+}
+
+
+global proc	CTWakesNew(
+	string	$unique_name,
+	string	$value_attribute_name_with_node_name
+)
+{
+//	print ("CTWakesNew: <" + $unique_name + ">, <" + $value_attribute_name_with_node_name + ">" + "\n");
+	$control_name = `checkBoxGrp
+		-label ""
+		-label1 "show graph in OpenGL"
+		-onCommand ("CTCheckWakes true " + $unique_name + " " + $value_attribute_name_with_node_name)
+		-offCommand ("CTCheckWakes false " + $unique_name + " " + $value_attribute_name_with_node_name)
+		("checkBoxGrp_" + $unique_name)`;
+}
+global proc	CTCheckWakes(
+	int	$on,
+	string	$unique_name,
+	string	$value_attribute_name_with_node_name
+)
+{
+//	print ("CTCheckWakes: <" + ($on ? "On" : "Off") + ">, <" + $unique_name + ">, <" + $value_attribute_name_with_node_name + ">" + "\n");
+	int	$tCSMR_scale_wakes__on = 0;
+	if (`objExists checkBoxGrp_tCSMR_scale_wakes`)
+		$tCSMR_scale_wakes__on = `checkBoxGrp -query -value1 checkBoxGrp_tCSMR_scale_wakes`;
+//	print ("tCSMR_scale_wakes: " + ($tCSMR_scale_wakes__on ? "On" : "Off") + "\n");
+	int	$tCSE_scale_wakes__on = 0;
+	if (`objExists checkBoxGrp_tCSE_scale_wakes`)
+		$tCSE_scale_wakes__on = `checkBoxGrp -query -value1 checkBoxGrp_tCSE_scale_wakes`;
+//	print ("tCSE_scale_wakes: " + ($tCSE_scale_wakes__on ? "On" : "Off") + "\n");
+	int	$tCSR_local_wakes__on = 0;
+	if (`objExists checkBoxGrp_tCSR_local_wakes`)
+		$tCSR_local_wakes__on = `checkBoxGrp -query -value1 checkBoxGrp_tCSR_local_wakes`;
+//	print ("tCSR_local_wakes: " + ($tCSR_local_wakes__on ? "On" : "Off") + "\n");
+	string	$node_name = `match "[^.]*" $value_attribute_name_with_node_name`;
+	if ($on) {
+		if ($unique_name == "tCSMR_scale_wakes") {
+			if ($tCSE_scale_wakes__on)
+				checkBoxGrp -edit -value1 off checkBoxGrp_tCSE_scale_wakes;
+			if ($tCSR_local_wakes__on)
+				checkBoxGrp -edit -value1 off checkBoxGrp_tCSR_local_wakes;
+		} else if ($unique_name == "tCSE_scale_wakes") {
+			if ($tCSMR_scale_wakes__on)
+				checkBoxGrp -edit -value1 off checkBoxGrp_tCSMR_scale_wakes;
+			if ($tCSR_local_wakes__on)
+				checkBoxGrp -edit -value1 off checkBoxGrp_tCSR_local_wakes;
+		} else if ($unique_name == "tCSR_local_wakes") {
+			if ($tCSMR_scale_wakes__on)
+				checkBoxGrp -edit -value1 off checkBoxGrp_tCSMR_scale_wakes;
+			if ($tCSE_scale_wakes__on)
+				checkBoxGrp -edit -value1 off checkBoxGrp_tCSE_scale_wakes;
+		}
+
+		setAttr ($node_name + ".rampWakes") ($unique_name == "tCSMR_scale_wakes" ? 0 : ($unique_name == "tCSE_scale_wakes" ? 1 : ($unique_name == "tCSR_local_wakes" ? 2 : (-1))));
+	} else {
+		setAttr ($node_name + ".rampWakes") -1;
+	}
+}
+global proc	CTCakesReplace(
+	string	$unique_name,
+	string	$value_attribute_name_with_node_name
+)
+{
+	int	$on = `checkBoxGrp -query -value1 ("checkBoxGrp_" + $unique_name)`;
+	print ("CTCakesReplace: <" + $unique_name + ">, <" + $value_attribute_name_with_node_name + ">" + ", On?" + ($on ? "True" : "False") + "\n");
+	string	$node_name = `match "[^.]*" $value_attribute_name_with_node_name`;
+	int	$iRampWakes = `getAttr ($node_name + ".rampWakes")`;
+	if ($iRampWakes == -1) {	// "rampWakes" 속성 값이 설정되어 있지 않다.
+		if ($on) { // 이 값으로 설정
+			setAttr ($node_name + ".rampWakes") ($unique_name == "tCSMR_scale_wakes" ? 0 : ($unique_name == "tCSE_scale_wakes" ? 1 : ($unique_name == "tCSR_local_wakes" ? 2 : (-1))));
+		}
+	} else {	// "rampWakes" 속성 값이 설정되어 있다.
+		if ($on) {	// On 상태인데
+			// 이 값과 일치하지 않는다면 On 상태를 해제
+			int	$iOk = false;
+			switch ($iRampWakes) {
+			case 0:	// "tCSMR_scale_wakes"
+				$iOk = $unique_name == "tCSMR_scale_wakes";
+				break;
+			case 1:	// "tCSE_scale_wakes"
+				$iOk = $unique_name == "tCSE_scale_wakes";
+				break;
+			case 2:	// "tCSR_local_wakes"
+				$iOk = $unique_name == "tCSR_local_wakes";
+				break;
+			default:
+				break;
+			}
+			if (!$iOk) {	// 일치하지 않는다.
+				checkBoxGrp -edit -value1 off ("checkBoxGrp_" + $unique_name);
+			}
+		}
+	}
+}
+
+global proc	CTParameterNew(
+	string	$unique_name,
+	int	$intSlider,	// slider type
+	string	$toggle_attribute_name_only,
+
+	string	$checkboxLabel,
+	string	$sliderGrpLabel,
+	float	$minValue,
+	float	$maxValue,
+	float	$stepValue,
+	float	$defaultValue,
+
+	string	$value_attribute_name_with_node_name
+)
+{
+	global int	$plugin__AETemplate_DEBUG;
+	if ($plugin__AETemplate_DEBUG)
+		print (
+			"hello, world: CTParameterNew: |" + $unique_name + "|" + ", " +
+			"|" + $toggle_attribute_name_only + "|" + ", " +
+			"|" + $value_attribute_name_with_node_name + "|" +
+			"\n"
+		);
+
+	string	$control_name;
+	if ($toggle_attribute_name_only == "") {
+		$control_name = `rowLayout
+			-numberOfColumns 1
+			-adjustableColumn 1
+			-backgroundColor 0 0 1
+			-columnAttach 1 "left" 0	// 0: offset;
+							// 이 값이 0 이 아니면 -backgroundColor 를 볼 수 있다.
+							// 하지만 다른 Control 과 Alignment 가 맞지 않다.
+							// "left": type; "right" 만 아니면 된다.
+		("layout_" + $unique_name)`;
+	} else {	// AS OF 3/7/09 (EST) NOT USED
+		$control_name = `rowLayout
+			-numberOfColumns 2
+			-adjustableColumn 2
+			-columnAlign 1 "left"
+		("layout_" + $unique_name)`;
+	}
+	if ($plugin__AETemplate_DEBUG)
+		print ("layout: \"" + $control_name + "\"");
+	if ($toggle_attribute_name_only != "") {	// AS OF 3/7/09 (EST) NOT USED
+		$control_name = `checkBox
+			-label $checkboxLabel
+			-onCommand ("CTToggle_sliderGrp true " + $unique_name + " " + $intSlider + " " + $toggle_attribute_name_only)
+			-offCommand ("CTToggle_sliderGrp false " + $unique_name + " " + $intSlider + " " + $toggle_attribute_name_only)
+		("checkBox_" + $unique_name)`;
+		if ($plugin__AETemplate_DEBUG)
+			print ("check_box: \"" + $control_name + "\"");
+	}
+	string	$change_command = "CTValueSliderGrp " + $unique_name + " " + $intSlider + " " + $value_attribute_name_with_node_name;
+	if ($intSlider) {
+		$control_name = `intSliderGrp
+//			-backgroundColor 0 1 0
+//			-adjustableColumn 3		// floatSliderGrp 의 경우 오른쪽에 여유가 있는 상태인데 반해서,
+							// intSliderGrp 의 경우에는 가득 찬 생태에서 Column 이 변한다.
+//			-columnAttach 3 "left" 0
+			-label $sliderGrpLabel
+			-field true
+			-minValue ((int) $minValue)
+			-maxValue ((int) $maxValue)
+			-step ((int) $stepValue)
+			-value ((int) $defaultValue)
+			-changeCommand $change_command
+		("sliderGrp_" + $unique_name)`;
+	} else {
+		$control_name = `floatSliderGrp
+//			-backgroundColor 0 0 1
+//			-adjustableColumn 3
+//			-columnAttach 3 "left" 0
+			-label $sliderGrpLabel
+			-field true
+			-minValue $minValue
+			-maxValue $maxValue
+			-step $stepValue
+			-value $defaultValue
+			-changeCommand $change_command
+		("sliderGrp_" + $unique_name)`;
+	}
+	if ($plugin__AETemplate_DEBUG)
+		print ("slider: \"" + $control_name + "\"\n");
+
+	CTParameterReplace($unique_name, $intSlider, $toggle_attribute_name_only, $value_attribute_name_with_node_name);
+}
+global proc CTSetAngle(string $afterShave_shape_node, string $arrowLocator_transform_node)
+{
+	float	$f[] = eval("getAttr " + $arrowLocator_transform_node + ".matrix");
+	// <<0, 0, 1>> => <<$x, $y, $z>>
+	float	$x = $f[8];
+	float	$y = $f[9];
+	float	$z = $f[10];
+
+	float	$r = sqrt($x * $x + $y * $y + $z * $z);
+	if ($r == 0) {
+		warning ($arrowLocator_transform_node + ": angle undetermined");
+		return;
+	}
+
+	float	$theta = rad_to_deg(acos($z / $r));	// [0, 180]
+//	print ("theta = " + $theta + "\n");
+	float	$phi = $x == 0 ? ($y == 0 ? 0 : ($y > 0 ? 90 : 270)) : rad_to_deg(atan(abs($y) / abs($x)));
+	if ($x != 0) {
+		if ($x > 0) {
+			if ($y == 0)
+				$phi = 0;
+			else if ($y > 0)
+				$phi = $phi;
+			else	// $y < 0
+				$phi = 360 - $phi;
+		} else {
+			if ($y > 0)
+				$phi = 180 - $phi;
+			else	// $y < 0
+				$phi = 180 + $phi;
+		}
+	}
+//	print ("phi = " + $phi + "\n");
+//	setAttr a2.Direction (rad_to_deg($theta)) (rad_to_deg($phi));
+	eval("setAttr " + $afterShave_shape_node + ".WindDirection2D " + $phi);
+	eval("setAttr " + $afterShave_shape_node + ".WindDirection3D " + $theta + " " + $phi);
+}
+global proc	CTReloadAttribute(
+	int	$intSlider,	// slider type
+	string	$control_name,
+	string	$value_attribute_name_with_node_name,
+	int	$event
+)
+{
+	global int	$plugin__AETemplate_DEBUG;
+	if ($plugin__AETemplate_DEBUG)
+		print (
+			"hello, world: " +
+			"event? " + ($event ? "True" : "False") + ", " +
+			"intSlider? " + ($intSlider ? "True" : "False") + ", " +
+			$control_name + ", " + $value_attribute_name_with_node_name +
+			"\n"
+		);
+	global string	$plugin__AE_node_name;
+	if ($plugin__AETemplate_DEBUG)
+		print ("|" + $plugin__AE_node_name + "|" + "\n");
+	string	$node_name = `match "[^.]*" $value_attribute_name_with_node_name`;
+	string	$buffer[];
+	tokenize($value_attribute_name_with_node_name, ".", $buffer);
+	string	$value_attribute_name_without_node_name = $buffer[1];
+	if ($plugin__AETemplate_DEBUG)
+		print ("|" + $value_attribute_name_without_node_name + "|" + "\n");
+
+	string	$attribute = $node_name + "." + $value_attribute_name_without_node_name;
+	if ($plugin__AETemplate_DEBUG)
+		print ("|" + $attribute + "|" + "\n");
+	int	$exist = -1;
+	if ($intSlider)
+		$exist = `intSlider -exists $control_name`;
+	else
+		$exist = `floatSlider -exists $control_name`;
+	if (!$exist)
+		return;
+	eval(($intSlider ? "intSliderGrp" : "floatSliderGrp") + " -edit -value " + `getAttr $attribute` + " " + $control_name);
+}
+global proc	CTToggle_sliderGrp(
+	int	$on,
+	string	$unique_name,
+	int	$intSlider,	// slider type
+	string	$toggle_attribute_name_only
+)
+{
+	global int	$plugin__AETemplate_DEBUG;
+	global string	$plugin__AE_node_name;
+	if ($plugin__AETemplate_DEBUG)
+		print ("|" + $plugin__AE_node_name + "|" + "\n");
+	if ($intSlider)
+		intSliderGrp -edit -enable $on ("sliderGrp_" + $unique_name);
+	else
+		floatSliderGrp -edit -enable $on ("sliderGrp_" + $unique_name);
+	setAttr ($plugin__AE_node_name + "." + $toggle_attribute_name_only) $on;
+}
+global proc	CTValueSliderGrp(
+	string	$unique_name,
+	int	$intSlider,	// slider type
+	string	$value_attribute_name_with_node_name
+)
+{
+	global int	$plugin__AETemplate_DEBUG;
+	global string	$plugin__AE_node_name;
+	if ($plugin__AETemplate_DEBUG)
+		print ("|" + $plugin__AE_node_name + "|" + "\n");
+	string	$node_name = `match "[^.]*" $value_attribute_name_with_node_name`;
+	string	$buffer[];
+	tokenize($value_attribute_name_with_node_name, ".", $buffer);
+	string	$value_attribute_name_without_node_name = $buffer[1];
+	if ($plugin__AETemplate_DEBUG)
+		print ("|" + $value_attribute_name_without_node_name + "|" + "\n");
+
+	if ($value_attribute_name_without_node_name == "InverseTimeStep") {
+//		confirmDialog -title "Warning" -message "Inverse Time Step: AS OF 3/8/2009 (EST), Only 240 in Maya Plug-in" -button "Ok";
+		warning "Inverse Time Step: AS OF 3/8/2009 (EST), Only 240 in Maya Plug-in";
+		int	$InverseTimeStep = `getAttr ($plugin__AE_node_name + ".InverseTimeStep")`;
+		intSliderGrp -edit -value $InverseTimeStep ("sliderGrp_" + $unique_name);
+		return;
+
+		int	$SimulationStatus = `getAttr ($plugin__AE_node_name + ".SimulationStatus")`;
+		if ($SimulationStatus != -1) {
+			confirmDialog -title "Warning" -message "Inverse Time Step: Only applied befor simulation" -button "Ok";
+			int	$InverseTimeStep = `getAttr ($plugin__AE_node_name + ".InverseTimeStep")`;
+			intSliderGrp -edit -value $InverseTimeStep ("sliderGrp_" + $unique_name);
+			return;
+		}
+	}
+	if ($intSlider) {
+		int	$val = `intSliderGrp -query -value ("sliderGrp_" + $unique_name)`;
+		setAttr ($plugin__AE_node_name + "." + $value_attribute_name_without_node_name) $val;
+	} else {
+		float	$val = `floatSliderGrp -query -value ("sliderGrp_" + $unique_name)`;
+		setAttr ($plugin__AE_node_name + "." + $value_attribute_name_without_node_name) $val;
+	}
+}
+global proc	CTParameterReplace(
+	string	$unique_name,
+	int	$intSlider,	// slider type
+	string	$toggle_attribute_name_only,
+	string	$value_attribute_name_with_node_name
+)
+{
+	global int	$plugin__AETemplate_DEBUG;
+	if ($plugin__AETemplate_DEBUG)
+		print (
+			"hello, world: CTParameterReplace: |" + $unique_name + "|" + ", " +
+			"|" + $toggle_attribute_name_only + "|" + ", " +
+			"|" + $value_attribute_name_with_node_name + "|" +
+			"\n"
+		);
+	string	$node_name = `match "[^.]*" $value_attribute_name_with_node_name`;
+	global string	$plugin__AE_node_name;
+	$plugin__AE_node_name = $node_name;
+	if ($plugin__AETemplate_DEBUG)
+		print ("$node_name:= |" + $node_name + "|" + "\n");
+	if ($toggle_attribute_name_only != "") {
+		int	$val = `getAttr ($node_name + "." + $toggle_attribute_name_only)`;
+		checkBox -edit -value $val ("checkBox_" + $unique_name);
+	}
+	string	$control_name = "sliderGrp_" + $unique_name;
+	float	$val = `getAttr $value_attribute_name_with_node_name`;
+	if ($plugin__AETemplate_DEBUG)
+		print ("$value_attribute_name_with_node_name:= |" + $value_attribute_name_with_node_name + "|" + "\n");
+	if ($intSlider)
+		intSliderGrp -edit -value ((int) $val) $control_name;
+	else
+		floatSliderGrp -edit -value $val $control_name;
+
+	string	$command = "CTReloadAttribute " + $intSlider + " " + $control_name + " " + $value_attribute_name_with_node_name;
+	// 단순한 속성일 때는 "-attributeChange" 를 써서 속성값과 control 값을 일치시킬 수 있으나,
+	// 배열이나 Compound 속성의 경우에는 이렇게 해서는 원하는 결과를 얻을 수 없다.
+//	scriptJob -parent $control_name -replacePrevious -attributeChange $value_attribute_name_with_node_name ($command + " 0");
+//	CTRegisterScriptJob("attributeChange", $node_name, $control_name, $command, $value_attribute_name_with_node_name);
+//	scriptJob -parent $control_name -replacePrevious -event "SelectionChanged" ($command + " 1");
+	CTRegisterScriptJob("SelectionChanged", $node_name, $control_name, $command, "");
+
+	if ($unique_name == "spWD2D") {
+		string	$afterShave_shape_node = `match "[^.]*" $value_attribute_name_with_node_name`;
+		string	$arrowLocator_transform_node = "transformArrowLocator_" + $afterShave_shape_node;
+		string	$arrowLocator_shape_node = "shapeArrowLocator_" + $afterShave_shape_node;
+		string	$arrowLocatorArray[] = `ls -exactType arrowLocator`;
+		int	$alreadyExist = 0;	// false
+		for ($arrowLocator in $arrowLocatorArray) {
+			if ($arrowLocator == $arrowLocator_shape_node) {
+				$alreadyExist = 1;
+				break;
+			}	
+		}
+		if ($alreadyExist == 0) {
+			// Save selection
+			string	$selectArray[] = `ls -sl`;
+
+			createNode transform -name $arrowLocator_transform_node;
+			eval("setAttr " + $arrowLocator_transform_node + ".rotateY 90");
+			eval("setAttr " + $arrowLocator_transform_node + ".rotateX -90");
+			createNode arrowLocator -parent $arrowLocator_transform_node -name $arrowLocator_shape_node;
+			eval("setAttr " + $arrowLocator_shape_node + ".Direction 0 0");
+			eval("setAttr " + $arrowLocator_shape_node + ".Length 10");
+			eval("setAttr " + $arrowLocator_shape_node + ".Point 10");
+
+			eval("scriptJob -attributeChange " + $arrowLocator_transform_node + ".rotate \"CTSetAngle " + $afterShave_shape_node + " " + $arrowLocator_transform_node + "\"");
+
+			// Load selection
+			select -clear;
+			for ($i = 0; $i < size($selectArray); ++$i) {
+//				print ("|" + $selectArray[$i] + "|\n");
+				select -add $selectArray[$i];
+			}
+			// hilite
+			hilite -replace $afterShave_shape_node;
+		}
+	}
+}
+
+global proc	CTFilenameTextField(
+	string	$control_name,
+	string	$value_attribute_name_with_node_name
+)
+{
+	global int	$plugin__AETemplate_DEBUG;
+	global string	$plugin__AE_node_name;
+	if ($plugin__AETemplate_DEBUG)
+		print ("|" + $plugin__AE_node_name + "|" + "\n");
+	string	$node_name = `match "[^.]*" $value_attribute_name_with_node_name`;
+	string	$buffer[];
+	tokenize($value_attribute_name_with_node_name, ".", $buffer);
+	string	$value_attribute_name_without_node_name = $buffer[1];
+	if ($plugin__AETemplate_DEBUG)
+		print ("|" + $value_attribute_name_without_node_name + "|" + "\n");
+	string	$filename = `textField -query -text $control_name`;
+	setAttr ($plugin__AE_node_name + "." + $value_attribute_name_without_node_name) -type "string" $filename;
+}
+global proc	CTReloadFileAttribute(
+	string	$control_name,
+	string	$fileAttribute
+)
+{
+	global int	$plugin__AETemplate_DEBUG;
+	if ($plugin__AETemplate_DEBUG)
+		print (
+			"hello, world: " +
+			$control_name + ", " + $fileAttribute +
+			"\n"
+		);
+	global string	$plugin__AE_node_name;
+	if ($plugin__AETemplate_DEBUG)
+		print ("|" + $plugin__AE_node_name + "|" + "\n");
+	string	$node_name = `match "[^.]*" $fileAttribute`;
+	string	$buffer[];
+	tokenize($fileAttribute, ".", $buffer);
+	string	$value_attribute_name_without_node_name = $buffer[1];
+	if ($plugin__AETemplate_DEBUG)
+		print ("|" + $value_attribute_name_without_node_name + "|" + "\n");
+
+	string	$attribute = $node_name + "." + $value_attribute_name_without_node_name;
+	string	$filename = `getAttr $attribute`;
+	textField -edit -text $filename $control_name;
+}

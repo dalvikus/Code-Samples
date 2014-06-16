@@ -1,0 +1,6 @@
+Revision history for Perl extension ERModule.
+
+0.01  Wed Jun 20 17:21:50 2007
+	- original version; created by h2xs 1.23 with options
+		-O -n ERModule ERModule/ERLib/ERConstant.h
+

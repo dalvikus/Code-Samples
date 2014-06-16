@@ -1,0 +1,191 @@
+/*
+	1. light shader		LightSource	"LightSource"
+	2. surface shader	Surface		"Surface"
+	3. displacement shader	Displacement	"Displacement"
+ */
+
+######## <---.rib> ########
+#	light
+#
+#	LightSource "mtorSpotLight"
+#			2
+#		"float intensity"	[1]
+#		"color lightcolor"	[1 1 1]
+#		"float decayRate"	[0]
+#		"float coneAngle"	[2.62192]
+#		"float penumbraAngle"	[1.66557]
+#		"float dropOff"		[0]
+#		"float useBarnDoors"	[0]
+#		"float[4] barnDoors"	[0.349066 0.349066 0.349066 0.349066]
+#		"float useDecayRegions"	[0]
+#		"float[6] decayRegions"	[1 2 3 3.76525 5.41201 7.84194]
+######## </---.rib> ########
+========================================================================
+ObjectName	"spotLightShape1"	"LightSource"
+------------------------------------------------------------------------
+LightSource "mtorSpotLight"
+		#
+	"float intensity"	[2]
+	"color lightcolor"	[1 1 1]
+	"float decayRate"	[0]
+	"float coneAngle"	[2.62192]
+	"float penumbraAngle"	[1.66557]
+	"float dropOff"		[0]
+	"float useBarnDoors"	[0]
+	"float[4] barnDoors"	[0.349066 0.349066 0.349066 0.349066]
+	"float useDecayRegions"	[0]
+	"float[6] decayRegions"	[1 2 3 3.76525 5.41201 7.84194]
+========================================================================
+
+
+######## <mtorLambert.sl> ########
+#	surface
+#	mtorLambert(
+#		float diffuseCoeff		= .8;
+#		color ambientColor		= color(0);
+#		color incandescence		= color(0);
+#		float translucenceCoeff		= 0;
+#		float refractiveIndex		= 1; /* unsupported */
+#		color refractedColor		= color(1); /* unsupported */
+#		float glowIntensity		= 0; /* unsupported */
+#	)
+######## </mtorLambert.sl> ########
+######## <---.rib> ########
+#	Surface		"mtorLambert"
+#		"float refractiveIndex"		[1]
+#		"float diffuseCoeff"		[0.8]
+#		"color ambientColor"		[0 0 0]
+#		"color incandescence"		[0 0 0]
+#		"float translucenceCoeff"	[0]
+#		"float glowIntensity"		[0]
+#
+#	Surface		 "mtorLambert"
+#		"float refractiveIndex"		[1]
+#		"float diffuseCoeff"		[0.8]
+#		"color ambientColor"		[0 0 0]
+#		"color incandescence"		[0 0 0]
+#		"float translucenceCoeff"	[0]
+#		"float glowIntensity"		[0]
+######## </---.rib> ########
+========================================================================
+ObjectName	"nurbsSphere*"	"Surface"
+------------------------------------------------------------------------
+Surface		"mtorLambert"
+	"float refractiveIndex"		[1]
+	"float diffuseCoeff"		[1.8]
+	"color ambientColor"		[0 0 0]
+	"color incandescence"		[0 0 0]
+	"float translucenceCoeff"	[0]
+	"float glowIntensity"		[0]
+========================================================================
+
+
+######## <Mondo.sl> #########
+#	surface
+#	Mondo(
+#		string abColorMap		= "";
+#		float abColorMapBlur		= 1;
+#		float abUseColorMapAlpha	= 0;
+#		float abDiffuse			= .8;
+#		string abDiffuseMap		= "";
+#		float abDiffuseMapBlur		= 1;
+#		float abSpecular		= .3;
+#		string abSpecularMap		= "";
+#		float abSpecularMapBlur		= 1;
+#		color abSpecularColor		= color(1,1,1);
+#		string abSpecularColorMap	= "";
+#		float abSpecularColorMapBlur	= 1;
+#		float abRoughness		= .3;
+#		string abRoughnessMap		= "";
+#		float abRoughnessMapBlur	= 1;
+#		string abTransparencyMap	= "";
+#		float abInvertTransparencyMap	= 0;
+#		float abTransparencyMapBlur	= 1;
+#		color abIncandescence		= color(0,0,0);
+#		string abIncandescenseMap	= "";
+#		float abIncandescenseMapBlur	= 1;
+#		string abReflectionMap		= "";
+#		float abReflectionUp		= 0;
+#		float abReflectivity		= .1;
+#		float abReflectionMapBlur	= 1;
+#		string abBumpMap		= "";
+#		float abBumpMapBlur		= 1;
+#		float abBumpScale		= 1.0;
+#		float abDoDisplacement		= 0.0;
+#		float abUseNormals		= 0;
+#		point STMatrix0			= point "shader" (1,0,0);
+#		point STMatrix1			= point "shader" (0,1,0);
+#	)
+#	Surface "Mondo"
+#		"color abIncandescence"		[ 0 0 0 ]
+#		"color abSpecularColor"		[ 1 1 1 ]
+#		"float abBumpMapBlur"		[ 1 ]
+#		"float abBumpScale"		[ 1 ]
+#		"float abColorMapBlur"		[ 1 ]
+#		"float abDiffuse"		[ 0.8 ]
+#		"float abDiffuseMapBlur"	[ 1 ]
+#		"float abDoDisplacement"	[ 0 ]
+#		"float abIncandescenseMapBlur"	[ 1 ]
+#		"float abInvertTransparencyMap"	[ 0 ]
+#		"float abReflectionMapBlur"	[ 1 ]
+#		"float abReflectionUp"		[ 0 ]
+#		"float abReflectivity"		[ 0.1 ]
+#		"float abRoughness"		[ 0.3 ]
+#		"float abRoughnessMapBlur"	[ 1 ]
+#		"float abSpecular"		[ 0.3 ]
+#		"float abSpecularColorMapBlur"	[ 1 ]
+#		"float abSpecularMapBlur"	[ 1 ]
+#		"float abTransparencyMapBlur"	[ 1 ]
+#		"float abUseColorMapAlpha"	[ 0 ]
+#		"float abUseNormals"		[ 0 ]
+#		"point STMatrix0"		[ 1 0 0 ]
+#		"point STMatrix1"		[ 0 1 0 ]
+#		"string abBumpMap"		[ "textures/katBump.tex" ]
+#		"string abColorMap"		[ "textures/kat.tex" ]
+#		"string abDiffuseMap"		[ "" ]
+#		"string abIncandescenseMap"	[ "" ]
+#		"string abReflectionMap"	[ "" ]
+#		"string abRoughnessMap"		[ "" ]
+#		"string abSpecularColorMap"	[ "" ]
+#		"string abSpecularMap"		[ "" ]
+#		"string abTransparencyMap"	[ "" ] 
+######## </Mondo.sl> ########
+
+
+========================================================================
+ObjectName	"ball?"	"Surface"
+------------------------------------------------------------------------
+Surface "Mondo"
+	"color abIncandescence"		[ 0 0 0 ]
+	"color abSpecularColor"		[ 1 1 1 ]
+	"float abBumpMapBlur"		[ 1 ]
+	"float abBumpScale"		[ 1 ]
+	"float abColorMapBlur"		[ 1 ]
+	"float abDiffuse"		[ 0.8 ]
+	"float abDiffuseMapBlur"	[ 1 ]
+	"float abDoDisplacement"	[ 1 ]
+	"float abIncandescenseMapBlur"	[ 1 ]
+	"float abInvertTransparencyMap"	[ 0 ]
+	"float abReflectionMapBlur"	[ 1 ]
+	"float abReflectionUp"		[ 0 ]
+	"float abReflectivity"		[ 0.1 ]
+	"float abRoughness"		[ 0.3 ]
+	"float abRoughnessMapBlur"	[ 1 ]
+	"float abSpecular"		[ 0.3 ]
+	"float abSpecularColorMapBlur"	[ 1 ]
+	"float abSpecularMapBlur"	[ 1 ]
+	"float abTransparencyMapBlur"	[ 1 ]
+	"float abUseColorMapAlpha"	[ 0 ]
+	"float abUseNormals"		[ 0 ]
+	"point STMatrix0"		[ 1 0 0 ]
+	"point STMatrix1"		[ 0 1 0 ]
+	"string abBumpMap"		[ "textures/katBump.tex" ]
+	"string abColorMap"		[ "textures/kat.tex" ]
+	"string abDiffuseMap"		[ "" ]
+	"string abIncandescenseMap"	[ "" ]
+	"string abReflectionMap"	[ "" ]
+	"string abRoughnessMap"		[ "" ]
+	"string abSpecularColorMap"	[ "" ]
+	"string abSpecularMap"		[ "" ]
+	"string abTransparencyMap"	[ "" ] 
+========================================================================

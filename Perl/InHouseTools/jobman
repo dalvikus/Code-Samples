@@ -1,0 +1,585 @@
+#!/usr/local/tcltk-8.3.4/bin/wish83.exe
+
+package require BWidget 
+image create photo fileOpen -file //chunji/cygwin/usr/local/bin/image/open.gif
+image create photo fileSave -file //chunji/cygwin/usr/local/bin/image/save.gif
+image create photo fileExit -file //chunji/cygwin/usr/local/bin/image/exit.gif
+#image create photo findFolder -file //chunji/cygwin/usr/local/bin/image/folder.gif
+
+
+#image create photo fileOpen -file open.gif
+#image create photo fileSave -file save.gif
+#image create photo findFolder -file folder.gif
+
+option add *TitleFrame.l.font {helvetica 13 bold italic}
+
+namespace eval Global {
+	variable patchLevel     "3.00"
+	variable jobMode 	0 ;# 0 --> netrender / 1 --> local
+	variable scenePath 	""
+	variable cmdPath 	"" 
+	variable bgPath	        ""
+	variable saveFile       ".jobVars-$Global::patchLevel.ini"
+	variable homeDir        "//chunji/cygwin/home/$env(USERNAME)"
+	variable binDir		"//chunji/cygwin/usr/local/bin"
+	#variable binDir	      "y:/home/iamoh/usrlocalbin"
+	variable iniFile 	{{{jobman variable file} {.jm}}}
+	variable temp		""
+	set fileExt(tiff)       ".tif"
+	set fileExt(targa)      ".tga"
+	set fileExt(sgif)       ".sgif"
+	set fileExt(mayaiff)    ""
+	set fileExt(iff)        ".iff"
+}
+
+proc Run {} {
+     regexp -- {[^0-9]*} $CPrimeInf::shot CPrimeInf::seq
+     CRib::getRibEditOption
+
+     if $CPrimeInf::render {
+	  if {![string compare $CPrimeInf::renderer prman]} {
+	       WrScript_local
+	  } else {
+	       WrScript_local_maya
+	  }
+
+     } else {
+	  if {![string compare $CPrimeInf::renderer prman]} {
+	       WrScript_remote
+	  } else {
+	       WrScript_remote_maya
+	  }
+     }
+}
+
+proc Create {} {
+	wm resizable . 0 0 
+
+    MainFrame .mfMain -textvariable help -width 550 -height 570
+    
+    .mfMain addindicator -text " Digiscape "
+    .mfMain addindicator -textvariable Global::patchLevel
+	
+   	set ::tbMain [.mfMain addtoolbar] 
+   	
+	Button $::tbMain.buSave -bd 1 -image fileSave -relief link -helptext "save variable" \
+		-command { \
+			set Global::temp [tk_getSaveFile -filetypes $Global::iniFile -initialdir $Global::homeDir]; \
+			if {[string compare $Global::temp ""]} { \
+				SaveVars $Global::temp \
+			}} 
+				
+   	Button $::tbMain.buOpen -image fileOpen -relief link  -bd 1 -helptext "load variable" \
+		-command { \
+			set Global::temp [tk_getOpenFile -filetypes $Global::iniFile -initialdir $Global::homeDir]; \
+			if {[string compare $Global::temp ""]} { \
+				source $Global::temp \
+			}}
+	Button $::tbMain.buExit -image fileExit  -relief link -bd 1 -helptext "save & exit" -command {SaveVars $Global::homeDir/$Global::saveFile;destroy .} 
+	Button $::tbMain.buRun  -text "RUN" -relief link -bd 1 -font "arial 11 bold" -helptext "run job script" -fg red -command Run
+	Button $::tbMain.buShowVar  -text "DEBUG" -relief link -bd 1 -font "arial 11 bold" -helptext "show variables" -fg red -command {ShowVars .vars}
+	checkbutton $::tbMain.cbJobMode -variable Global::jobMode -width 15 -text "render only" -font "arial 12 bold" -bg #CC6600 -selectcolor #0066CC -fg white -indicatoron false \
+		-command {if $Global::jobMode {$::tbMain.cbJobMode configure -text "render & daily" } else {$::tbMain.cbJobMode configure -text "render only"}}
+	
+	grid columnconfigure  $::tbMain 3 -weight 1
+	grid rowconfigure     $::tbMain 0 -weight 1
+	grid $::tbMain.cbJobMode -row 0 -column 0 -padx 2
+	grid $::tbMain.buRun 	-row 0 -column 1 -padx 3
+	grid $::tbMain.buShowVar -row 0 -column 2 -padx 3
+	grid $::tbMain.buSave 	-row 0 -column 4 -padx 5 -sticky news
+	grid $::tbMain.buOpen 	-row 0 -column 5 -padx 5 -sticky news
+	grid $::tbMain.buExit 	-row 0 -column 6 -padx 5 -sticky news
+	   	
+   	set frame [.mfMain getframe]
+    NoteBook $frame.nbMain -width 500 -height 550 -font "arial 14 bold"
+
+     # create primeInf page ...
+     CPrimeInf::create $frame.nbMain
+     # create rib page ...
+     CRib::create $frame.nbMain
+     # create chunk page ...
+     CChunk::create $frame.nbMain
+     # create dps page ...
+     CDps::create $frame.nbMain
+     # create maya page ...
+     CMaya::create $frame.nbMain
+	
+	#$frame.nbMain compute_size
+    $frame.nbMain raise [$frame.nbMain page 0]
+	pack $frame.nbMain
+	pack .mfMain -fill both
+}
+
+proc SaveVars { fileName } {
+     set file [open $fileName w] 
+     CRib::getRibEditOption ;#****
+     regsub -all -line {"} $CRib::ribEditOption \\" CRib::ribEditOption
+     puts $file "\
+
+# CGlobal
+#set Global::jobMode	 $Global::jobMode
+set Global::scenePath	 \"$Global::scenePath\"
+set Global::cmdPath	 \"$Global::cmdPath\"
+set Global::bgPath	 \"$Global::bgPath\"
+
+
+# CPrimeInf
+set CPrimeInf::scene	 \"$CPrimeInf::scene\"
+set CPrimeInf::show	 \"$CPrimeInf::show\"
+set CPrimeInf::seq	 \"$CPrimeInf::seq\"
+set CPrimeInf::shot	 \"$CPrimeInf::shot\"
+set CPrimeInf::dept	 \"$CPrimeInf::dept\"
+set CPrimeInf::revision	 \"$CPrimeInf::revision\"
+set CPrimeInf::output	 \"$CPrimeInf::output\"
+set CPrimeInf::renderer  \"$CPrimeInf::renderer\"
+set CPrimeInf::sendMail	 $CPrimeInf::sendMail
+set CPrimeInf::mailTo	 \"$CPrimeInf::mailTo\"
+set CPrimeInf::crew	 \"$CPrimeInf::crew\"
+set CPrimeInf::delRib	 $CPrimeInf::delRib
+
+# CRib
+set CRib::cameraName	 \"$CRib::cameraName\"
+set CRib::mtorID	 \"$CRib::mtorID\"
+set CRib::frameInf	 \"$CRib::frameInf\"
+set CRib::dspyServer	 \"$CRib::dspyServer\"
+set CRib::dspyMode	 \"$CRib::dspyMode\"
+set CRib::formatX	 $CRib::formatX
+set CRib::formatY	 $CRib::formatY
+set CRib::pixelSampleX	 $CRib::pixelSampleX
+set CRib::pixelSampleY	 $CRib::pixelSampleY
+set CRib::shadingRate	 $CRib::shadingRate
+set CRib::mtorCmd	 \"$CRib::mtorCmd\"
+
+set CRib::cmd		 \"$CRib::cmd\"
+set CRib::ribEditOption	 \"$CRib::ribEditOption\"
+set CRib::bgName	 \"$CRib::bgName\"
+
+set CRib::date		 \"$CDps::date\"
+set CRib::mm		 \"$CDps::mm\"
+set CRib::anim		 \"$CDps::anim\"
+set CRib::fx		 \"$CDps::fx\"
+set CRib::td		 \"$CDps::td\"
+set CRib::roto		 \"$CDps::roto\"
+set CRib::comp		 \"$CDps::comp\"
+set CRib::coord		 \"$CDps::coord\"
+set CRib::background	 \"$CDps::background\"
+set CRib::cameraMove	 \"$CDps::cameraMove\"
+set CRib::pixelRate	 \"$CDps::pixelRate\"
+set CRib::audio		 \"$CDps::audio\"
+set CRib::filmIo	 \"$CDps::filmIo\"
+set CRib::cmd		 \"$CDps::cmd\"
+set CRib::notes		 \"$CDps::notes\"
+
+# output
+set CMaya::ID		 \"$CMaya::ID\"	      
+set CMaya::camName	 \"$CMaya::camName\"
+set CMaya::frameRange    \"$CMaya::frameRange\"
+set CMaya::imgH		 \"$CMaya::imgH\" 
+set CMaya::imgW		 \"$CMaya::imgW\"
+set CMaya::imgAR	 \"$CMaya::imgAR\"
+set CMaya::fimgH	 \"$CMaya::fimgH\"
+set CMaya::fimgW	 \"$CMaya::fimgW\"   
+set CMaya::xLeftPixelBound    \"$CMaya::xLeftPixelBound\" 
+set CMaya::xRightPixelBound   \"$CMaya::xRightPixelBound\"
+set CMaya::yLowPixelBound     \"$CMaya::yLowPixelBound\"
+set CMaya::yHightPixelBound   \"$CMaya::yHightPixelBound\"
+set CMaya::imgFormat	      \"$CMaya::imgFormat\"
+
+# motion blur
+set CMaya::useMB	      $CMaya::useMB
+set CMaya::shutterAngle	      \"$CMaya::shutterAngle\" 
+set CMaya::MBByFrame	      \"$CMaya::MBByFrame\"	
+set CMaya::use2DMB	      \"$CMaya::use2DMB\"
+set CMaya::2DMBLength	      \"$CMaya::2DMBLength\" 
+set CMaya::2DMBSharpness      \"$CMaya::2DMBSharpness\"
+set CMaya::2DMBSmoothVal      \"$CMaya::2DMBSmoothVal\"
+set CMaya::2DMBSmoothCol      $CMaya::2DMBSmoothCol
+set CMaya::keep2DMV	      $CMaya::keep2DMV	
+set CMaya::MBVisibilitySam    \"$CMaya::MBVisibilitySam\"
+set CMaya::maxMBVisibilitySam \"$CMaya::maxMBVisibilitySam\" 
+
+# ray trace
+set CMaya::enableRT		   $CMaya::enableRT	
+set CMaya::maxRTReflectionLev	   \"$CMaya::maxRTReflectionLev\" 
+set CMaya::maxRTRefractionLev	   \"$CMaya::maxRTRefractionLev\" 
+set CMaya::maxRTShadowRayDep	   \"$CMaya::maxRTShadowRayDep\"
+
+# quality
+set CMaya::MPFiltering	      $CMaya::MPFiltering
+set CMaya::MPFilter	      \"$CMaya::MPFilter\"
+set CMaya::SSamples	      \"$CMaya::SSamples\"	
+set CMaya::maxSSamples	      \"$CMaya::maxSSamples\" 
+set CMaya::volumeSS	      \"$CMaya::volumeSS\"	
+set CMaya::particleVS	      \"$CMaya::particleVS\" 
+set CMaya::antiAliasing	      \"$CMaya::antiAliasing\"
+
+# accel.
+set CMaya::TFCache	 $CMaya::TFCache	
+set CMaya::detectST	 $CMaya::detectST	
+set CMaya::reuseRGD	 $CMaya::reuseRGD	
+set CMaya::useDBB	 $CMaya::useDBB	
+set CMaya::abortMT	 $CMaya::abortMT	
+
+# misc.
+set CMaya::verboseRender      $CMaya::verboseRender	
+set CMaya::gamma	      \"$CMaya::gamma\"	
+set CMaya::createIPR	      $CMaya::createIPR	
+set CMaya::enableDM	      $CMaya::enableDM	
+set CMaya::onlyDM	      $CMaya::onlyDM	
+set CMaya::rContrast	      \"$CMaya::rContrast\"	
+set CMaya::gContrast	      \"$CMaya::gContrast\"	
+set CMaya::bContrast	      \"$CMaya::bContrast\"	
+set CMaya::pContrast	      \"$CMaya::pContrast\"	
+
+# DOoooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
+ # output
+set CMaya::camNameDo	 $CMaya::camNameDo	 
+set CMaya::frameRangeDo  $CMaya::frameRangeDo 
+set CMaya::imgHDo	 $CMaya::imgHDo	    
+set CMaya::imgWDo	 $CMaya::imgWDo	     
+set CMaya::imgARDo	 $CMaya::imgARDo	    
+set CMaya::fimgHDo	 $CMaya::fimgHDo	     
+set CMaya::fimgWDo	 $CMaya::fimgWDo	     
+set CMaya::xLeftPixelBoundDo	   $CMaya::xLeftPixelBoundDo 
+set CMaya::xRightPixelBoundDo	   $CMaya::xRightPixelBoundDo 
+set CMaya::yLowPixelBoundDo	   $CMaya::yLowPixelBoundDo   
+set CMaya::yHightPixelBoundDo	   $CMaya::yHightPixelBoundDo 
+#set CMaya::imgFormatDo	      $CMaya::imgFormatDo
+set CMaya::startFrameDo	      $CMaya::startFrameDo      
+set CMaya::endFrameDo	      $CMaya::endFrameDo	
+set CMaya::byFrameDo	      $CMaya::byFrameDo	        
+
+# motion blur
+set CMaya::useMBDo	      $CMaya::useMBDo	
+set CMaya::shutterAngleDo     $CMaya::shutterAngleDo	  
+set CMaya::MBByFrameDo	      $CMaya::MBByFrameDo	   
+set CMaya::use2DMBDo	      $CMaya::use2DMBDo		   
+set CMaya::2DMBLengthDo	      $CMaya::2DMBLengthDo	   
+set CMaya::2DMBSharpnessDo    $CMaya::2DMBSharpnessDo	   
+set CMaya::2DMBSmoothValDo    $CMaya::2DMBSmoothValDo	   
+set CMaya::2DMBSmoothColDo    $CMaya::2DMBSmoothColDo	   
+set CMaya::keep2DMVDo	      $CMaya::keep2DMVDo	     
+set CMaya::MBVisibilitySamDo	   $CMaya::MBVisibilitySamDo	 
+set CMaya::maxMBVisibilitySamDo    $CMaya::maxMBVisibilitySamDo   
+
+# ray trace
+set CMaya::enableRTDo		   $CMaya::enableRTDo	 
+set CMaya::maxRTReflectionLevDo    $CMaya::maxRTReflectionLevDo 
+set CMaya::maxRTRefractionLevDo    $CMaya::maxRTRefractionLevDo
+set CMaya::maxRTShadowRayDepDo	   $CMaya::maxRTShadowRayDepDo
+
+# quality
+set CMaya::MPFilteringDo      $CMaya::MPFilteringDo
+set CMaya::MPFilterDo	      $CMaya::MPFilterDo
+set CMaya::SSamplesDo	      $CMaya::SSamplesDo
+set CMaya::maxSSamplesDo      $CMaya::maxSSamplesDo
+set CMaya::volumeSSDo	      $CMaya::volumeSSDo
+set CMaya::particleVSDo	      $CMaya::particleVSDo
+set CMaya::antiAliasingDo     $CMaya::antiAliasingDo
+
+# accel.
+set CMaya::TFCacheDo	 $CMaya::TFCacheDo
+set CMaya::detectSTDo    $CMaya::detectSTDo
+set CMaya::reuseRGDDo    $CMaya::reuseRGDDo
+set CMaya::useDBBDo	 $CMaya::useDBBDo
+set CMaya::abortMTDo	 $CMaya::abortMTDo
+
+# misc.
+set CMaya::verboseRenderDo    $CMaya::verboseRenderDo
+set CMaya::gammaDo	      $CMaya::gammaDo		
+set CMaya::createIPRDo	      $CMaya::createIPRDo	
+set CMaya::enableDMDo	      $CMaya::enableDMDo	 
+set CMaya::onlyDMDo	      $CMaya::onlyDMDo		  
+set CMaya::rContrastDo	      $CMaya::rContrastDo	  
+set CMaya::gContrastDo	      $CMaya::gContrastDo	  
+set CMaya::bContrastDo	      $CMaya::bContrastDo	  
+set CMaya::pContrastDo	      $CMaya::pContrastDo	  
+"
+     close $file
+}
+
+proc ShowVars { w } {
+     catch {destroy $w}
+     toplevel $w
+     CRib::getRibEditOption
+     
+     frame $w.frVars
+     frame $w.frVars.frTop
+     text  $w.frVars.frTop.txVars -relief sunken -bd 1 -yscrollcommand "$w.frVars.frTop.scY set" -xscrollcommand "$w.frVars.scX set" -setgrid 1 -height 30 \
+     	-font "arial 14 bold" -fg #0066CC
+     scrollbar $w.frVars.frTop.scY -command "$w.frVars.frTop.txVars yview"
+     scrollbar $w.frVars.scX -command "$w.frVars.frTop.txVars xview" -orient horizontal
+		
+	 pack $w.frVars.frTop.txVars -fill both -side left -expand yes
+	 pack $w.frVars.frTop.scY -fill y -side left
+	 pack $w.frVars.frTop -fill both -expand yes
+	 pack $w.frVars.scX -fill x		
+     pack $w.frVars -expand yes -fill both
+     
+     $w.frVars.frTop.txVars insert 0.0 \
+"
+MTOR OPTION EXAMPLE
+
+GLOBAL
+
+	patch level	$Global::patchLevel
+	job mode		$Global::jobMode	    # 0: render only	1: render & daily
+	scene path	$Global::scenePath
+	cmd path		$Global::cmdPath
+
+
+PRIME INFORMATION
+
+	scene			$CPrimeInf::scene
+	show			$CPrimeInf::show
+	seq				$CPrimeInf::seq
+	shot			$CPrimeInf::shot
+	dept			$CPrimeInf::dept
+	layer			$CPrimeInf::layer
+	revision			$CPrimeInf::revision
+	dspyServer		$CRib::dspyServer
+	dspyMode		$CRib::dspyMode
+	output			$CPrimeInf::output
+	renderer	        $CPrimeInf::renderer
+	sendMail			$CPrimeInf::sendMail
+	mailTo			$CPrimeInf::mailTo
+	crew			$CPrimeInf::crew
+	mailSubject		$CPrimeInf::mailSubject
+	mailContent		$CPrimeInf::mailContent
+	render			$CPrimeInf::render	       # 0: netrender 1: local
+	delete rib			$CPrimeInf::delRib
+	
+MTOR-
+	mtorDo			$CRib::mtorDo
+	cameraName		$CRib::cameraName
+	mtorID			$CRib::mtorID
+	frameInf	        $CRib::frameInf
+	format			$CRib::formatX	  $CRib::formatY
+	pixelsample		$CRib::pixelSampleX    $CRib::pixelSampleY
+	shadingrate		$CRib::shadingRate
+	mtorCmd			$CRib::mtorCmd
+
+RIBEDIT-
+
+	cmd file
+"
+foreach cmdfile $CRib::cmd {
+	$w.frVars.frTop.txVars insert end "\t\t$cmdfile\n"
+}
+
+$w.frVars.frTop.txVars insert end \
+"\n\tribEditOption		\n$CRib::ribEditOption
+	bgName			$CRib::bgName
+
+CChunk
+
+	renHeroNum 		$CChunk::renHeroNum
+	renGrndShdNum		$CChunk::renGrndShdNum
+	ezCompNum		$CChunk::ezCompNum 
+
+"
+
+for {set i 1} {$i <= $CChunk::renHeroNum} {incr i} {
+	$w.frVars.frTop.txVars insert end \
+"renHeroChunk #$i
+	Do		$CChunk::renHeroChunk($i,1)
+	ID		$CChunk::renHeroChunk($i,2)
+	ribEdit		$CChunk::renHeroChunk($i,3)
+"
+}
+	 
+for {set i 1} {$i <= $CChunk::renGrndShdNum} {incr i} {
+	$w.frVars.frTop.txVars insert end \
+"renGrndShdChunk #$i
+	Do		$CChunk::renGrndShdChunk($i,1)
+	ID		$CChunk::renGrndShdChunk($i,5)
+	Light		$CChunk::renGrndShdChunk($i,2)
+	Hero		$CChunk::renGrndShdChunk($i,3)
+	Target		$CChunk::renGrndShdChunk($i,4)	
+"
+}
+
+	$w.frVars.frTop.txVars insert end \
+"
+
+DPS 
+
+	date			$CDps::date
+	mm			$CDps::mm
+	anim			$CDps::anim
+	fx			$CDps::fx
+	td			$CDps::td
+	roto			$CDps::roto
+	comp			$CDps::comp
+	coord			$CDps::coord
+	background		$CDps::background
+	cameraMove		$CDps::cameraMove
+	pixelRate			$CDps::pixelRate
+	audio			$CDps::audio
+	filmIo			$CDps::filmIo
+	cmd			$CDps::cmd
+	notes			$CDps::notes
+
+Maya
+
+ID		    $CMaya::ID	      
+camName		    $CMaya::camName
+frameRange	    $CMaya::frameRange
+imgH		    $CMaya::imgH 
+imgW		    $CMaya::imgW
+imgAR		    $CMaya::imgAR
+fimgH		    $CMaya::fimgH
+fimgW		    $CMaya::fimgW   
+xLeftPixelBound     $CMaya::xLeftPixelBound 
+xRightPixelBound    $CMaya::xRightPixelBound
+yLowPixelBound      $CMaya::yLowPixelBound
+yHightPixelBound    $CMaya::yHightPixelBound
+imgFormat	    $CMaya::imgFormat
+
+# motion blur
+useMB		    $CMaya::useMB
+shutterAngle	    $CMaya::shutterAngle 
+MBByFrame	    $CMaya::MBByFrame	
+use2DMB		    $CMaya::use2DMB
+2DMBLength	    $CMaya::2DMBLength 
+2DMBSharpness       $CMaya::2DMBSharpness
+2DMBSmoothVal       $CMaya::2DMBSmoothVal
+2DMBSmoothCol       $CMaya::2DMBSmoothCol
+keep2DMV	    $CMaya::keep2DMV	
+MBVisibilitySam     $CMaya::MBVisibilitySam
+maxMBVisibilitySam  $CMaya::maxMBVisibilitySam 
+
+# ray trace
+enableRT		   $CMaya::enableRT	
+maxRTReflectionLev	   $CMaya::maxRTReflectionLev 
+maxRTRefractionLev	   $CMaya::maxRTRefractionLev 
+maxRTShadowRayDep	   $CMaya::maxRTShadowRayDep
+
+# quality
+MPFiltering	      $CMaya::MPFiltering
+MPFilter	      $CMaya::MPFilter
+SSamples	      $CMaya::SSamples	
+maxSSamples	      $CMaya::maxSSamples 
+volumeSS	      $CMaya::volumeSS	
+particleVS	      $CMaya::particleVS 
+antiAliasing	      $CMaya::antiAliasing
+
+# accel.
+TFCache	       $CMaya::TFCache	
+detectST       $CMaya::detectST	
+reuseRGD       $CMaya::reuseRGD	
+useDBB	       $CMaya::useDBB	
+abortMT	       $CMaya::abortMT	
+
+# misc.
+verboseRender       $CMaya::verboseRender	
+gamma		    $CMaya::gamma	
+createIPR	    $CMaya::createIPR	
+enableDM	    $CMaya::enableDM	
+onlyDM		    $CMaya::onlyDM	
+rContrast	    $CMaya::rContrast	
+gContrast	    $CMaya::gContrast	
+bContrast	    $CMaya::bContrast	
+pContrast	    $CMaya::pContrast	
+
+# DOoooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
+camNameDo	 $CMaya::camNameDo	 
+frameRangeDo  $CMaya::frameRangeDo 
+imgHDo	 $CMaya::imgHDo	    
+imgWDo	 $CMaya::imgWDo	     
+imgARDo	 $CMaya::imgARDo	    
+fimgHDo	 $CMaya::fimgHDo	     
+fimgWDo	 $CMaya::fimgWDo	     
+xLeftPixelBoundDo	   $CMaya::xLeftPixelBoundDo 
+xRightPixelBoundDo	   $CMaya::xRightPixelBoundDo 
+yLowPixelBoundDo	   $CMaya::yLowPixelBoundDo   
+yHightPixelBoundDo	   $CMaya::yHightPixelBoundDo 
+imgFormatDo	      $CMaya::imgFormatDo
+
+# motion blur
+useMBDo	      $CMaya::useMBDo	
+shutterAngleDo     $CMaya::shutterAngleDo	  
+MBByFrameDo	      $CMaya::MBByFrameDo	   
+use2DMBDo	      $CMaya::use2DMBDo		   
+2DMBLengthDo	      $CMaya::2DMBLengthDo	   
+2DMBSharpnessDo    $CMaya::2DMBSharpnessDo	   
+2DMBSmoothValDo    $CMaya::2DMBSmoothValDo	   
+2DMBSmoothColDo    $CMaya::2DMBSmoothColDo	   
+keep2DMVDo	      $CMaya::keep2DMVDo	     
+MBVisibilitySamDo	   $CMaya::MBVisibilitySamDo	 
+maxMBVisibilitySamDo    $CMaya::maxMBVisibilitySamDo   
+
+# ray trace
+enableRTDo		   $CMaya::enableRTDo	 
+maxRTReflectionLevDo    $CMaya::maxRTReflectionLevDo 
+maxRTRefractionLevDo    $CMaya::maxRTRefractionLevDo
+maxRTShadowRayDepDo	   $CMaya::maxRTShadowRayDepDo
+
+# quality
+MPFilteringDo      $CMaya::MPFilteringDo
+MPFilterDo	      $CMaya::MPFilterDo
+SSamplesDo	      $CMaya::SSamplesDo
+maxSSamplesDo      $CMaya::maxSSamplesDo
+volumeSSDo	      $CMaya::volumeSSDo
+particleVSDo	      $CMaya::particleVSDo
+antiAliasingDo     $CMaya::antiAliasingDo
+
+# accel.
+TFCacheDo	 $CMaya::TFCacheDo
+detectSTDo    $CMaya::detectSTDo
+reuseRGDDo    $CMaya::reuseRGDDo
+useDBBDo	 $CMaya::useDBBDo
+abortMTDo	 $CMaya::abortMTDo
+
+# misc.
+verboseRenderDo    $CMaya::verboseRenderDo
+gammaDo	      $CMaya::gammaDo		
+createIPRDo	      $CMaya::createIPRDo	
+enableDMDo	      $CMaya::enableDMDo	 
+onlyDMDo	      $CMaya::onlyDMDo		  
+rContrastDo	      $CMaya::rContrastDo	  
+gContrastDo	      $CMaya::gContrastDo	  
+bContrastDo	      $CMaya::bContrastDo	  
+pContrastDo	      $CMaya::pContrastDo	
+"
+}
+
+proc Msg { msg } {
+     tk_messageBox -message $msg
+}
+
+# main
+if {![file exists $Global::homeDir/$Global::saveFile]} {
+     set file [open $Global::homeDir/$Global::saveFile w]
+     close $file
+}
+
+foreach script "$Global::binDir/chunk.tcl $Global::binDir/primeInf.tcl $Global::binDir/rib.tcl $Global::binDir/dps.tcl $Global::binDir/wrscript.tcl $Global::binDir/maya.tcl" {
+	namespace inscope :: source $script
+}
+
+source $Global::homeDir/$Global::saveFile
+
+Create
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

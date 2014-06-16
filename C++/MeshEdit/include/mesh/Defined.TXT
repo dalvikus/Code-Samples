@@ -1,0 +1,531 @@
+================================================================================
+여기서는 표준모델에서 지정된 부위에 대한 정보를 얻고
+이를 프로그램에서 사용하는 형태로 가공하는 방법을 설명한다.
+
+지정된 부위는 다음과 같이 세 부위를 말한다.
+
+	1) 길이를 얻는 계측 부위
+	2) 지정된 영역
+	3) 성형 템플릿에 사용될 색깔등고선 영역
+
+측정모델의 위상구조(토폴로지: topology)가 표준모델의 위상구조와 같다면
+표준모델을 사용한 부위는 측정모델에서도 약간의 수정만 거친다면
+그대로 사용될 수 있다.
+
+파일캐쉬를 만드는 것과 달리 자동화하는 데에는 한계가 있다.
+하지만 정의하는 사람이 이 문서에 따라 부위를 정의하면 크게 어려움은 없다.
+
+먼저 복잡한 길이계측에 대해서 알아본다: 1. 길이계측
+여기서 사용된 방법을 사용하면 지정된 영역이나
+색깔등고선 영역의 정의는 상대적으로 간단하다: 2. 지정된 영역, 3. 색깔등고선 영역
+
+
+1. 길이 계측
+============
+길이 계측에 사용되는 기본유형을 알아본다; 1) 기본유형
+각 유형을 정의할 때 사용되는 단위인 점.면에 대해서 알아본다; 2) 점.면 정의
+이를 바탕으로 하고 길이를 정의한다: 3) 길이 정의
+길이를 정의할 때 헤더파일을 사용하는 데, 이 때 각 정의마다 사용되는 변수를 구분하기 위해
+namespace 를 도입한다: 4) namespace
+부위별로 정의된 것들을 묶어 모든 표준모델에서 길이의 정의를 담은 헤더파일을 완성한다: 5) __defined__.h
+
+1) 기본유형
+-----------
+길이 측정에 사용되는 정의는 다음과 같이 다섯 가지로 기본 유형으로 분류된다: MEASURE_TYPE_T in kMeasure.h
+
+	[기본유형 1] 두 점 사이의 거리: MEASURE_DEF__TWO_PLANE_DISTANCE
+	[기본유형 2] 한 점과 평면 사이의 거리: MEASURE_DEF__POINT_PLANE_DISTANCE
+	[기본유형 3] 두 평면 사이의 거리: MEASURE_DEF__TWO_PLANE_DISTANCE
+	[기본유형 4] 한 점을 지나는 단면에 의해서 잘리는 둘레의 길이: MEASURE_DEF__GIRTH
+	[기본유형 5] 모델 표면위의 두 점 사이의 거리: MEASURE_DEF__TWO_POINT_GIRTH
+
+3)의 경우 두 평면의 평행이어야 한다.
+[기본유형 4], [기본유형 5]의 경우,
+측정모드에 따라 모델 표면을 따라 잴 수도 있고(TAPE_MEASURE_MODE_CONTOUR),
+줄자를 사용해서 잴 수도 있다.(TAPE_MEASURE_MODE_WRAP)
+
+프로그램에서 사용하는 많은 지정된 부위는 이 중에서 [기본유형 4]또는 [기본유형 5]를 사용하지만
+경우에 따라 둘 이상의 조합으로 길이가 정의된다.
+예를 들어 키의 경우 다음 세 길이의 합으로 정의된다
+	1) 정수리부터 골반까지의 거리: [기본유형 2]
+	2) 골반에서 무릎까지의 거리: [기본유형 3]
+	3) 무릎에서 발꿈치까지의 거리: [기본유형 2]
+
+	주) 키의 예를 들어지만 많은 경우 세밀한 길이측정을 위해
+	둘 이상의 기본유형을 조합해서 길이가 정의된다.
+
+2) 점.면 정의
+-------------
+다섯 가지 기본유형의 길이의 정의에 필요한 정보는 두 가지이다: kDef.h
+	1) 점: POINT_DEF
+	2) 면: PLANE_DEF
+
+점을 정의하기위해 3차원좌표를 생각할 수 있으나 이는 표델과 무관한 내용이므로,
+표준모델에서 정의된 값이 그대로 측정모델에 적용될 수 없다.
+kDef.h 에 정의된 POINT_DEF 를 사용하면 모델에 무관하게 점을 정의할 수 있다.
+면의 경우 한 점과 면에 수직인 벡터인 법선벡터의 의해서 결정된다.
+kDef.h 에 정의된 PLANE_DEF 를 사용한다.
+
+Pick.cpp 에서 (CTRL + '8')키를 사용하면 상황에 따라
+POINT_DEF 와 PLANE_DEF 를 정의하는 데 필요한 정보가 출력된다.
+
+예를 들어 [기본유형 4]의 정의를 얻고자 한다고 가정하자.
+단면계측모드(SHIFT + CTRL + F6)에서 단면이 지나는 한 점을 선택한다.(SHIFT + 클릭)
+단면이 표시되면 CTRL + '8' 키를 눌려 이 단면을 얻을 때 사용된 정보인
+한 점(POINT_DEF)과 단면을 결정하는 법선벡터를 출력한다: PLANE_DEF
+다음은 한 예이다:
+
+        POINT_DEF[0]: (14559, 0.300082f, 0.400299f)
+        N[0]: (0.000000f, 1.000000f, 0.000000f)
+
+이 값을 복사해서 어느 부위인지 기록한다; N 은 법선벡인 PLANE_DEF::normal 을 말한다.
+"3) 길이 정의"에서 만드는 "__defined__.h"에서 사용된다.
+
+	주) 필요하다면 manipulator를 사용하여 단면의 법선벡터를 조절할 수 있다.
+
+이와 같은 단면결정방법은 PLANE_DEF 에 사용되는 것으로 [기본유형 2]와 [기본유형 3]에도 사용된다.
+
+두 점사이의 거리 계측이라면(CTRL + ATL + F6) [기본유형 5]를 정의할 때 유용하다.
+이 경우 다음과 같은 결과가 출력된다.
+
+        POINT_DEF[0]: (7958, 0.343240f, 0.563359f)
+        N[0]: (0.000000f, 1.000000f, 0.000000f)
+        POINT_DEF[1]: (8000, 0.738809f, 0.237159f)
+        N[1]: (0.000000f, 1.000000f, 0.000000f)
+
+실제로 사용되는 것은 두 개의 POINT_DEF 이니 그것도 복사해서 적어두면 된다.
+
+	주) 이 경우 좀 더 정확한 정의를 위해서는 두 점뿐만 아니라
+	실제로 사용되는 단면도 정의되는 TWO_POINT_PLANE_DEF 가 적절하다.
+	이는 미세조정에 해당하는 것이다. 표준모델에서 정의된 미세조정은
+	측정모델에 가면 의미가 없으므로 표준모델를 사용하는 정의에서는 두 개의 POINT_DEF 면 충분하다.
+
+마지막으로 [기본유형 1]에서 말하는 한 점의 정의를 얻기위해서는 앞의 둘 중의 하나를 편법적으로 이용하면 된다.
+[기본유형 4]를 이용한다면 원하는 지점을 지나는 임의의 둘레를 만든 후,
+CTRL + '8' 를 사용해서 나온 결과 중에서 POINT_DEF 만 사용한다.
+[기본유형 5]를 이용한다면 첫번째 찍힌 점이 POINT_DEF[0]란 점을 떠올리면 쉽게 POINT_DEF 를 얻을 수 있다.
+
+3) 길이 정의
+------------
+2)에서 결정된 POINT_DEF, PLANE_DEF 를 사용하면
+1)에서 말하는 기본유형 다섯가지의 정의인 MEASURE_DEF__* 를 결정할 수 있다.
+
+기본유형(Type)과 해당 정의인 MEASURE_DEF__* 가 결정되면 하나의 길이의 정의인 MEASURE_DEF 가 결정된다:
+
+	struct MEASURE_DEF {
+		MEASURE_TYPE_T	__type;
+		MEASURE_DEF__BASE*	__ptr;
+	};
+
+MEASURE_DEF__BASE 는 모든 기본유형의 정의인 MEASURE_DEF__* 의 기본클래스로
+C++ 에서 Polymophism 을 사용가능하게 한다.
+
+	주) 1)에서 언급한 다섯 가지 유형 외에 새로운 유형이 추가되더라고
+	MEASURE_DEF__BASE::calculate 만 override 한다면 기본틀은 변하지 않는다.
+
+실제로는 하나의 길이의 정의에 여러 개의 MEASURE_DEF 가 사용될 수 있다. (예, 키)
+그러므로 결과적으로는 MEASURE_DEF 배열의 정의가 길이의 정의에 해당한다: MEASURE_DEF_LIST
+	struct MEASURE_DEF_LIST
+	{
+		int	n;	// ptr 에 있는 MEASURE_DEF 갯수
+		MEASURE_DEF*	ptr;
+	};
+
+예를 들어 보자.
+	주) 모든 예는 첨부되는 __defined__.h 에 있는 내용이다.
+머리 둘레의 정의는 [기본유형 4]에 속하고 이는 PLANE_DEF 만 있으면 된다.
+다음은 [기본유형 4]를 정의하는 예이다.
+
+	PLANE_DEF	planeDef = {
+		{15743, 0.221824f, 0.408594f},
+		D3DXVECTOR3(0, 1, 0)
+	};
+	MEASURE_DEF__GIRTH	girthDef(TAPE_MEASURE_MODE_CONTOUR, planeDef);
+
+추가적으로 길이를 재는 방식(TAPE_MEASURE_METHOD_T)을 설정한다.
+
+머리둘레의 경우 이와 같은 정의하나만 있으면 충분하므로 머리둘레의 정의는 다음과 같다.
+
+	MEASURE_DEF	defList[1] = {
+		{MEASURE_TYPE__GIRTH, &girthDef},
+	};
+
+이는 다음과 같은 MEASURE_DEF_LIST 를 결정한다.
+
+	{1, defList}
+
+좀 더 복잡한 키의 예를 보자.
+세 개의 MEASURE_DEF 가 필요한 키의 정의는 다음과 같다.
+
+	POINT_PLANE_DEF	pointPlaneDef1 = {
+		{20790, 0.025643f, 0.962431f},	// 정수리
+		{				// 골반
+			{62710, 0.448102f, 0.258171f},
+			D3DXVECTOR3(0, 1, 0)
+		}
+	};
+	MEASURE_DEF__POINT_PLANE_DISTANCE	pointPlaneDistanceDef1(pointPlaneDef1);
+
+	TWO_PLANE_DEF	twoPlaneDef = {
+		{				// 골반
+			{65847, 0.015407f, 0.824872f},
+			D3DXVECTOR3(0.086850f, 0.996197f, 0.007047f)
+		},
+		{				// 오른쪽 무릎
+			{72432, 0.102591f, 0.257141f},
+			D3DXVECTOR3(0.086850f, 0.996197f, 0.007047f)
+		}
+	};
+	MEASURE_DEF__TWO_PLANE_DISTANCE	twoPlaneDistanceDef(twoPlaneDef);
+
+	POINT_PLANE_DEF	pointPlaneDef2 = {
+		{73637, 0.016866f, 0.185059f},	// 오른쪽 발뒤꿈치
+		{				// 오른쪽 무릎
+			{72432, 0.102591f, 0.257141f},
+			D3DXVECTOR3(0.086850f, 0.996197f, 0.007047f)
+		},
+	};
+	MEASURE_DEF__POINT_PLANE_DISTANCE	pointPlaneDistanceDef2(pointPlaneDef2);
+
+	////
+	MEASURE_DEF	defList[3] = {
+		{MEASURE_TYPE__POINT_PLANE_DISTANCE, &pointPlaneDistanceDef1},
+		{MEASURE_TYPE__TWO_PLANE_DISTANCE, &twoPlaneDistanceDef},
+		{MEASURE_TYPE__POINT_PLANE_DISTANCE, &pointPlaneDistanceDef2},
+	};
+
+세 개의 기본유형을 사용하고 있으며 각각 MEASURE_DEF__POINT_PLANE_DISTANCE, MEASURE_TYPE__TWO_PLANE_DISTANCE,
+MEASURE_TYPE__POINT_PLANE_DISTANCE 의 MEASURE_DEF__* 를 사용함을 알 수 있다.
+이는 다음과 같은 MEASURE_DEF_LIST 를 결정한다.
+
+	{3, defList}
+
+4) namespace
+------------
+헤더파일에서는 오로지 변수의 정의만 가능하다.
+각 부위별로 MEASURE_DEF 배열을 정의할 때 사용되는 변수를 구분하기위해 각 부위별로 서로 다른 namespace 를 사용한다.
+예를 들어, 머리둘레는 Head 라는 namespace 를, 키는 Height 라는 namespace 를 사용한다.
+따라서 3)에서 각 부위는 실제로 헤더파일에는 다음과 같은 구조에 있다.
+
+	namespace Head {
+		PLANE_DEF	planeDef = {
+			{15743, 0.221824f, 0.408594f},
+			D3DXVECTOR3(0, 1, 0)
+		};
+		MEASURE_DEF__GIRTH	girthDef(TAPE_MEASURE_MODE_CONTOUR, planeDef);
+
+		////
+		MEASURE_DEF	defList[1] = {
+			{MEASURE_TYPE__GIRTH, &girthDef},
+		};
+	}
+
+	namespace Height {
+		POINT_PLANE_DEF	pointPlaneDef1 = {
+			{20790, 0.025643f, 0.962431f},	// 정수리
+			{				// 골반
+				{62710, 0.448102f, 0.258171f},
+				D3DXVECTOR3(0, 1, 0)
+			}
+		};
+		MEASURE_DEF__POINT_PLANE_DISTANCE	pointPlaneDistanceDef1(pointPlaneDef1);
+
+		TWO_PLANE_DEF	twoPlaneDef = {
+			{				// 골반
+				{65847, 0.015407f, 0.824872f},
+				D3DXVECTOR3(0.086850f, 0.996197f, 0.007047f)
+			},
+			{				// 오른쪽 무릎
+				{72432, 0.102591f, 0.257141f},
+				D3DXVECTOR3(0.086850f, 0.996197f, 0.007047f)
+			}
+		};
+		MEASURE_DEF__TWO_PLANE_DISTANCE	twoPlaneDistanceDef(twoPlaneDef);
+
+		POINT_PLANE_DEF	pointPlaneDef2 = {
+			{73637, 0.016866f, 0.185059f},	// 오른쪽 발뒤꿈치
+			{				// 오른쪽 무릎
+				{72432, 0.102591f, 0.257141f},
+				D3DXVECTOR3(0.086850f, 0.996197f, 0.007047f)
+			},
+		};
+		MEASURE_DEF__POINT_PLANE_DISTANCE	pointPlaneDistanceDef2(pointPlaneDef2);
+
+		////
+		MEASURE_DEF	defList[3] = {
+			{MEASURE_TYPE__POINT_PLANE_DISTANCE, &pointPlaneDistanceDef1},
+			{MEASURE_TYPE__TWO_PLANE_DISTANCE, &twoPlaneDistanceDef},
+			{MEASURE_TYPE__POINT_PLANE_DISTANCE, &pointPlaneDistanceDef2},
+		};
+	}
+
+5) __defined__.h
+----------------
+3)에 따라 표준모델에서 지정된 부위에 대한 길이의 정의를 완성했다면
+다음과 같은 MEASURE_TYPE_DEF 를 완성된다.
+
+	struct MEASURE_TYPE_DEF {
+		TAPE_MEASURE_TYPE_T	type;
+		MEASURE_DEF_LIST	defList;
+	};
+
+어느 부위(type)가 어떤 MEASURE_DEF 에 대한 배열인 MEASURE_DEF_LIST 를 사용하는 지 말해준다.
+실제로 표준모델에는 여러 개의 정의가 있으므로 MEASURE_TYPE_DEF 의 배열인 MEASURE_TYPE_DEF_LIST 가 결정되면
+표준모델에서 이루어지는 모든 길이의 정의는 완성된다.
+
+	struct MEASURE_TYPE_DEF_LIST
+	{
+		int	n;
+		MEASURE_TYPE_DEF*	ptr;
+	};
+
+다음은 __defined__.h 에 있는 예이다; 에트리 표준모델
+
+	MEASURE_TYPE_DEF	typeDef[9 + 15] = {
+#if 1	// 둘레
+		{TAPE_MEASURE_HEAD,			{1, Head::defList}},
+		{TAPE_MEASURE_NECK,			{1, Neck::defList}},
+		{TAPE_MEASURE_BREAST,			{1, Breast::defList}},
+		{TAPE_MEASURE_WAIST,			{1, Waist::defList}},
+		{TAPE_MEASURE_HIP,			{1, Hip::defList}},
+		{TAPE_MEASURE_LEFT_THIGH,		{1, LeftThigh::defList}},
+		{TAPE_MEASURE_RIGHT_THIGH,		{1, RightThigh::defList}},
+		{TAPE_MEASURE_LEFT_FOREARM,		{1, LeftForeArm::defList}},
+		{TAPE_MEASURE_RIGHT_FOREARM,		{1, RightForeArm::defList}},
+#endif	// 둘레
+#if 1	// 길이
+		{TAPE_MEASURE_HEIGHT,			{3, Height::defList}},
+		{TAPE_MEASURE_SEATED_HEIGHT,		{1, SeatedHeight::defList}},
+		{TAPE_MEASURE_SHOULDER_WIDTH,		{1, Shoulder::defList}},
+		{TAPE_MEASURE_LEFT_LEG,			{2, LeftLeg::defList}},
+		{TAPE_MEASURE_RIGHT_LEG,		{2, RightLeg::defList}},
+		{TAPE_MEASURE_LEFT_ARM,			{2, LeftArm::defList}},
+		{TAPE_MEASURE_RIGHT_ARM,		{2, RightArm::defList}},
+		{TAPE_MEASURE_LEFT_ARM_INSIDE,		{2, LeftArmInside::defList}},
+		{TAPE_MEASURE_LEFT_ARM_OUTSIDE,		{2, LeftArmOutside::defList}},
+		{TAPE_MEASURE_RIGHT_ARM_INSIDE,		{2, RightArmInside::defList}},
+		{TAPE_MEASURE_RIGHT_ARM_OUTSIDE,	{2, RightArmOutside::defList}},
+		{TAPE_MEASURE_LEFT_LEG_INSIDE,		{1, LeftLegInside::defList}},
+		{TAPE_MEASURE_LEFT_LEG_OUTSIDE,		{1, LeftLegOutside::defList}},
+		{TAPE_MEASURE_RIGHT_LEG_INSIDE,		{1, RightLegInside::defList}},
+		{TAPE_MEASURE_RIGHT_LEG_OUTSIDE,	{1, RightLegOutside::defList}},
+#endif	// 길이
+	};
+
+이는 표준모델에 대한 다음과 같은 MEASURE_TYPE_DEF_LIST 를 완성한다:
+
+	{15, &typeDef}
+
+여러 개의 표준모델이 있으므로 이와 같은 MEASURE_TYPE_DEF_LIST 에 대한 배열로 __measure__.h 의
+길이 정의 부분을 완성한다.
+
+	MEASURE_TYPE_DEF_LIST	typeDefList[] = {
+		{1, DAZ::typeDef},
+		{9 + 15, ETRI::typeDef},	// 9 + 15 = 24: NUM_TAPE_MEASURE_TYPE
+	};
+
+	주) 파일캐쉬와 마찬가지로 첫 번째(index = 0) 표준모델은 DAZ 표준모델,
+	두 번째 표준모델(index = 1)은 에트리 표준모델을 가정한다.
+
+4)에서 각 부위에서 결정하는 MEASURE_DEF 의 결정에 사용되는 변수들을 구분하기위해
+부위별로 서로 다른 namespace 를 사용한 것처럼,
+각 표준모델별로 서로 다른 namespace 를 사용함으로써
+MEASURE_TYPE_DEF_LIST 의 결정에 사용되는 변수들을 구분했다.
+즉 앞의 MEASURE_TYPE_DEF 는 실제로 모델별로 구분된 namespace 안에 들어있다.
+
+	namespace ... {
+		......
+
+		MEASURE_TYPE_DEF	typeDef[] = {
+			......
+		};
+	}
+
+
+2. 지정된 영역
+==============
+영역을 정의하는 구조에 대해서 알아본다: 1) 영역 정의
+영역의 기본이 되는 Face 들의 목록을 얻는 방법을 알아본다: 3) Face 목록
+반복적으로 Face 들의 목록을 얻는 데,
+어떤 목록이 어떤 부위에 해당하는 지 알 수 있도록 Enter 키를 사용한다: 2) Enter 키
+
+영역의 경우 정의되는 값들이 많다. 따라서 정의자체를 모은 헤더파일 __defined__.h 에 쓰지 않고,
+따로 __defined__ 파일 안에 영역의 정의를 담는다.
+
+	주) 기본적으로 프로그램이 실행하면 같은 폴더안헤 defined 란 파일이 생긴다.
+	영역의 결과를 출력할 때 화면에 출력되는 값들을 복사하기 번거롭고 어렵기 때문에
+	동시에 이 파일에 결과가 저장된다. 콘솔창의 결과를 복사해서 사용하지 않고
+	이 파일을 수정하여 __defined__ 파일을 만들어 include/mesh/ 안에 넣어두는 것이 편리한다.
+
+	매번 프로그램을 실행할 때마다 defined 파일을 덮어쓰므로
+	저장할 것이 있다면 프로그램 실행 후에 꼭 저장해야 한다.
+
+1) 영역 정의
+------------
+원하는 영역에 해당하는 Face 들의 목록(Face ID)을 얻어,
+다음과 같이 정의된 AREA_FACEID_LIST 구조를 채운다.
+
+	struct AREA_FACEID_LIST
+	{
+		int	n;
+		DWORD*	ptr;
+	};
+
+예를 들어, 몸통을 이루는 Face 의 목록을 얻은 후,
+
+	DWORD	trunk[6934] = {...};
+
+다음과 같이 AREA_FACEID_LIST 구조를 만든다:
+
+	{6934, trunk}
+
+길이의 정의와 마찬가지로 여러 표준모델이 있으므로 이를 구분하기 위해 표준모델마다 다른 namespace 를 사용한다.
+예를 들어 에트리 표준모델의 경우 ETRI 라는 namespace 안에서 위의 trunk 변수를 정의한다면
+
+	namespace ETRI {
+		DWORD	trunk[6934] = {...};
+		......
+	}
+
+AREA_FACEID_LIST 는 다음과 같다.
+
+	{6934, ETRI::trunk}
+
+영역마다 이와 같은 AREA_FACEID_LIST 구조를 만들면, 다음과 같은 AREA_TYPE_DEF 구조가 완성된다.
+
+	struct AREA_TYPE_DEF
+	{
+		AREA_TYPE_T	type;
+		AREA_FACEID_LIST	faceIDList;
+	};
+
+몸통의 경우 다음과 같은 AREA_TYPE_DEF 구조를 만든다:
+
+	{AREA_TRUNK,	{6934, ETRI::trunk}},
+
+이와 같은 식으로 주어진 표준모델에 대해 AREA_TYPE_DEF 구조의 배열을 만든다.
+
+__defined__.h 에 있는 에트리 표준모델의 경우 AREA_TYPE_DEF 배열은 다음과 같다.
+
+	AREA_TYPE_DEF	areaTypeDef[15] = {
+		{AREA_TRUNK,	{6934, ETRI::trunk}},
+		{AREA_LEFT_ARM,		{2733, ETRI::leftArm}},
+		{AREA_RIGHT_ARM,	{2986, ETRI::rightArm}},
+		{AREA_LEFT_LEG,		{3822, ETRI::leftLeg}},
+		{AREA_RIGHT_LEG,	{3728, ETRI::rightLeg}},
+		{AREA_NECK,		{842, ETRI::neck}},
+		{AREA_CHEST,		{1939, ETRI::chest}},
+		{AREA_ABDOMINAL,	{748, ETRI::abdominal}},
+		{AREA_HIP,		{1981, ETRI::hip}},
+		{AREA_LEFT_FORE_ARM,	{1407, ETRI::leftForearm}},
+		{AREA_RIGHT_FORE_ARM,	{1528, ETRI::rightForearm}},
+		{AREA_LEFT_THIGH,	{1745, ETRI::leftThigh}},
+		{AREA_RIGHT_THIGH,	{1545, ETRI::rightThigh}},
+		{AREA_LEFT_CALF,	{907, ETRI::leftCalf}},
+		{AREA_RIGHT_CALF,	{853, ETRI::rightCalf}},
+	};
+
+각 표준모델마다 위와 같은 AREA_TYPE_DEF 배열을 사용하여 다음 구조를 완성하면
+모든 표준모델에 대한 지정된 영역의 정의를 마친다.
+
+	struct AREA_TYPE_DEF_LIST
+	{
+		int	n;
+		AREA_TYPE_DEF*	ptr;
+	};
+
+두 개의 표준모델이 있는 경우 AREA_TYPE_DEF_LIST 는 다음과 같다: __defined__.h
+
+	AREA_TYPE_DEF_LIST	areaTypeDefList[] = {
+		{0, 0},
+		{5 + 10, ETRI::areaTypeDef},
+	};
+
+첫 번째의 경우 AREA_TYPE_DEF 에 대한 포인터가 0이므로,
+첫 번째 표준모델에 대해서는 어떤 지정된 영역의 정의가 만들어지지 않았음을 뜻한다.
+
+2) Enter 키
+-----------
+지정된 영역이나 "3. 색깔등고선 영역"의 경우 화면에 출력되는 내용이 많다.
+또한 반복적으로 영역을 출력하다보면 어느 결과가 어느 영역에 해당하는 내용인지 구분하기가 어렵다.
+이 때 Enter 키를 사용하여 영역의 정보를 출력할 때 사용될 변수의 이름을 정할 수 있다.
+
+Enter 키는 다음과 같이 사용된다:
+
+	Enter 키(Enter 키 모드 설정) ->
+		변수이름 입력/확인 -> Enter 키 -> 변수이름 등록 ->
+	Enter 키(Enter 키 모드 해제)
+
+Enter 키를 눌러 모드에 들어가면 화면의 좌측상단에 varName 이라는 문자열이 보이고
+그 다음에 입력한 변수의 이름이 나타난다: varName: ""
+변수이름에 맞는 키(A-Z, a-z, 0-9, _)를 사용하여 변수이름을 정한 후(필요하면 DEL 키를 사용하여 지울 수 있다)
+Enter 키를 눌러 변수이름을 등록한다. 변수이름이 결정되면 다시 Enter 키를 눌러 모드를 해제한다.
+화면에서 해당 문자열이 없어진다.
+
+3) Face 목록
+------------
+2) 의 Enter 키를 사용하여 영역에 사용될 변수의 이름을 정한다:
+
+원하는 영역을 감싸는 점들을 마우스로 CTRL + 클릭해서 선택한다.
+이 때 SHIFT 를 사용하면 추가/삭제가 가능하다.
+마우스를 드래그하여 한꺼번에 여러 점들을 선택할 수도 있다.
+
+SHIFT + CTRL + '8' 키를 눌러 선택된 점들이 감싸는 영역의 Face 목록을 얻는다.
+예를 들어 몸통의 경우 다음과 같은 결과를 얻는다; 변수이름을 trunk 로 설정한 경우
+
+	DWORD	trunk[###] = {   // varName:= |trunk| (###)
+		....
+        };      // varName: |trunk| (###)
+
+이 결과를 복사하여 __defined__ 파일을 만든 후,
+__defined__.h 구조에 있는 AREA_TYPE_DEF_LIST 를 완성할 때 사용한다.
+
+
+3. 색깔등고선 영역
+==================
+1)에서는 색깔등고선 영역의 정의를 알아보고,
+2)에서는 정의를 얻는 방법을 설명한다.
+
+1) 색깔등고선 영영 정의
+-----------------------
+"2. 지정된 영역"의 "1) 영역 정의"와 매우 유사하다.
+
+지정된 영역에서 모으는 정보가 Face 목록(DWORD 형)인 반면,
+색깔등고선 영역에서 모으는 정보는 kSimulation.h 에 정의된 MODEL_COLOR 란 점이 다르다.
+
+지정된 영역의 경우, 많은 유형(AREA_TYPE_T)가 있지만 색깔등고선 영역의 경우
+최대 kSimulation.h 에 정의된 N_MODEL_POINT_TYPE * N_BREAST_IMPLANT_TYPE 개의 영역만이 있다.
+따라서 이 갯수만큼의 MODEL_COLOR_DEF 구조가 있으면 된다:
+
+	struct MODEL_COLOR_DEF {
+		int	n;
+		MODEL_COLOR*	ptr;
+	};
+
+마지막으로 표준모델마다 MODEL_COLOR_DEF 배열인 다음 MODEL_COLOR_DEF_LIST 를 만들면
+색깔등고선 영역의 정의는 완성된다:
+
+	struct MODEL_COLOR_DEF_LIST {
+		int	n;
+		MODEL_COLOR_DEF*	ptr;
+	};
+
+2) MODEL_COLOR 목록
+-------------------
+SHIFT + '8' 키를 사용한다. 변수이름을 설정하기 위해 그 전에 Enter 키 모드를 사용한다.
+
+색깔등고선을 보기 위해 쉐이딩모드를 None 으로 설정한다: '6'키
+
+원하는 색깔등고선을 만들기 위해 CTRL + 마우스 클릭을 사용하여 표준모델의 Vertex 를 선택한다.
+Vertex 가 선택될 때마다 색깔등고선의 모양이 변한다.
+
+원하는 모양이 나오면 SHIFT + '8' 키를 눌러 MODEL_COLOR 를 저장한다.
+
+	주) 제대로 MODEL_COLOR 목록이 설정되었는 지 확인할 때
+	None 쉐이딩 모드상태에서 SHIFT + CTRL + ALT + '7' 키와 'J'/'K'키를 사용한다.
+================================================================================
+
+	작성자: 김광호
+	작성일자: 2009년 9월 23일 (EST)
+	문서버젼: 0.1 (비공개버젼: 0.1)
+	문서완성도: 완성

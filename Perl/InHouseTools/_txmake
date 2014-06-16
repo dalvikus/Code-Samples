@@ -1,0 +1,23 @@
+#!/usr/local/tcltk-8.3.4/bin/tclsh83.exe
+set DEBUG 0
+set prvDir ""
+set lastDir ""
+set xxx [pwd]
+set tifFile [lindex $argv 0] 
+set texFile [string replace $tifFile [string first tif $tifFile] end tex]
+
+regexp -- {(.*)/tif[mM]aps/?(.*)} $xxx temp prvDir lastDir 
+
+if $DEBUG {
+	puts "xxx     = $xxx"
+	puts "prvDir  = $prvDir"
+	puts "lastDir = $lastDir"
+	puts "tifFile = $tifFile"
+	puts "texFile = $texFile"
+	puts "cmd     = $prvDir/texmaps/$lastDir/$texFile"
+}
+
+if [catch {exec txmake -smode clamp -tmode clamp $tifFile $prvDir/texmaps/$lastDir/$texFile} msg] {
+	puts $msg
+}
+

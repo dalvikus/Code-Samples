@@ -1,0 +1,467 @@
+#!/usr/bin/perl -w
+
+#
+# 1.04
+#	1. Comma(",")-separated object names
+#
+#		ObjectName	"ballA, ballB, callA"	"Surface"
+#
+#	2. Introduce variable block as
+#
+#		$xxx = {
+#			......
+#		}
+#
+#	   Use variable $xxx in COMMAND block as
+#
+#	   	Surface "......"
+#	   		$xxx
+#	   		"float ..."
+#
+#	3. Modify $xxx_SHADER
+#
+# 1.05
+#
+#	1. Introduce
+#
+#		%=
+#
+
+$__DEBUG__ = 0x00;
+
+	%SHADER_TYPE = (
+		'LightSource'	=> 1,
+		'Surface'	=> 2,
+		'Displacement'	=> 3
+	);
+
+	unless ( $#ARGV >= 1 ) {
+		print STDERR <<EOT;
+$0 ribFile cmdFile1 [cmdFile2 ...]
+EOT
+		exit 1;
+	}
+
+	$COMMENT = '';
+	@COMMAND_LIST = ();
+	@SEARCH_PATH_LIST = ();
+
+	for ( my $i = 1; $i <= $#ARGV; ++$i ) {
+		open( COMMAND, '< ' . $ARGV[ $i ] ) || die( 'Cannot open ' . $ARGV[ $i ] . $/ );
+		if ( ReadCommandFile( COMMAND ) != 0 ) {
+			print STDERR 'ReadCommandFile Error...' . $/;
+			exit 1;
+		}
+		close( COMMAND );
+	}
+if ( $__DEBUG__ & 0x01 ) {
+	print STDERR '# of (LightSource|Surface|Displacement) objects = ' . ( $#COMMAND_LIST + 1 ) . $/;
+	foreach ( @COMMAND_LIST ) {
+		print STDERR <<EOT;
+@{ [ '=' x 72 ] }
+NAME = '@{ [ $_ -> [ 0 ] ] }'
+TYPE = '@{ [ $_ -> [ 1 ] ] }'
+<CONTENT>
+@{ [ $_ -> [ 2 ] ] }</CONTENT>
+@{ [ '=' x 72 ] }
+EOT
+	}
+	print STDERR <<EOT;
+@{ [ '+' x 72 ] }
+<COMMENT>
+/*
+$COMMENT */
+</COMMENT>
+@{ [ '+' x 72 ] }
+EOT
+	print STDERR join( ':', @SEARCH_PATH_LIST ) . $/;
+}
+
+
+
+	$nextLine = undef;
+	@nextLine = ();
+	unless ( $ARGV[ 0 ] ne '-' ) {
+		$g_STDIN = 1;
+	} else {
+		$g_STDIN = 0;
+		open( RIB, '< ' . $ARGV[ 0 ] ) || die( 'Cannot open ' . $ARGV[ 0 ] . $/ );
+	}
+	if ( ProcessRibFile( RIB ) != 0 ) {
+		print STDERR 'ProcessRibFile Error...' . $/;
+		exit 1;
+	}
+	close( RIB ) unless ( $g_STDIN );
+exit 0;
+
+
+sub ProcessRibFile
+{
+#
+	unless ( $g_STDIN ) {
+		open( OLD_STDIN, '<& STDIN' );
+		open( STDIN, '<& ' . $_[ 0 ] );
+	}
+#
+
+
+	my	$SEARCH_PATH = '^(Option "searchpath".*?"resource" \[")(.*?)("\]\s*)$';
+
+	my	$COLOR_OPACITY = '^\s*(Color|Opacity)\s*\[.*?\]\s*$';
+
+	my	$xxx_BEGIN = '^(\s*)(Attribute|Transform)Begin\s*$';
+	my	$xxx_IDENTIFIER = '^\s*Attribute\s+"identifier"\s+".+?"\s+\["(.+?)"\]\s*$'; 
+#	my	$xxx_SHADER = '^\s*(LightSource|Surface|Displacement)\s+".+?"\s+(\d*)\s*".+?"';
+	my	$xxx_SHADER = '^\s*(LightSource|Surface|Displacement)\s+".+?"(\s*(.+?)\s+".+?"|)';
+	my	$xxx_END = '^(\s*)(Attribute|Transform)End\s*$';
+
+
+
+	my	$in_xxx = 0;		# 0: NONE, 1: Attribute, 2: Transform
+	my	$xxx_level = '';
+	my	$xxx_identifier = '';
+	my	$i_shader = 0;		# 0: NONE, 1: Light, 2: Surface, 3: Displacement
+	my	$light_index = 0;	# only for Light shader
+
+
+
+	my	$ix = undef;		# temporary variable
+	while ( nextLine() ) {
+if ( $__DEBUG__ & 0x02 ) {
+	if ( $#nextLine > 0 ) {
+		print STDERR '=' x 72 . $/;
+		print STDERR join( '', @nextLine );
+		print STDERR '=' x 72 . $/;
+	}
+}
+
+		if ( $nextLine[ 0 ] =~ /$xxx_BEGIN/ ) {
+			unless ( $in_xxx ) {
+				$in_xxx = $2 ne 'Transform' ? 1 : 2;
+				$xxx_level = $1;
+			} else {
+				# assert( $xxx_level < $1 )
+				# level down
+			}
+		} elsif ( $nextLine[ 0 ] =~ /$xxx_END/ ) {
+			unless ( $xxx_level ne $1 ) {
+if ( $__DEBUG__ & 0x02 && $xxx_identifier && $i_shader ) {
+	# Print all the informations, in case that
+	# $xxx_identifier(not '') and $i_shader(> 0) are defined.
+	print STDERR <<EOT;
+@{ [ '=' x 72 ] }
+\$xxx_level = '$xxx_level'
+\$xxx_identifier = '$xxx_identifier'
+\$i_shader = '$i_shader'
+\$light_index = '$light_index'
+@{ [ '=' x 72 ] }
+EOT
+}
+				# reset variables
+				$in_xxx = 0;
+				$xxx_level = '';
+				$xxx_identifier = '';
+				$i_shader = 0;
+				$light_index = 0;
+			} else {
+				# level up
+			}
+		} elsif ( $in_xxx ) {
+			if ( $nextLine[ 0 ] =~ /$xxx_IDENTIFIER/ ) {
+				$xxx_identifier = $1;
+if ( $__DEBUG__ & 0x02 ) {
+	print STDERR 'object name = \'' . $xxx_identifier . '\'' . $/;
+}
+#			} elsif ( $nextLine[ 0 ] =~ /$xxx_SHADER/ ) {
+			} elsif ( join( '', @nextLine ) =~ /$xxx_SHADER/ ) {
+				# $1 = (LightSource|Surface|Displacement)
+				$i_shader = $SHADER_TYPE{ $1 };
+				$light_index = $3;
+				$light_index = 0 unless ( $light_index );
+if ( $__DEBUG__ & 0x02 ) {
+	print STDERR 'shader type = \'' . $1 . '\', option = \'' . $light_index . '\'' . $/;
+	print STDERR join( '', @nextLine );
+}
+				# assert( $xxx_identifier )
+
+				# compare and modify if possible
+				$ix = isMatched( $xxx_identifier, $i_shader, $light_index );
+			}
+		}
+
+		unless ( defined( $ix ) ) {
+			if ( $#SEARCH_PATH_LIST != -1 && $nextLine[ 0 ] =~ /$SEARCH_PATH/ ) {
+				print '#' . join( '', @nextLine );
+				print $1 . join( ':', @SEARCH_PATH_LIST ) . ':' . $2 . $3;
+			} else {
+				print join( '', @nextLine );
+			}
+		} else {
+			$m_CONTENT = $COMMAND_LIST[ $ix ][ 2 ];
+			if ( $i_shader == 1 ) {		# light shader
+				$m_CONTENT =~ s/\n/\t$light_index\n/;
+			}
+			for ( my $i = 0; $i <= $#nextLine; ++$i ) {
+				$nextLine[ $i ] = '#' . $nextLine[ $i ];
+			}
+			print       join( '', @nextLine );
+			$nextLine[ 0 ] =~ /^(\s*)/;
+			# force white color and full opacity
+			print $1 . 'Color [1 1 1]' . $/;
+			print $1 . 'Opacity [1 1 1]' . $/;
+			$m_CONTENT =~ s/"\s*([^"]*?)\s*"(\s*)\[\s*(%=)\s*\]/use_DEFAULT($1, $2, $3, \@nextLine)/eg;
+			print $m_CONTENT;
+		print STDERR <<EOT;
+@{ [ '=' x 72 ] }
+NAME = '$COMMAND_LIST[ $ix ][ 0 ]'
+TYPE = '$COMMAND_LIST[ $ix ][ 1 ]'
+<CONTENT>
+$COMMAND_LIST[ $ix ][ 2 ]</CONTENT>
+<CONTENT>
+$m_CONTENT</CONTENT>
+@{ [ '=' x 72 ] }
+EOT
+			$ix = undef;	# reset
+		}
+	}
+#
+	open( STDIN, '<& OLD_STDIN' ) unless ( $g_STDIN );
+#
+	return 0;
+}
+
+
+sub	nextLine
+{
+#	return 0 unless ( defined( $nextLine ) );
+
+	@nextLine = ();
+	push( @nextLine, $nextLine ) if ( defined( $nextLine ) );
+
+	while ( <STDIN> ) {
+		if ( $#nextLine != -1 && ( /^\s*[#A-Z]/ || /^\s*$/ || /^version/ ) ) {
+			$nextLine = $_;
+			return 1;
+		}
+		push( @nextLine, $_ );
+	}
+	$nextLine = $_;
+
+	return $#nextLine == -1 ? 0 : 1;
+}
+
+sub	ReadCommandFile
+{
+#
+	open( OLD_STDIN, '<& STDIN' );
+	open( STDIN, '<& ' . $_[ 0 ] );
+#
+	# Comment block - /* ...... */ - is not allowed to be nested.
+	my	$COMMENT_BEGIN = '^\s*/\*\s*$';
+	my	$COMMENT_END = '^\s* \*/$';
+	my	$in_COMMENT = 0;
+
+	# SearchPath block
+	my	$SEARCH_PATH_LINE = '^\s*(SHADER|TEXTURE)_PATH\s*=\s*"(.*?)"\s*$';
+
+	# Variable block
+	#	05/31/2002
+	my	%VARs = ();
+	my	$VAR_KEY = undef;
+	my	$VAR_VAL = '';
+	my	$VAR_BEGIN = '^\s*\$(.*?)\s*=\s*\{';
+	my	$VAR_END = '^\s*\}';
+
+	# Command block
+	my	$COMMAND_BLOCK = '^' . '=' x 72 . '$';
+	my	$COMMAND_BLOCK_DELIMITER = '^' . '-' x 72 . '$';
+	my	$OBJECT_TAG = '^\s*ObjectName\s*"\s*(.+)\s*"\s*"\s*(.+?)\s*"\s*$';
+
+	my	$in_COMMAND = 0;	# 0: NONE, 1: HEAD, 2: BODY
+	my	$OBJECT_NAME = '';
+	my	$SHADER_TYPE = '';	# (LightSource|Surface|Displacement)
+					# 0: NONE, 1: Light, 2: Surface, 3: Displacement
+	my	$SHADER_CONTENT = '';
+	while ( <STDIN> ) {
+		if ( /$COMMENT_BEGIN/ ) {
+			# assert( $in_COMMENT == 0 )
+			$in_COMMENT = 1;
+		} elsif ( /$COMMENT_END/ ) {
+			# assert( $in_COMMENT == 1 )
+			$in_COMMENT = 0;
+		} elsif ( /$COMMAND_BLOCK/ ) {
+			if ( $in_COMMAND == 0 ) {	# NONE
+				$in_COMMAND = 1;
+			} elsif ( $in_COMMAND == 2) {	# BODY
+				unless ( $SHADER_CONTENT ) {
+					# Warning!
+					print STDERR 'unless ( $SHADER_CONTENT ) {......}' . $/;
+				}
+
+if ( $__DEBUG__ & 0x01 && 1 == 0 ) {
+	print STDERR <<EOT;
+@{ [ '=' x 72 ] }
+NAME = '$OBJECT_NAME'
+TYPE = '$SHADER_TYPE'
+<CONTENT>
+$SHADER_CONTENT</CONTENT>
+@{ [ '=' x 72 ] }
+EOT
+}
+				foreach $x ( split( '\s*,\s*', $OBJECT_NAME ) ) {
+					$x =~ s/([?+*])/\.$1/g;
+					foreach ( keys %VARs ) {
+if ( $__DEBUG__ & 0x08 ) {
+	print STDERR $_ . ' = {' . $/
+		   . $VARs{ $_ }
+		   . '}' . $/;
+}
+						$SHADER_CONTENT =~ s/\$$_/$VARs{ $_ }/g;
+					}
+					push( @COMMAND_LIST, [ $x, $SHADER_TYPE{ $SHADER_TYPE }, $SHADER_CONTENT ] );
+				}
+
+				# Collect and save, then discard!
+				$in_COMMAND = 0;
+				$OBJECT_NAME = '';
+				$SHADER_TYPE = 0;
+				$SHADER_CONTENT = '';
+			} else {
+				print STDERR '$in_COMMAND != (0|2)' . $/;
+				return 1;
+			}
+		} elsif ( /$COMMAND_BLOCK_DELIMITER/ ) {
+			if ( $in_COMMAND == 1) {
+				unless ( $OBJECT_NAME ) {
+					print STDERR 'unless( $OBJECT_NAME ) { ...... }' . $/;
+					return 1;
+				}
+				$in_COMMAND = 2;
+			} else {
+				print STDERR '$in_COMMAND != 1' . $/;
+				return 1;
+			}
+		} else {
+			if ( $in_COMMENT ) {
+				$COMMENT .= $_;
+			} else {
+				if ( $in_COMMAND == 1 ) {
+					if ( /$OBJECT_TAG/ ) {
+						$OBJECT_NAME = $1;
+						$SHADER_TYPE = $2;
+					} else {
+						print STDERR $_;
+						# Ignore!
+					}
+				} elsif ( $in_COMMAND == 2 ) {
+					$SHADER_CONTENT .= $_;
+				} else {
+					if ( /$VAR_BEGIN/ ) {
+						# assert $VAR_KEY = undef
+						if ( defined( $VAR_KEY ) ) {
+							print STDERR 'assert($VAR_KEY = undef)' . $/;
+							return 1;
+						}
+						$VAR_KEY = $1;
+if ( $__DEBUG__ & 0x08 ) {
+	print STDERR 'VAR_KEY = "' . $VAR_KEY . '"' . $/;
+}
+					} elsif ( /$VAR_END/ ) {
+						# assert $VAR_KEY != undef
+						unless ( defined( $VAR_KEY ) ) {
+							print STDERR 'assert($VAR_KEY != undef)' . $/;
+							return 1;
+						}
+if ( $__DEBUG__ & 0x08 ) {
+	print STDERR 'VAR_VAL = {' . $/
+	    . $VAR_VAL
+	    . '}' . $/;
+}
+						$VARs{ $VAR_KEY } = $VAR_VAL;
+						# reset
+						$VAR_KEY = undef;
+						$VAR_VAL = '';
+					} elsif ( defined( $VAR_KEY ) ) {
+						$VAR_VAL .= $_;
+					} else {
+						# Ignore!
+#						print STDERR $_;
+						if ( /$SEARCH_PATH_LINE/ ) {
+							update_SEARCH_PATH( $2 );
+						}
+					}
+				}
+			}
+		}
+	}
+	# assert( $in_COMMENT == 0 && $in_COMMAND == 0 )
+	if ( $in_COMMENT ) {
+		print STDERR 'unless ( $in_COMMENT ) { ...... }' . $/;
+	}
+	if ( $in_COMMAND ) {
+		print STDERR 'unless ( $in_COMMAND ) { ...... }' . $/;
+	}
+
+#
+	open( STDIN, '<& OLD_STDIN' );
+#
+	return 0;
+}
+
+sub update_SEARCH_PATH
+{
+	my	@m_LIST = split( ':', $_[ 0 ] );
+	my	$x;
+	my	$f;
+	my	$i;
+
+	foreach ( @m_LIST ) {
+		$f = 0;				# not in @SEARCH_PATH_LIST
+		for ( $i = 0; $i <= $#SEARCH_PATH_LIST; ++$i ) {
+			unless ( $_ ne $SEARCH_PATH_LIST[ $i ] ) {
+				$f = 1;		# in @SEARCH_PATH_LIST
+				last;
+			}
+		}
+		push( @SEARCH_PATH_LIST, $_ ) unless ( $f );
+	}
+}
+
+sub isMatched
+{
+if ( $__DEBUG__ & 0x04 ) {
+	print STDERR <<EOT;
+in isMatched...
+\$xxx_identifier = '$_[ 0 ]'
+\$i_shader = '$_[ 1 ]'
+\$light_index = '$_[ 2 ]'
+EOT
+}
+	my	@list = split( '\|', $_[ 0 ] );
+	shift @list unless ( $list[ 0 ] );
+
+	my	$i;
+	my	$gi;
+	for ( $gi = $#COMMAND_LIST; $gi >= 0; --$gi ) {
+		for ( $i = $#list; $i >= 0; --$i ) {
+			# 06/25/2002
+			$list[ $i ] =~ s/_.*//g;
+			$_[ 1 ] == $COMMAND_LIST[ $gi ][ 1 ]
+				&&
+			$list[ $i ] =~ /^$COMMAND_LIST[ $gi ][ 0 ]$/
+				&&
+			return $gi;
+		}
+	}
+
+	return undef;
+}
+
+sub	use_DEFAULT
+{
+	my	($param, $space, $val, $listref) = @_;
+	if ( join( '', @{ $listref } ) =~ /"\s*$param\s*"\s*\[\s*(.*?)\s*\]/ ) {
+		$val = $1;
+	}
+	return '"' . $param . '"' . $space . '[' . $val . ']';
+}

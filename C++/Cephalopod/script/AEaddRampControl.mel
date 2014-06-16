@@ -1,0 +1,527 @@
+// Copyright (C) 1997-2006 Autodesk, Inc., and/or its licensors.
+// All rights reserved.
+//
+// The coded instructions, statements, computer programs, and/or related
+// material (collectively the "Data") in these files contain unpublished
+// information proprietary to Autodesk, Inc. ("Autodesk") and/or its licensors,
+// which is protected by U.S. and Canadian federal copyright law and by
+// international treaties.
+//
+// The Data is provided for use exclusively by You. You have the right to use,
+// modify, and incorporate this Data into other products for purposes authorized 
+// by the Autodesk software license agreement, without fee.
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND. AUTODESK
+// DOES NOT MAKE AND HEREBY DISCLAIMS ANY EXPRESS OR IMPLIED WARRANTIES
+// INCLUDING, BUT NOT LIMITED TO, THE WARRANTIES OF NON-INFRINGEMENT,
+// MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE, OR ARISING FROM A COURSE 
+// OF DEALING, USAGE, OR TRADE PRACTICE. IN NO EVENT WILL AUTODESK AND/OR ITS
+// LICENSORS BE LIABLE FOR ANY LOST REVENUES, DATA, OR PROFITS, OR SPECIAL,
+// DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES, EVEN IF AUTODESK AND/OR ITS
+// LICENSORS HAS BEEN ADVISED OF THE POSSIBILITY OR PROBABILITY OF SUCH DAMAGES.
+
+//
+//  Procedure Name:
+//	AEaddRampControl2
+//
+//  Description Name;
+//	Creates the attribute editor controls for the ramp widget
+//
+//  Input Value:
+//	nodeName 
+//
+//  Output Value:
+//	None
+// 
+
+proc string localizedAttrName( string $name ) {
+	if( $name == "Selected Color" ) {
+		return (uiRes("m_AEaddRampControl.kSelClr"));
+	} else if( $name == "Selected Position" ) {
+		return (uiRes("m_AEaddRampControl.kSelPos"));
+	} else if( $name == "Selected Value" ) {
+		return (uiRes("m_AEaddRampControl.kSelVal"));
+	} else if( $name == "Interpolation method" ) {
+		return (uiRes("m_AEaddRampControl.kInterpMethod"));
+	}
+}
+
+
+global proc AEmakeCompactRamp2 (string $nodeAttr,
+							   int $scaleSlider,
+							   int $staticEntries,
+							   int $staticPositions,
+							   int $adaptiveScaling )
+//
+//	Description:
+//
+//	$staticEntries - If set to 1, the gradientControl widget will be set to
+//					a fixed number of ramp entries (control points).
+//
+{
+	string $buffer[];
+	tokenize($nodeAttr, ".", $buffer);
+	string $node = $buffer[0];
+	string $attr = $buffer[1];
+
+	string $rampName = $attr + "Ramp";
+	string $editButton = $attr + "RampEdit";
+	string $scName = $attr +"Scc";
+	string $spName = $attr +"Sp";
+	string $siName = $attr +"Si";
+
+	string $colEntryName =  ($nodeAttr + "[0]." + $attr + "_ColorR");
+	int $isColor = `objExists ($colEntryName)`;
+	int $hasInput = `objExists ($nodeAttr +"Input")`;
+	int $hasInputScale = `objExists ($nodeAttr +"InputScale")`;
+	string $inputName = "InputScale";
+	if( !$hasInputScale && `objExists ($nodeAttr +"InputBias")`) {
+		$inputName = "InputBias";
+		$hasInputScale = true;
+	}
+	setUITemplate -pst attributeEditorTemplate;
+	string $rampBlock = `formLayout ($rampName + "Block")`;
+	string $attrNiceName = attributeNiceName($node,$attr);
+    	string $label = `text -label $attrNiceName -align right ($rampName + "Label")`;
+
+	string $rframe = `frameLayout -bs "in" -lv 0 -cll 0 ($rampBlock + "fr")`;
+	string $rampForm = `formLayout ($rampName + "Form")`;
+		string $spc	= `attrFieldSliderGrp -l ""
+			-annotation (localizedAttrName("Selected Position"))
+			-h 30 -w 70 -cw4 1 69 1 1 $spName`;
+
+		string $scc;
+		if( $isColor ){
+			$scc= `attrColorSliderGrp -l "" 
+				-annotation (localizedAttrName("Selected Color")) -sb 1
+				-h 26 -w 77 -cw4 2 45 1 26 -adj 3 $scName`;
+		} else {
+			$scc	= `attrFieldSliderGrp -l "" 
+				-annotation (localizedAttrName("Selected Value"))
+				-h 30 -w 70 -cw4 1 44 1 26 $scName`;
+		}
+		$editButton = `button -l ">" -width 23 -c ("editRampAttribute "+$nodeAttr) $editButton`;
+
+		string $widgetName = `gradientControl
+							-at  $nodeAttr
+							-snc $staticEntries
+							-sp  $staticPositions
+							-ror $adaptiveScaling
+							-as  $adaptiveScaling
+							//-w 148 -h 74
+							-w 135 -h 74
+							$rampName`;
+	
+		string $interp = `attrEnumOptionMenuGrp -l "" 
+			-annotation (localizedAttrName("Interpolation method"))
+			-h 30 -w 70 -cw2 1 69  $siName`;
+		string $pInput, $pInputScale;
+		if( $hasInputScale ){ 
+			string $multiplier = (uiRes("m_AEaddRampControl.kMultiplierAnnot"));
+			if( $hasInput ){
+				$pInputScale	= `attrFieldSliderGrp -l "" 
+				-ann $multiplier
+				-h 30 -w 58 -cw4 1 50 1 1
+				-at ($nodeAttr + $inputName) ($rampName + $inputName)`;
+			} else {
+				$pInputScale	= `attrFieldSliderGrp -l (uiRes("m_AEaddRampControl.kInScale"))
+				-ann $multiplier
+				-h 30 -w 240 -cw4 70 69 100 1
+				-at ($nodeAttr + $inputName) ($rampName + $inputName)`;
+			}
+		}
+		if( $hasInput ){
+			string $input = (uiRes("m_AEaddRampControl.kInput"));
+			string $inputAnnot = (uiRes("m_AEaddRampControl.kInputAnnot"));
+			if( $hasInputScale ){ 
+				$pInput = `attrEnumOptionMenuGrp -l $input
+				-ann $inputAnnot
+				-h 30 -w 188 -cw2 78 110 
+				-at ($nodeAttr + "Input") ($rampName + "Input")`;
+			} else {
+				$pInput = `attrEnumOptionMenuGrp -l $input
+				-ann $inputAnnot
+				-h 30 -w 240 -cw2 78 160 
+				-at ($nodeAttr + "Input") ($rampName + "Input")`;
+			}
+		}
+
+		formLayout
+			-edit
+				-attachForm $spc "left" -10 
+				-attachNone $spc "right"
+				-attachForm $spc "top" 2
+				-attachNone $spc "bottom"
+
+				-attachForm $scc "left" -10
+				-attachNone $scc "right"
+				-attachControl $scc "top" -3 $spc
+				-attachNone $scc "bottom"
+
+				-attachForm $widgetName "left" 70
+				-attachNone $widgetName "right"
+				-attachForm $widgetName "top" 3
+				-attachNone $widgetName "bottom"
+
+				-attachForm $interp "left" -10 
+				-attachNone $interp "right"
+				-attachControl $interp "top" -3 $scc
+				-attachNone $interp "bottom"
+
+				-attachForm $editButton "top" 0
+				-attachForm $editButton "bottom" 0
+				-attachControl $editButton "left" 5 $widgetName
+				-attachNone $editButton "right" 0
+
+				$rampForm;
+		if( $hasInput ){
+			if($hasInputScale){
+				formLayout -edit
+				-attachControl $pInput "top" -3 $interp 
+				-attachForm $pInput "left" -10 
+				-attachControl $pInputScale "top" -3 $interp 
+				-attachControl $pInputScale "left" -10  $pInput 
+				$rampForm;
+			} else {
+				formLayout -edit
+				-attachControl $pInput "top" -3 $interp 
+				-attachForm $pInput "left" -10 
+				$rampForm;
+			}
+		} else if( $hasInputScale ){
+			formLayout -edit
+			-attachControl $pInputScale "top" -3 $interp 
+			-attachForm $pInputScale "left" -10 
+			$rampForm;
+		}
+	setParent ..;
+	setParent ..;
+	formLayout
+			-edit
+				-attachForm $rframe "left" 131 
+				-attachForm $rframe "top" 0
+
+				-attachControl $label "right" 0 $rframe 
+				-attachForm $label "top" 30 
+				$rampBlock;
+	setParent ..;
+
+
+	// tell the port about the controls
+	gradientControl -e -scc $scc $widgetName;
+	gradientControl -e -spc $spc $widgetName;
+	gradientControl -e -sic $interp $widgetName;
+	setUITemplate -ppt;
+}
+
+
+global proc	AEmakeLargeRamp2(
+	string	$nodeAttr,
+	int	$bound,
+	int	$indent,
+	int	$staticEntries,
+	int	$staticPositions,
+	int	$adaptiveScaling
+)
+//
+//	Description:
+//
+//	$staticEntries - If set to 1, the gradientControl widget will be set to
+//					a fixed number of ramp entries (control points).
+//
+{
+	string $buffer[];
+	tokenize($nodeAttr, ".", $buffer);
+	string $attr = $buffer[1];
+        string $node = $buffer[0];
+
+	string $rampName = $attr + "Ramp";
+	string $editButton = $attr + "RampEdit";
+	string $scName = $attr +"Scc";
+	string $spName = $attr +"Sp";
+	string $siName = $attr +"Si";
+
+	string $colEntryName =  ($nodeAttr + "[0]." + $attr + "_ColorR");
+	int $isColor = `objExists ($colEntryName)`;
+
+	setUITemplate -pst attributeEditorTemplate;
+	columnLayout -columnAttach "both" 5 -rowSpacing 2 -columnWidth 420;
+
+	// ramp block
+	string $rampForm = `formLayout ($rampName + "Form")`;
+		string $spc	= `attrFieldSliderGrp -label (localizedAttrName("Selected Position"))
+			-annotation (localizedAttrName("Selected Position"))
+			-h 30 -w 206 -cw4 123 81 1 1 $spName`;
+		string $scc;
+		if( $isColor ){
+			$scc= `attrColorSliderGrp -label (localizedAttrName("Selected Color"))
+				-annotation (localizedAttrName("Selected Color")) -sb 1
+				-h 26 -w 206 -cw4 123 56 1 25 -adj 3 $scName`;
+		} else {
+			$scc	= `attrFieldSliderGrp -label (localizedAttrName("Selected Value"))
+			-annotation (localizedAttrName("Selected Value"))
+			-h 30 -w 206 -cw4 123 56 1 24 $scName`;
+		}
+		
+		string $interp = `attrEnumOptionMenuGrp -label (uiRes("m_AEaddRampControl.kInterp"))
+			-annotation (localizedAttrName("Interpolation method"))
+			-w 206
+			-cw2 123 81 $siName`;
+		string $boundStyle = "etchedIn";
+		if( $bound ){
+			$boundStyle = "in";
+		}
+		string $lmax;
+		if ( $adaptiveScaling ) {
+			$lmax = `text -label "1.0" ($rampName+"LX")`;
+		}
+		$editButton = `button -l ">" -width 23 -c ("editRampAttribute "+$nodeAttr) $editButton`;
+		string $rframe = `frameLayout -bs $boundStyle -lv 0 -cll 0 ($rampForm + "fr")`;
+		string $widgetName = `gradientControl
+								-at $nodeAttr
+								-snc $staticEntries
+								-sp $staticPositions
+								// -w 148 -h 74
+								-w 135 -h 74
+								$rampName`;
+		if ( $adaptiveScaling ) {
+			gradientControl -e -as $adaptiveScaling -ror $adaptiveScaling -ulc $lmax $widgetName;
+		}
+
+		setParent ..;
+		formLayout
+			-edit
+				-attachForm $spc "left"  0
+				-attachForm $spc "right" 206
+				-attachForm $spc "top" 0
+				-attachNone $spc "bottom"
+
+				-attachForm $scc "left" 0 
+				-attachForm $scc "right" 206
+				-attachControl $scc "top" 0 $spc
+				-attachNone $scc "bottom"
+
+				-attachForm $interp "left" 0 
+				-attachNone $interp "right"
+				-attachControl $interp "top" 0 $scc
+				-attachNone $interp "bottom"
+
+				-attachControl $rframe "left" 2 $spc
+				-attachNone $rframe "right"
+				-attachForm $rframe "top" 0
+				-attachNone $rframe "bottom"
+
+				-attachForm $editButton "top" 0
+				-attachForm $editButton "bottom" 0
+				-attachControl $editButton "left" 5 $rframe
+				-attachNone $editButton "right"
+				$rampForm;
+
+		if ( $adaptiveScaling ) {
+			formLayout
+				-edit
+					-attachControl $lmax "left" 2 $rframe
+					-attachNone $lmax "right"
+					-attachForm $lmax "top" 0
+					-attachNone $lmax "bottom"
+					$rampForm;
+		}
+	setParent ..;
+
+	// input
+	if(objExists ($nodeAttr +"Input")){
+		string $inLabel;
+		string $labelAttr = attributeNiceName($node,$attr);
+		string $inputVarAnnot = (uiRes("m_AEaddRampControl.kInputVarAnnot"));
+		
+		if( $indent || size( $labelAttr ) < 9 ){
+			string $fmt = (uiRes("m_AEaddRampControl.kInputFmt"));
+			$inLabel = `format -s $labelAttr $fmt`;
+		} else {
+			$inLabel = (uiRes("m_AEaddRampControl.kInputShort"));
+		}
+		if( $indent ){
+			attrEnumOptionMenuGrp -l $inLabel
+				-ann $inputVarAnnot
+				-cw2 204 155 
+				-at ($nodeAttr + "Input") ($rampName + "Input");
+		} else {
+			attrEnumOptionMenuGrp -l $inLabel
+				-ann $inputVarAnnot
+				-cw2 123 500 
+				-at ($nodeAttr + "Input") ($rampName + "Input");
+		}
+		
+	}
+
+	// inputBias
+	if(  objExists ($nodeAttr +"InputBias") ){
+		attrFieldSliderGrp -label (uiRes("m_AEaddRampControl.kInputBias")) -cw4 123 81 130	25 
+				-at ($nodeAttr +"InputBias") ($rampName + "InputBias");
+	}
+
+	// inputScale
+	if(  objExists ($nodeAttr +"InputScale") ){
+		attrFieldSliderGrp -label (uiRes("m_AEaddRampControl.kInputScale")) -cw4 123 81 130 25	
+				-at ($nodeAttr +"InputScale") ($rampName + "InputScale");
+	}
+	// inputOffset
+	if(  objExists ($nodeAttr +"InputOffset") ){
+		attrFieldSliderGrp -label (uiRes("m_AEaddRampControl.kInputOffset")) -cw4 123 81 130 25	
+				-at ($nodeAttr +"InputOffset") ($rampName + "InputOffset");
+	}
+
+	// tell the port about the controls
+	gradientControl -e -scc $scc $widgetName;
+	gradientControl -e -spc $spc $widgetName;
+	gradientControl -e -sic $interp $widgetName;
+	setUITemplate -ppt;
+
+}
+
+global proc	AEmakeRampControlInteractiveNew_doIt2(string $nodeAttr, int $adaptiveScaling)
+{
+	int $rampDrawMethod = 0;
+	if( `optionVar -exists "gradientControlDrawMethod"` ){
+		$rampDrawMethod = `optionVar -q "gradientControlDrawMethod"`;
+	}
+	switch( $rampDrawMethod )
+	{
+	case 1:
+		AEmakeCompactRamp2( $nodeAttr,	// nodeAttr
+						0,				// scaleSlider
+						0,				// staticEntries
+						0,			// staticPositions
+						$adaptiveScaling );     
+		break;
+	case 2:
+		AEmakeCompactRamp2( $nodeAttr,1,0,0,$adaptiveScaling );
+		break;
+	case 3:
+		AEmakeLargeRamp2( $nodeAttr,		// nodeAttr
+						0,				// bound
+						0,				// indent
+						0,				// staticEntries
+						0,			// staticPositions
+						$adaptiveScaling );
+		break;
+	case 4:
+		AEmakeLargeRamp2( $nodeAttr,1,0,0,0,$adaptiveScaling );
+		break;
+	default:
+		AEmakeLargeRamp2($nodeAttr, 1, 1, 0, 0, $adaptiveScaling);
+		break;
+	}
+}
+
+global proc	AEmakeRampControlInteractiveNew2(string $nodeAttr)
+{
+	AEmakeRampControlInteractiveNew_doIt2($nodeAttr, false);
+}
+
+global proc AEmakeRampControlInteractiveNewAS2 (string $nodeAttr)
+{
+	AEmakeRampControlInteractiveNew_doIt2( $nodeAttr, true );
+}
+
+global proc	AEmakeRampControlInteractiveReplace2(string $nodeAttr)
+{
+	string $buffer[];
+	tokenize($nodeAttr, ".", $buffer);
+	string $attr = $buffer[1];
+
+	string $rampName = $attr + "Ramp";
+	string $editButton = $attr + "RampEdit";
+
+//print ("$nodeAttr: |" + $nodeAttr + "|, $rampName: |" + $rampName + "|\n");
+	gradientControl -edit -at $nodeAttr $rampName;
+	if( `button -exists $editButton` ){	
+		button -edit -c ("editRampAttribute "+$nodeAttr) $editButton;
+	}
+//	attrEnumOptionMenuGrp -edit -at ($nodeAttr + "_Interp") ($rampName + "_Interp");
+	if( `objExists ($nodeAttr +"Input")` ){
+		attrEnumOptionMenuGrp -edit -at ($nodeAttr + "Input") ($rampName + "Input");
+	}
+	if( `objExists ($nodeAttr +"InputScale")` ){
+		attrFieldSliderGrp -edit -at ($nodeAttr + "InputScale") ($rampName + "InputScale");
+	}
+	if( `objExists ($nodeAttr +"InputBias")` ){
+		attrFieldSliderGrp -edit -at ($nodeAttr + "InputBias") ($rampName + "InputBias");
+	}
+	if( `objExists ($nodeAttr +"InputOffset")` ){
+		if (`attrFieldSliderGrp -query -exists ($rampName + "InputOffset")`) {
+			attrFieldSliderGrp -edit -at ($nodeAttr + "InputOffset") ($rampName + "InputOffset");
+		}
+	}
+}
+
+global proc	AEaddRampControl_doIt2(string $rampName, int $adaptiveScaling, string $label)
+//  
+//  Description: 
+// In order to use catalog lookups for the attribute name,
+// $rampName should be of form "pCube.translateX".  For backward
+// compatability, $rampName can also be just
+// "translateX" but in this case no catalog lookup can be
+// performed and interToUI() will be called to obtain the UI
+// display label for the attribute.
+// 
+{
+    int $rampDrawMethod = 0;
+    if( `optionVar -exists "gradientControlDrawMethod"` ) {
+        $rampDrawMethod = `optionVar -q "gradientControlDrawMethod"`;
+    }
+    int $subBlock = (($rampDrawMethod < 1) || ($rampDrawMethod > 2));
+    if( $subBlock ){
+        string $rampTitle;
+        string $nodeAttr[];
+    
+        // tokenize $rampName on "." to see if we get the nodeName and attrName
+        // pieces required for a catalog lookup.
+        //
+        tokenize ($rampName,".",$nodeAttr);
+        if( size($nodeAttr) == 2 ) {
+            string $nodeName = $nodeAttr[0];
+            string $attrName = $nodeAttr[1];
+            
+            $rampTitle = attributeNiceName( $nodeName, $attrName );
+   
+            // Change rampName back to attrName format
+            //
+            $rampName = $attrName;     
+        }
+        // Old-style attr name used.  No choice but to use interToUI().
+        //
+        else {
+            // I18N_OK: All calls to AEaddRampControl and AEaddRampControlAS
+            // must be modified to include nodeName.attrName as the 1st 
+            // attribute instead of just attrName. If this was not done, 
+            // we have to revert to interToUI as a last resort.
+            $rampTitle = interToUI($rampName);
+        }
+    
+	editorTemplate -beginLayout ($label != "" ? $label : $rampTitle) -collapse false;
+    }
+	editorTemplate -callCustom ($adaptiveScaling
+			? "AEmakeRampControlInteractiveNewAS2" : "AEmakeRampControlInteractiveNew2")
+						"AEmakeRampControlInteractiveReplace2" $rampName;
+	// editorTemplate -addControl ($rampName + "_Interp");
+    if( $subBlock ) {
+        editorTemplate -endLayout;
+    }
+    editorTemplate -suppress ($rampName + "Input");
+    editorTemplate -suppress ($rampName + "InputBias");
+    editorTemplate -suppress ($rampName + "InputScale");
+}
+
+// Main entry point for creating a ramp control
+//
+global proc	AEaddRampControl2(string $rampName, string $label)
+{
+	AEaddRampControl_doIt2($rampName, false, $label);
+}
+
+// Main entry point for creating a ramp control with adaptive scaling
+//
+global proc	AEaddRampControlAS2(string $rampName)
+{
+	AEaddRampControl_doIt2($rampName, true, "");
+}

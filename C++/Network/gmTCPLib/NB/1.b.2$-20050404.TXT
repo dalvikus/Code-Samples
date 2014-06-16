@@ -1,0 +1,25 @@
+2005/04/04 - 1.b.2$
+----------------
+
+1. __gmMESSAGE_IOCP__가 정의된 경우에, 즉 "받은" 큐에 메시지가 들어왔을 때,
+PostQueuedCompletionStatus를 써서 알리는 경우에,
+OOB정보를 처리하기 위하여 지금까지는 다음 하나만을 사용했다.
+
+	0x0001		연결을 끊어라.
+
+여기에다 TLS를 사용하는 경우, 클라이언트에서 Handshake Protocol을 시작할 때
+다음 값을 사용한다.
+
+	0x0002		클라이언트가 Handshake Protocol을 시작한다.
+
+
+2. gmPseudoTCP의 인덱스를 정리한다.
+
+	m__globalIndex, mf__GetGlobalIndex()
+	m__localIndex, mf__GetLocalIndex()
+	m__index, mf__GetIndex()
+
+3. gmPseudoTCP::mf__SetPseudoTCPStatusEstablished의 prototype을 바꾸어서,
+리턴값이 BOOL이 되도록 했다.
+처음 연결해서 연결상태가 ESTABLISHED로 바뀌면 TRUE를 그렇지 않으면 FALSE를 리턴한다.
+서버의 경우에만 의미가 있다.

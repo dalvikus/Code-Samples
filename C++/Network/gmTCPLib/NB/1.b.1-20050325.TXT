@@ -1,0 +1,32 @@
+2005/03/25 - 1.b.1
+----------------
+
+	공용큐는 사용하지 않는 것으로 했다.
+	따라서 앞으로는 이 부분은 고치지 않을 것이다.
+	만약 공용큐를 사용한다면 공용큐를 사용하지 않는 경우와 비교하면서
+	고쳐야 할 것이다. 그 기준은 1.a.0부터이다.
+
+	PeekMessage는 더 이상 사용하지 않는다.
+	이를 사용하는 마지막 예는 1.a.1을 참고하라.
+
+	Simulation예도 없앤다. 이를 사용하는 마지막 예도 1.a.1을 참고하라.
+
+	더 이상 위의 알림도 표시하지 않는다.
+
+0. 1.b.0-20050324.TXT의 내용 중에서 빠진 부분을 적었다.
+특히 LPOVERLAPPED에는 m__dwUID값을 넣어주지 않고, m__dwUID를 가리키는 포인터를 넣었다.
+이유는 아래의 1.에서 정리했던 GetQueuedCompletionStatus의 처리때문이다.
+gmIocp-1.b.0에 있는 1.b.0-20050324.TXT와 다른 내용이 있다.
+이 파일(1.b.1-20050325.TXT)과 함께 보아야 한다.
+
+1. 메시지가 들어올 때, 사용하던 IOCP(I/O Completion Port)의 사용법을 정리했다.
+특히 IocpMessageLoop에서 GetQueuedCompletionStatus의 여러 경우를 조사했다.
+gmWinIocpS의 IocpMessageLoop에 자세한 설명이 나와있다.
+결론은 이렇다. 어찌됐든 GetQueuedCompletionStatus의 리턴값이 0인 경우는 문제가 된다.
+0이 아닐 때에만이 GetQueuedCompletionStatus가 설정하는 변수들(dwMessage, gmhTCP, pdwUID)가 의미가 있다.
+
+이 경우에, dwMessage의 최상위 비트가 1로 되어 있으면 OOB정보가 있다.
+dwMessage의 하위 워드가 OOB의 형태를 말해준다. 현재는 0x0001만 있다.
+즉 연결이 "강제로" 끊어진 경우이다. 정상적으로 끊어진 경우는
+dwMessage개의 메시지를 처리할 때, 메시지를 가져올 때 알 수 있다.(TCPBUF__NOT_ESTABLISHSED)
+

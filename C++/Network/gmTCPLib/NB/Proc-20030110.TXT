@@ -1,0 +1,675 @@
+////////////////////////////////////////////////////////////////////////////////
+////////                서버와 클라이언트가 연결할 때...                ////////
+////////////////////////////////////////////////////////////////////////////////
+void CGameLoop::NetworkProcess()
+{
+//	g_Disposer->ProcessPreClient();
+	int	CDisposer::ProcessPreClient()
+	{
+		int	CDisposer::ProcessPreClient()
+		{
+//			for (......) {
+//				switch (...) {
+	////////////////////////////////////////////////////////////////
+case PRE_CLIENT_STATE_REQUEST_CHARACTER:
+	rtn = ......;
+	if(IS_TASK_DONE(rtn)) {
+		//
+		if(!client->m_CharInfo.lReturnVal) {
+			//-- 성공
+			// 몇 가지 설정을 한 후에...
+			void CDisposer::SendClientRequestInitData(ClientInfo *) {
+				packet->OutputQueue();
+			}
+		} else {
+			// 실패
+			packet->OutputQueue();
+			break;
+		}
+		// 성공
+		// 추가적으로...
+	}
+	break;
+	////////////////////////////////////////////////////////////////
+//				}
+//			}
+		}
+	}
+
+	//-- TCP
+
+//	g_Disposer->Dispose();
+	int	CDisposer::Dispose()
+	{
+		int	CDisposer::DisposeConnectionlessInput(CPacket* pkt)
+		{
+//		switch (...) {
+	////////////////////////////////////////////////////////////////
+			case PROTOCOL_REQUEST_INIT_DATA:
+				//-- 초기화를 시작한다...
+				break;
+	////////////////////////////////////////////////////////////////
+//		}
+		}
+	}
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+////////    데이터를 큐에 넣고 이를 네크워크를 통해서 보내는 단계       ////////
+////////////////////////////////////////////////////////////////////////////////
+
+int cmd_Start(int argc, char** argv)
+{
+    return g_ServerManager->StartServer();
+}
+
+int CServerManager::StartServer(void)
+{
+    extern HINSTANCE g_hInstance;
+
+
+    if(m_State != SERVER_IDLE)
+    {
+        Logout(g_LogMain, "Warning : Server is currently %s.\n",
+            (m_State == SERVER_STOPPED) ? "stopped" : "running");
+        Logout(g_LogMain, "         Use \"resume\" command instead.\n");
+        return OK;
+    }
+
+    assert(m_State == SERVER_IDLE);
+	new CDisposer();
+    new CGateManager();
+    if(g_GateManager->OpenGate() == ERR)
+    {
+        Logout(g_LogMain, "ERROR : Cannot open GATE. Server start failed.\n");
+        return ERR;
+    }
+
+#ifdef USE_EVENT
+    REvent = CreateEvent(0, FALSE, FALSE, 0);
+    WEvent = CreateEvent(0, FALSE, FALSE, 0);
+#endif
+
+    Create();
+
+    //Logout(g_LogMain, "run_server\n");
+
+    DWORD threadid;
+    m_ServerMainThread = CreateThread(0, 0, (LPTHREAD_START_ROUTINE)run_server, g_hInstance, 0, &threadid);
+    g_Timer->SetStartTime();
+    return OK;
+}
+
+DWORD run_server(LPVOID hinstance)
+{
+    g_ServerManager->Run();
+    return OK;
+}
+
+void CServerManager::Run(void)
+{
+    Logout(g_LogMain, "INFO : Server started service at %s\n\n", get_date_str());
+
+    float LastFrameTime = 0;
+
+    m_State = SERVER_RUNNING;
+    m_Action = SERVER_ACTION_NONE;
+
+	double oldtime,newtime;
+
+	oldtime = g_Timer->GetDoubleTime ();
+
+
+    int a = 0;
+    for(;;)
+    {
+        if(m_Action == SERVER_ACTION_QUIT)
+            break;
+
+/*
+  서버의 프레임이 시작되는 위치와 끝나는 위치에 타임 브로커의
+  ServerFrameStart(), ServerFrameFinish()를 호출해 주어야 한다. 이 함수들은
+  해당 서버의 프레임 타임과 프레임 타임의 평균값등을 계산하는데 있어 필수적이다
+*/
+
+        g_Timer->CalFrameTime(newtime,oldtime); 
+        PROFILE_START_TIME();
+        PROFILE_BEGIN("Run");
+
+        g_GameLoop->Run(); 
+//        g_InputDisposer->Dispose();
+
+//        g_GEM->Process(0);
+
+
+        PROFILE_END("Run");
+        PROFILE_FINISH_TIME();
+        PROFILE_UPDATE();
+
+
+
+   	oldtime = newtime;
+
+    }
+
+    Logout(g_LogMain, "INFO : Server quit service at %s\n\n", get_date_str());
+    m_State = SERVER_IDLE;
+}
+
+void CGameLoop::Run()
+{
+   NetworkProcess();
+   PlayerProcess();
+g_time=g_Timer->GetDoubleTime();
+   MonsterProcess();
+//g_time =(g_Timer->GetDoubleTime() - g_time);
+//Logout(g_LogMain, "Monster Process Time -- %.4f\n", g_time);
+//LogPrintf("Monster Process Time -- %.4f\n", g_time);
+
+   NpcProcess();
+   Generation();
+//Logout(g_LogMain, "Frame -- %d\n", g_Timer->GetFrameRate());
+//LogPrintf("Frame -- %d\n", g_Timer->GetFrameRate());
+}
+
+void CGameLoop::PlayerProcess()
+{
+  PlayerManager->Run();
+}
+
+void CPlayerManager::Run()
+{
+  Loop();
+
+}
+
+void CPlayerManager::Loop()
+{
+	CEntityHashTable *table;
+	table=gScenegraph->GetPlayerHashTable();
+ //   EntityLoop(table);
+
+
+    StateID stateid;
+    int counter=0;
+	CBiotic *biotic;
+    for(EntityMapIterator itor = table->begin(); itor != table->end();)
+	{
+
+		  if(counter>m_ProcessSize)
+			  return ;
+		  biotic=(CBiotic*)itor->second;
+		  if(biotic->m_ProcessedFlag)
+		  {
+		      itor++;
+			  continue;
+		  }
+		  counter++;
+		  biotic->m_ProcessedFlag=true;
+
+
+		  itor->second->GatherEntityInfoAround();
+          itor->second->Process();
+		  gStateHandler->SendMsg( MSG_SYSTEM_Update,itor->second,stateid,0);//just statemachine onupdate call    
+		  itor->second->ReleaseEntityInfoAround();
+		  //delete check
+		  if(itor->second->GetStateId().GetType()==STATE_Delete)
+		  {
+               gScenegraph->RemoveEntityFromScenegraph(itor->second); 				 
+ 			   delete itor->second;
+			   itor=table->erase(itor);				 
+		  }
+		  else
+		  {
+		       itor++;
+		  }  
+	}
+    for(itor = table->begin(); itor != table->end();itor++)
+	{
+		  biotic=(CBiotic*)itor->second;
+		  biotic->m_ProcessedFlag=false;
+	}
+}
+
+void CPlayer::Process() 
+{
+	
+	if(GetStateId().GetSpecies()!=GROUP_SYSTEM)
+	{
+
+		CreateBeforLoadingFromDB();
+
+		m_Combat->m_HostilityManager->Refresh();//제거하고 후보들을 선정한다.
+
+		if(IsRegularNetInfoTime())
+			ProduceRegularNetInfo();
+
+		if(g_Timer->IsGameTimeAlarm())
+		{
+  		    RegisterProtocolData(PROTOCOL_UNRELIABLE_DATE_TIME, NULL);
+		}
+
+		double ltime = g_Timer->GetDoubleTime();
+		if(g_Timer->GetDoubleTime()-m_ReceivedPacketTime>60)
+		{
+			LogMeout();
+			m_LogOutFlag=true;
+			if(m_WriteState==DBSTATE_END)
+			{
+				Logout(g_LogMain,"Time : %lf %lf logged out....\n",ltime,m_ReceivedPacketTime);
+				return;
+			}
+		}
+		SendEntityMoveToNet();
+	}
+
+	DBRequest();
+
+	m_ItemSlotManager->Update();
+    //전투 모드냐?
+	//if(GetStateId().GetSpecies()==GROUP_COMBAT)//cure 도 처리 된당.
+	//{
+	
+    m_Combat->Run();	
+	
+	//}
+	// time argument in Produce()?
+	Produce();
+}
+
+void CPlayer::SendEntityMoveToNet()
+{
+   if(g_Timer->GetDoubleTime()-m_LastSendMoveTime>gMoveInterval&&m_RecievedMoveFlag)
+   {
+
+        float tsize=AroundList.size();
+    	float rate=tsize/SendMoveUnitSize;
+		rate*=2;
+		if(rate==0)
+			rate=1;
+
+//	 	m_AroundRange=int((float)(RANGE_HIBERNATE)/rate);
+//		if(m_AroundRange<2000)
+//			m_AroundRange=2000;
+//		else if(m_AroundRange>RANGE_HIBERNATE)
+//		{
+//		  m_AroundRange=RANGE_HIBERNATE;		
+//		}
+        
+        if(tsize<=SendMoveUnitSize)
+		{
+
+	   		EntityListItor itor;
+			for(itor=AroundList.begin();itor!=AroundList.end();itor++)
+			{
+				if((*itor)->GetEpochId().GetSpecies()==MONSTER||(*itor)->GetEpochId().GetSpecies()==NPC)
+				{
+			  		RegisterProtocolData(PROTOCOL_UNRELIABLE_ENTITY_MOVE,(void*)((*itor)));		
+				}				
+			}   
+			m_SendMoveCounter=0;
+
+		}
+		else
+		{
+
+            int firstcounter=m_SendMoveCounter;
+            int counter=0;
+	   		EntityListItor itor;
+			for(itor=AroundList.begin();itor!=AroundList.end();itor++)
+			{
+				
+				if(counter<firstcounter)
+				{
+					counter++; 
+					continue;
+				}	
+				if(m_SendMoveCounter-firstcounter>=SendMoveUnitSize)
+					break;
+
+				if((*itor)->GetEpochId().GetSpecies()==MONSTER||(*itor)->GetEpochId().GetSpecies()==NPC)
+				{
+			  		RegisterProtocolData(PROTOCOL_UNRELIABLE_ENTITY_MOVE,(void*)((*itor)));		
+				}				
+                //LogPrintf("movecounter %d\n",counter);
+				counter++; 
+				m_SendMoveCounter++;
+
+			}   
+
+			if(m_SendMoveCounter>=tsize)
+			{
+				m_SendMoveCounter=0;			
+			}
+			
+		}
+		m_LastSendMoveTime=g_Timer->GetDoubleTime();
+		m_RecievedMoveFlag=false;
+   }
+
+}
+
+int
+//CChannel::RegisterProtocolData(int protocol_id,void *data)
+CChannel::RegisterProtocolData(int protocol_id,void *data, int TCP = 0)
+{
+	CProtocolData *protocol_data;
+	CProtocol *protocol;
+	int push_queue;
+
+	if(protocol_id!=PROTOCOL_UNRELIABLE_ENTITY_MOVE&&protocol_id!=PROTOCOL_UNRELIABLE_DATE_TIME)
+	{
+       LogPrintf("registerprotocol %d\n",protocol_id);	
+	}
+	if (!(protocol=g_Disposer->GetProtocol(protocol_id))) return NET_ERR;
+	if (protocol->CallFlat(&protocol_data,m_cpPlayer,data,&push_queue)==NET_ERR) return NET_ERR;
+
+	////////////////////////////////////////////////////////////////
+	// TCP: WRITE
+	bool	isReliable = protocol->IsReliable();
+	if (isReliable == true && TCP == 1) {
+		unsigned int	index = m_cpPlayer->m_TCPIndex;
+		TCPMSG	TCPMsg;
+		TCPMsg.hType	= (unsigned short) protocol_id;
+		TCPMsg.hBytes	= protocol_data->TCPGetLength();
+		TCPMsg.cBuf	= protocol_data->GetData();
+
+		g__gmTCPServer->m__gmTCPServer[index].mf__push(TCPMsg);
+
+		g_ProtocolDataPool->Add(protocol_data);
+	////////////////////////////////////////////////////////////////
+	} else {
+		if (push_queue) m_SendQueue.push(protocol_data);
+	}
+
+	return NET_OK;
+}
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+int
+CChannel::Produce()
+{
+	CPacket *pkt = new CPacket();
+	CProtocolData *pdata;
+	ProtocolDataListItor itor;
+	//ProtocolDataList *temp_list;
+	int rtn;
+
+//	char aa[100] = {0, };
+	//LogPrintf("Making To %s \n",GetStringAddress());
+	InitPacketBuffer(pkt);
+	
+	if (m_ReliableAckStatus==RELIABLE_ACK_IDLE)
+	{
+		while (!m_SendQueue.empty()) 
+		{
+			pdata = m_SendQueue.top();
+			LogPrintf("write protocol %d\n",pdata->GetProtocol()->m_Id);
+			//test
+			//if(pdata->GetProtocol()->m_Id == 136)
+			//{
+			//	int size = pdata->GetCurSize();
+			//	memcpy(aa, pdata, size);				
+			//	__asm nop
+			//}
+			if (WriteProtocolDataToPacket(pdata,pkt)==NET_ERR) {
+				break;
+			}
+			m_SendQueue.pop();
+			if (pdata->GetProtocol()->IsReliable())
+			{
+				m_HasReliable = 1;
+				m_ReliableList.push_back(pdata);
+			}
+			else {
+				if (pdata->Clear()) g_ProtocolDataPool->Add(pdata);//delete pdata;
+			}
+		}
+	}
+	else if (m_ReliableAckStatus==RELIABLE_ACK_WAIT)
+	{
+		//temp_list = new ProtocolDataList();
+
+
+		while (!m_SendQueue.empty())
+		{
+			pdata = m_SendQueue.top();
+			//LogPrintf("write protocol %d\n",pdata->GetProtocol()->m_Id);
+			if (pdata->GetProtocol()->IsReliable())
+				m_TempList.push_back(pdata);
+			else
+			{
+				if (WriteProtocolDataToPacket(pdata,pkt)==NET_ERR) {
+					break;
+				}
+				if (pdata->Clear()) g_ProtocolDataPool->Add(pdata);//delete pdata;
+			}
+			m_SendQueue.pop();
+		}
+		for (itor=m_TempList.begin();itor!=m_TempList.end();itor++) m_SendQueue.push(*itor);
+		//delete temp_list;
+		m_TempList.clear();
+	}
+	else if (m_ReliableAckStatus==RELIABLE_ACK_RESEND)
+	{
+
+
+		assert(!m_ReliableList.empty());
+		m_HasReliable = 1;
+		int overflow = 0;
+		for (itor=m_ReliableList.begin();itor!=m_ReliableList.end();itor++)
+		{
+			pdata = *itor;
+			//LogPrintf("write protocol %d\n",pdata->GetProtocol()->m_Id);
+			rtn = WriteProtocolDataToPacket(pdata,pkt);
+			if (rtn==NET_ERR) {
+				LogPrintf("RELIABLE RESEND OVERFLOW\n");
+				overflow = 1;
+			}
+			assert(rtn==NET_OK);
+		}
+		if (overflow) {
+			for (itor=m_ReliableList.begin();itor!=m_ReliableList.end();) {
+				itor = m_ReliableList.erase(itor);
+			}
+		}
+		while (!m_SendQueue.empty())
+		{
+			pdata = m_SendQueue.top();
+			if (WriteProtocolDataToPacket(pdata,pkt)==NET_ERR) {
+				break;
+			}
+			m_SendQueue.pop();
+			if (pdata->GetProtocol()->IsReliable())
+			{
+				m_ReliableList.push_back(pdata);
+			}
+			else {
+				if (pdata->Clear()) g_ProtocolDataPool->Add(pdata);//delete pdata;
+			}
+		}
+	}
+	SendPacketBuffer(pkt);
+
+	if (!m_SendQueue.empty()) 
+	{
+		FlushUnsentUnReliable();
+	}
+	return NET_OK;
+}
+
+void
+CChannel::SendPacketBuffer(CPacket *pkt)
+{
+	if (pkt->GetCurSize()>PACKET_TO_CLIENT_HEADER_SIZE)
+	{
+		//LogPrintf("Sending real %s\n",GetStringAddress());
+		if (WritePacketHeader(pkt)==NET_ERR) return;
+		pkt->SetAddress(this);
+		pkt->OutputQueue();
+	}
+}
+
+bool 
+CPacket::OutputQueue(int nQueueID)
+{
+    //PrintPacketInfo();
+#ifdef USE_IOCP
+    g_OutputQueue[nQueueID]->put(this);
+#else
+    g_OutputQueue->put(this);
+#endif
+
+#ifdef USE_EVENT
+    SetEvent(g_ServerManager->WEvent);
+#endif
+    return true;
+}
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+
+////////////////////////////////////////////////////////////////////////////////
+////////    네크워크 -> 큐 -> CallUnFlat()                              ////////
+////////////////////////////////////////////////////////////////////////////////
+
+void CGameLoop::NetworkProcess()
+{
+	g_Disposer->ProcessPreClient();
+//	            if(IS_TASK_DONE(rtn))
+	// TCP
+	g_Disposer->Dispose();
+//		CDisposer::DisposeConnectionlessInput(CPacket* pkt)
+}
+
+int
+CDisposer::Dispose()
+{
+#ifdef USE_EVENT
+	if (WaitForSingleObject(g_ServerManager->REvent,1)!=WAIT_OBJECT_0) return NET_OK;
+#endif
+
+	CPlayer *player;
+	int packet_type;
+	EpochID eid;
+	int protocol_id;
+	CProtocol *protocol;
+#ifdef USE_IOCP
+	for (int i=0; i<g_TopInfo->NumGate; i++) {
+		while (g_InputQueue[i]->get(&m_Packet)==OK) {
+#else
+		while (g_InputQueue->get(&m_Packet)==OK) {
+#endif
+            
+    		packet_type = m_Packet->GetPacketType();
+            //Logout(g_LogMain, "Received the packet type %d, size %d\n",packet_type,m_Packet->GetCurSize());
+    		m_Packet->BeginReading();
+
+		    if (packet_type==PACKET_TYPE_CONNECTIONLESS)
+		    {
+                //Logout(g_LogMain,"Received connectionless packet.\n");
+		    	DisposeConnectionlessInput(m_Packet);
+		    } 
+		    else
+		    {   
+    			if (m_Packet->ReadEpochID(&eid)==NET_ERR) 
+    			{
+    				delete m_Packet;
+                    continue;
+    			}
+	    		if (!(player=(CPlayer*)gScenegraph->GetPlayerHashTable()->Get(eid)))
+	    		{
+	    			delete m_Packet;
+                    continue;
+			    }
+			    player->m_ReceivedPacketTime = g_Timer->GetDoubleTime();
+			    if (player->ReadPacketHeader(m_Packet)==NET_ERR) 
+			    {
+				    delete m_Packet;
+                  continue;
+    			}
+
+    			for (;;) 
+	    		{
+	    			if (m_Packet->GetCurIdx()>=m_Packet->GetCurSize()) break;
+       				if (m_Packet->ReadByte(&protocol_id)==NET_ERR) break;
+	    			if (!(protocol=GetProtocol(protocol_id))) break;
+	    			if (protocol->CallUnFlat(player,m_Packet)==NET_ERR) break;
+    			}
+    		}
+    		delete m_Packet;
+        }
+#ifdef USE_IOCP
+    }
+#endif
+	return NET_OK;
+}
+////////////////////////////////////////////////////////////////////////////////
+// TCP: READ
+//
+// INPUT:
+//	TCPPMSG
+//		unsigned int	index;				*
+//		TCPMSG {
+//			unsigned short	hType;			*
+//			unsigned short	hBytes;
+//			char		cBuf[1024];
+//		}
+
+//
+//	Call TCPgetCharID(TCPPMSG.index);
+//		g__TCPServer->m__gmTCPServer[index].m__ID;
+
+	CPlayer		*player;
+	EpochID		eid;
+	eid.SetId(TCPgetCharID(index));
+	if (!(player = (CPlayer*) gScenegraph->GetPlayerHashTable()->Get(eid))) {
+		continue;
+	}
+
+	player->m_ReceivedPacketTime = g_Timer->GetDoubleTime();
+
+	CProtocol	*protocol;
+	int	protocol_id = (int) TCPPMSG.TCPMSG.hType;
+	if (!(protocol = GetProtocol(protocol_id)))
+		break;
+
+	CPacket		m_Packet;
+	// <<<<<<<<
+	// copy cBuf -> m_Packet.m_Buffer
+	// >>>>>>>>
+	if (protocol->CallUnFlat(player, m_Packet) == NET_ERR)
+		break;
+////////////////////////////////////////////////////////////////////////////////
+
+
+////////////////////////////////////////////////////////////////////////////////
+////////                정리                                            ////////
+////////////////////////////////////////////////////////////////////////////////
+
+	void CGameLoop::Run(void);
+
+	의
+
+	void CGameLoop::NetworkProcess(void);
+
+	에서
+		다른 쓰레드에서 읽어들인 네트워크 패킷이 있다면 이 사실을
+		이벤트를 통해서 안다.
+		패킷을 읽어 들이고 CallUnFlat 함수를 이용해서 해석한다.
+
+	그리고, 예를 들어,
+
+	CGameLoop::PlayerProcess(void);
+
+	에서
+		각 플레이어의 정보를 CallFlat 함수를 이용하여 패킷에 묶고
+		이를 "보내는" 큐에 쌓아둔다.
+		이벤트를 통해서 다른 쓰레드가 이 큐에 쌓여있는 패킷을
+		네트워크를 통해서 보내도록 한다.
+

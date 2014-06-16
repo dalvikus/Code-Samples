@@ -1,0 +1,222 @@
+use ERModule;
+
+use strict;
+
+
+$ERModule::HoHChunk{ 'RSExample0' } = {
+	'type'	=> ERModule::ER__CHUNK_TYPE__SHD,
+	'siref'	=> \@ERModule::AoHShaderInfoByTd,		# CHUNK_TYPE__SHD인 경우에는,
+						# 쉐이더 정보는 항상 @AoHShaderInfoByTd를 사용한다.
+	'jcref'	=> [
+		{
+			'light set'	=> [ "spotLightShape1" ],
+				# "spotLightShape1"이라는 문자열을 포함하는 이름을 가진 라이트에 의해
+			'give set'	=> [ "sphere" ],
+				# "sphere"라는 문자열을 포함하는 이름을 가진 모든 오브젝트들이 만드는 그림자가
+			'take set'	=> [ "plane" ]
+				# "plane"이라는 문자열을 포함하는 이름을 가진 오브젝트에 드리우는
+
+				# "특수" 처리된 그림자 이미지를 얻는다.
+		},
+		{
+			'light set'	=> [ "spotLightShape2" ],
+				# "spotLightShape2"이라는 문자열을 포함하는 이름을 가진 라이트에 의해
+			'give set'	=> [ "sphereShape1" ],
+				# "cone"이라는 문자열을 포함하는 이름을 가진 모든 오브젝트들이 만드는 그림자가
+			'take set'	=> [ "sphereShape2" ]
+				# "plane"이라는 문자열을 포함하는 이름을 가진 오브젝트에 드리우는
+
+				# "특수" 처리된 그림자 이미지를 얻는다.
+		}
+	]
+};
+
+$ERModule::HoHChunk{ 'RSExample1' } = {
+	'type'	=> ERModule::ER__CHUNK_TYPE__RS,
+	'siref'	=> \@ERModule::AoHShaderInfoByArt,
+	# CHUNK_TYPE__SHD와 달리, Light Linking에 관한 정보를 담은 키(llref)가 존재한다.
+	# 기본값은 '모든 라이트는 모든 오브젝트에 비춘다'이다.
+	'llref'	=> [
+		{
+			'light set'	=> [ '.*' ],
+			'object set'	=> [ '.*' ]
+		}
+	],
+	# CHUNK_TYPE__SHD와 달리, "[...]"이 아니라 "{...}"이다!
+	'jcref'	=> {
+		# Primary이미지를 얻을 때 사용되는 Render Stats에 관한 정보
+		# 여기서 설정되어있는 정보가 있을 때,
+		# 그 정보를 참고로 하여 오브젝트를 수정한다.
+		# 아무런 정보가 없다면 즉 "[]"라면 모든 오브젝트는 그대로 둔다.
+		'primary'	=> [
+			{
+				'object set'	=> [ 'sphere' ],
+				'Render Stats'	=> ERModule::ER__RS__CAST_SHADOW | ERModule::ER__RS__RECV_SHADOW | ERModule::ER__RS__VISIBILITY | ERModule::ER__RS__VIS_REFL
+								# 아래 2.의 RS__XXX들의 '|'를 이용한 조합
+								# 단, RS__DELETE의 경우 다른 비트는 무시된다.
+			}
+		],
+		# Secondary이미지에 사용되는 channel에 관한 정보
+		# 여기서 설정된 정보에 따라 추가 이미지를 만든다.
+		# 추가 이미지를 원하지 않을 때는 "[]"로 설정한다.
+		'secondary'	=> {
+			'diffuse'	=> [ '_diffuse' ]	# 적어도 하나는 있어야 한다.
+		}
+	}
+};
+
+$ERModule::HoHChunk{ 'RSExample2' } = {
+	'type'	=> ERModule::ER__CHUNK_TYPE__RS,
+	'siref'	=> \@ERModule::AoHShaderInfoByArt,
+	# CHUNK_TYPE__SHD와 달리, Light Linking에 관한 정보를 담은 키(llref)가 존재한다.
+	# 기본값은 '모든 라이트는 모든 오브젝트에 비춘다'이다.
+	'llref'	=> [
+		{
+			'light set'	=> [ '.*' ],
+			'object set'	=> [ '.*' ]
+		}
+	],
+	# CHUNK_TYPE__SHD와 달리, "[...]"이 아니라 "{...}"이다!
+	'jcref'	=> {
+		# Primary이미지를 얻을 때 사용되는 Render Stats에 관한 정보
+		# 여기서 설정되어있는 정보가 있을 때,
+		# 그 정보를 참고로 하여 오브젝트를 수정한다.
+		# 아무런 정보가 없다면 즉 "[]"라면 모든 오브젝트는 그대로 둔다.
+		'primary'	=> [
+			{
+				'object set'	=> [ 'plane' ],
+				'Render Stats'	=> ERModule::ER__RS__CAST_SHADOW | ERModule::ER__RS__VISIBILITY | ERModule::ER__RS__RT
+								# 아래 2.의 RS__XXX들의 '|'를 이용한 조합
+								# 단, RS__DELETE의 경우 다른 비트는 무시된다.
+			}
+		],
+		# Secondary이미지에 사용되는 channel에 관한 정보
+		# 여기서 설정된 정보에 따라 추가 이미지를 만든다.
+		# 추가 이미지를 원하지 않을 때는 "[]"로 설정한다.
+		'secondary'	=> {
+			'specular'	=> [ '_specular' ]	# 적어도 하나는 있어야 한다.
+		}
+	}
+};
+
+$ERModule::HoHChunk{ 'RSExample3' } = {
+	'type'	=> ERModule::ER__CHUNK_TYPE__RS,
+	'siref'	=> \@ERModule::AoHShaderInfoByArt,
+	# CHUNK_TYPE__SHD와 달리, Light Linking에 관한 정보를 담은 키(llref)가 존재한다.
+	# 기본값은 '모든 라이트는 모든 오브젝트에 비춘다'이다.
+	'llref'	=> [
+		{
+			'light set'	=> [ '.*' ],
+			'object set'	=> [ '.*' ]
+		}
+	],
+	# CHUNK_TYPE__SHD와 달리, "[...]"이 아니라 "{...}"이다!
+	'jcref'	=> {
+		# Primary이미지를 얻을 때 사용되는 Render Stats에 관한 정보
+		# 여기서 설정되어있는 정보가 있을 때,
+		# 그 정보를 참고로 하여 오브젝트를 수정한다.
+		# 아무런 정보가 없다면 즉 "[]"라면 모든 오브젝트는 그대로 둔다.
+		'primary'	=> [
+			{
+				'object set'	=> [ 'plane' ],
+				'Render Stats'	=> ERModule::ER__RS__DELETE
+								# 아래 2.의 RS__XXX들의 '|'를 이용한 조합
+								# 단, RS__DELETE의 경우 다른 비트는 무시된다.
+			},
+			{
+				'object set'	=> [ 'shape2' ],
+				'Render Stats'	=> ERModule::ER__RS__RECV_SHADOW | ERModule::ER__RS__VIS_REFR
+			}
+		],
+		# Secondary이미지에 사용되는 channel에 관한 정보
+		# 여기서 설정된 정보에 따라 추가 이미지를 만든다.
+		# 추가 이미지를 원하지 않을 때는 "[]"로 설정한다.
+		'secondary'	=> {}
+	}
+};
+
+$ERModule::HoHChunk{ 'RSExample4' } = {
+	'type'	=> ERModule::ER__CHUNK_TYPE__RS,
+	'siref'	=> \@ERModule::AoHShaderInfoByArt,
+	# CHUNK_TYPE__SHD와 달리, Light Linking에 관한 정보를 담은 키(llref)가 존재한다.
+	# 기본값은 '모든 라이트는 모든 오브젝트에 비춘다'이다.
+	'llref'	=> [
+		{
+			'light set'	=> [ '.*' ],
+			'object set'	=> [ '.*' ]
+		}
+	],
+	# CHUNK_TYPE__SHD와 달리, "[...]"이 아니라 "{...}"이다!
+	'jcref'	=> {
+		# Primary이미지를 얻을 때 사용되는 Render Stats에 관한 정보
+		# 여기서 설정되어있는 정보가 있을 때,
+		# 그 정보를 참고로 하여 오브젝트를 수정한다.
+		# 아무런 정보가 없다면 즉 "[]"라면 모든 오브젝트는 그대로 둔다.
+		'primary'	=> [],
+		# Secondary이미지에 사용되는 channel에 관한 정보
+		# 여기서 설정된 정보에 따라 추가 이미지를 만든다.
+		# 추가 이미지를 원하지 않을 때는 "[]"로 설정한다.
+		'secondary'	=> {}
+	}
+};
+
+$ERModule::HoHChunk{ 'RSExample5' } = {
+	'type'	=> ERModule::ER__CHUNK_TYPE__RS,
+	'siref'	=> \@ERModule::AoHShaderInfoByArt,
+	# CHUNK_TYPE__SHD와 달리, Light Linking에 관한 정보를 담은 키(llref)가 존재한다.
+	# 기본값은 '모든 라이트는 모든 오브젝트에 비춘다'이다.
+	'llref'	=> [
+		{
+			'light set'	=> [ 'Shape1' ],
+			'object set'	=> [ 'sphereShape1' ]
+		},
+		{
+			'light set'	=> [ 'Shape2' ],
+			'object set'	=> [ 'sphereShape2' ]
+		}
+	],
+	# CHUNK_TYPE__SHD와 달리, "[...]"이 아니라 "{...}"이다!
+	'jcref'	=> {
+		# Primary이미지를 얻을 때 사용되는 Render Stats에 관한 정보
+		# 여기서 설정되어있는 정보가 있을 때,
+		# 그 정보를 참고로 하여 오브젝트를 수정한다.
+		# 아무런 정보가 없다면 즉 "[]"라면 모든 오브젝트는 그대로 둔다.
+		'primary'	=> [],
+		# Secondary이미지에 사용되는 channel에 관한 정보
+		# 여기서 설정된 정보에 따라 추가 이미지를 만든다.
+		# 추가 이미지를 원하지 않을 때는 "[]"로 설정한다.
+		'secondary'	=> {}
+	}
+};
+
+$ERModule::HoHChunk{ 'RSExample6' } = {
+	'type'	=> ERModule::ER__CHUNK_TYPE__RS,
+	'siref'	=> \@ERModule::AoHShaderInfoByArt,
+	# CHUNK_TYPE__SHD와 달리, Light Linking에 관한 정보를 담은 키(llref)가 존재한다.
+	# 기본값은 '모든 라이트는 모든 오브젝트에 비춘다'이다.
+	'llref'	=> [
+		{
+			'light set'	=> [ '.*' ],
+			'object set'	=> [ '.*' ]
+		}
+	],
+	# CHUNK_TYPE__SHD와 달리, "[...]"이 아니라 "{...}"이다!
+	'jcref'	=> {
+		# Primary이미지를 얻을 때 사용되는 Render Stats에 관한 정보
+		# 여기서 설정되어있는 정보가 있을 때,
+		# 그 정보를 참고로 하여 오브젝트를 수정한다.
+		# 아무런 정보가 없다면 즉 "[]"라면 모든 오브젝트는 그대로 둔다.
+		'primary'	=> [
+			{
+				'object set'	=> [ 'shape2' ],
+				'Render Stats'	=> ERModule::ER__RS__MATTE
+			}
+		],
+		# Secondary이미지에 사용되는 channel에 관한 정보
+		# 여기서 설정된 정보에 따라 추가 이미지를 만든다.
+		# 추가 이미지를 원하지 않을 때는 "[]"로 설정한다.
+		'secondary'	=> {}
+	}
+};
+
+1;

@@ -1,0 +1,1037 @@
+#!/usr/local/tcltk-8.3.4/bin/wish83.exe
+#package require BWidget
+
+#do not make rib file when user only change cmd file...
+proc printf {msg} {
+		tk_dialog .dialog {message is ......} $msg {} 0 OK}
+
+option add *font {"arial" 9} userDefault
+#option add *font {"helvetica" 9 bold} userDefault
+
+#------------------------------------------------------------------#
+#-         					 Artx GUI version                         -#
+#------------------------------------------------------------------#
+
+#---------------------------------------------#
+#-            namespace : widget             -#
+#---------------------------------------------#
+namespace eval nsWidget {
+	set frMain [frame .frMain -bd 3 -relief ridge]
+	set frOption [frame $frMain.frOption -relief raise -bd 1]
+	set frOptionMore [frame $frMain.frOptionMore -relief raise -bd 1]
+	set frButton [frame $frMain.frButton -bd 3]
+
+	set frScene [frame $frOption.frScene -bd 1]
+   set frCmd [frame $frOption.frCmd -bd 1]
+   set frName [frame $frOption.frName -bd 1]
+   set frFrame [frame $frOption.frFrame -bd 1]
+   set frCamName [frame $frOption.frCamName -bd 1]
+   set frDspyResolution [frame $frOption.frDspyResolution -bd 1]
+   set frReuseFrameBuffer [frame $frOption.frReuseFrameBuffer -bd 1]
+   set frRender [frame $frOption.frRender -bd 1]
+   set frMakeRib [frame $frOption.frMakeRib -bd 1]
+   set frShadingRate [frame $frOptionMore.frShadingRate -bd 1]
+   set frPixelSample [frame $frOptionMore.frPixelSample -bd 1]
+   set frMotionBlur [frame $frOptionMore.frMotionBlur -bd 1]
+   set frSubframeMotion [frame $frOptionMore.frSubframeMotion -bd 1]
+   set frBlurCamera [frame $frOptionMore.frBlurCamera -bd 1]
+   set frShadowBias [frame $frOptionMore.frShadowBias -bd 1]
+   set frRenderOnlyExcept [frame $frOption.frRenderOnlyExcept -bd 1]
+   set frRenGrndShd [frame $frOptionMore.frRenGrndShd -bd 1]
+   set frCropWnd [frame $frOptionMore.frCropWnd -bd 1]
+   set frCropWndOptionX [frame $frOptionMore.frCropWndOptionX -bd 1]
+   set frCropWndOptionY [frame $frOptionMore.frCropWndOptionY -bd 1]
+   set frFileSave [frame $frOptionMore.frFileSave -bd 1]
+}
+
+#----------------------------------------------#
+#-        namespace : widget variable         -#
+#----------------------------------------------#
+namespace eval nsWidgetVar {
+	#--- basic option ---#
+	set scene ""
+	set cmd ""
+	set name ""
+	set startFrame ""
+	set endFrame ""
+	set frameInterval ""
+	set camName ""
+	set dspyWidth ""
+	set dspyHeight ""
+	set reuseFrameBuffer ""
+	set render ""
+	
+	#--- advanced option ---#
+	set shadingRate ""
+	set pixelSampleX ""
+	set pixelSampleY ""
+	set motionBlur 0
+	set subframeMotion 0
+	set blurCamera 0
+	set shadowBias ""
+	set onlyExceptObj ""
+	set onlyExceptRbVar 0
+	set renGrndShd_Do 0
+	set renGrndShd_Light ""
+	set renGrndShd_Src ""
+	set renGrndShd_Target ""
+	set renGrndShd_Render ""
+	set renGrndShd_Id ""
+	
+	set cropWnd 0
+	set cropWndXMin 0
+	set cropWndXMax 0
+	set cropWndYMin 0
+	set cropWndYMax 0
+	set fileSave 0
+	set cmdLine ""
+}
+
+#---------------------------------------------#
+#-            namespace : globals            -#
+#---------------------------------------------#
+namespace eval nsGlobal {
+	set scenePath ""
+	set cmdPath ""
+	set showAdvancedOption 0
+	set errMsgMtor ""
+	set errMsgR2r ""
+	set errMsgRibEdit ""
+	set errMsgPrman ""
+	set errMsgRenGrndShd ""
+	set errMsgSho ""
+	set mtorOption ""
+	set ribEditOption ""
+	set fileJobScript ""
+#	set entryColor "#005490"
+	set entryColor black
+	set cbFgColor black
+	set mayaFile {{{maya binary file} {.mb}} {{maya ascii file} {.ma}}}
+	set cmdFile {{{cmd file} {.dscmd}}}
+	set doMtor 1
+}
+
+#---------------------------------------------#
+#-			   proc show advanced option	      -#
+#---------------------------------------------#
+proc ShowAdvancedOption {} {
+	if $nsGlobal::showAdvancedOption { ;# show advanced option
+		set nsGlobal::showAdvancedOption 0
+		pack forget $nsWidget::frOptionMore
+		
+	} elseif {!$nsGlobal::showAdvancedOption} {
+		set nsGlobal::showAdvancedOption 1
+		pack configure $nsWidget::frOptionMore -padx 3 -fill x -after $nsWidget::frOption		
+	}		
+}
+
+#---------------------------------------------#
+#-				 proc show err message		   	-#
+#---------------------------------------------#
+proc ShowErrMsg {w errType} {
+	
+	catch {destroy $w}
+	toplevel $w
+	
+	frame			$w.frErrMsg
+	scrollbar   $w.frErrMsg.scErrMsgX	-orient horizontal  -command "$w.frErrMsg.txErrMsg xview"
+	scrollbar 	$w.frErrMsg.scErrMsgY   -command "$w.frErrMsg.txErrMsg yview"
+	text 		   $w.frErrMsg.txErrMsg 	-yscroll "$w.frErrMsg.scErrMsgY set" -xscroll "$w.frErrMsg.scErrMsgX set" -setgrid 1 \
+													-bg #f0f0f0 -selectbackground #d3875f -fg black
+
+	bind $w <KeyPress-Escape> "destroy $w"
+
+	grid $w.frErrMsg.txErrMsg 	-row 0 -column 0 -rowspan 1 -columnspan 1 -sticky news
+	grid $w.frErrMsg.scErrMsgY -row 0 -column 1 -rowspan 1 -columnspan 1 -sticky news
+	grid $w.frErrMsg.scErrMsgX	-row 1 -column 0 -rowspan 1 -columnspan 1 -sticky news
+	grid rowconfig    $w.frErrMsg 0 	-weight 1 -minsize 0
+	grid columnconfig $w.frErrMsg	0 	-weight 1 -minsize 0	
+	pack $w.frErrMsg
+	
+	if {![string compare $errType mtor]} {
+		$w.frErrMsg.txErrMsg insert 0.0 $nsGlobal::errMsgMtor
+	}
+	if {![string compare $errType renGrndShd]} {
+		$w.frErrMsg.txErrMsg insert 0.0 $nsGlobal::errMsgRenGrndShd
+	}
+	if {![string compare $errType r2r]} {
+		$w.frErrMsg.txErrMsg insert 0.0 $nsGlobal::errMsgR2r
+	}
+	if {![string compare $errType ribEdit]} {
+		$w.frErrMsg.txErrMsg insert 0.0 $nsGlobal::errMsgRibEdit
+	}
+	if {![string compare $errType prman]} {
+		$w.frErrMsg.txErrMsg insert 0.0 $nsGlobal::errMsgPrman
+	}
+}
+
+#---------------------------------------------#
+#-				  proc save setting					-#
+#---------------------------------------------#
+proc SaveSetting {} {
+	set file [open ~/artx_latest w]
+	puts $file "#--- latest setting ---#"
+	puts $file ""
+	
+	puts $file "scene_file \t $nsWidgetVar::scene"
+	puts $file "cmd_file \t $nsWidgetVar::cmd"
+	puts $file "name \t $nsWidgetVar::name"
+	puts $file "frame_setting \t $nsWidgetVar::startFrame $nsWidgetVar::endFrame $nsWidgetVar::frameInterval"
+	puts $file "cam_name \t $nsWidgetVar::camName"
+	puts $file "display_resolution \t $nsWidgetVar::dspyWidth $nsWidgetVar::dspyHeight"
+	puts $file "reuse_framebuffer \t $nsWidgetVar::reuseFrameBuffer"
+	puts $file "render \t $nsWidgetVar::render"
+	puts $file "renGrndShd_do \t $nsWidgetVar::renGrndShd_Do"
+	puts $file "renGrndShd_render \t $nsWidgetVar::renGrndShd_Render"
+	puts $file "renGrndShd_src \t $nsWidgetVar::renGrndShd_Src"
+	puts $file "renGrndShd_target \t $nsWidgetVar::renGrndShd_Target"
+	puts $file "renGrndShd_light \t $nsWidgetVar::renGrndShd_Light"
+	puts $file "renGrndShd_id \t $nsWidgetVar::renGrndShd_Id"
+	puts $file "shading_rate \t $nsWidgetVar::shadingRate"
+	puts $file "pixel_samples \t $nsWidgetVar::pixelSampleX $nsWidgetVar::pixelSampleY"
+	puts $file "shadow_bias \t $nsWidgetVar::shadowBias"
+	puts $file "render_only_except \t $nsWidgetVar::onlyExceptRbVar"	
+	puts $file "render_object \t $nsWidgetVar::onlyExceptObj"
+ 	puts $file "motion_blur \t $nsWidgetVar::motionBlur"
+	puts $file "subframe_blur \t $nsWidgetVar::subframeMotion"
+	puts $file "blur_camera	\t $nsWidgetVar::blurCamera"
+	puts $file "file_save \t $nsWidgetVar::fileSave"
+	puts $file "crop_window	\t $nsWidgetVar::cropWnd"
+	puts $file "crop_x_min \t $nsWidgetVar::cropWndXMin"
+	puts $file "crop_x_max \t $nsWidgetVar::cropWndXMax"
+	puts $file "crop_y_min \t $nsWidgetVar::cropWndYMin"
+	puts $file "crop_y_max \t $nsWidgetVar::cropWndYMax"
+
+	close $file	
+}
+
+#---------------------------------------------#
+#-			    proc set variable			 -#
+#---------------------------------------------#
+proc SetVar {when} {
+	if [string compare $when "default"] {
+		set file [open ~/artx_latest r]
+	
+	} else {
+		set file [open ~/artx_init r]
+	}
+	
+ 	gets $file ;# read comment
+	gets $file ;# read space line
+
+	# basic ------------------------------------------	
+	if [string compare $when "default"] {
+		gets $file line ;# scene
+		set nsWidgetVar::scene [lindex $line 1]
+		regexp {.+/} $nsWidgetVar::scene nsGlobal::scenePath
+		gets $file line ;# cmd
+		set nsWidgetVar::cmd [lindex $line 1]
+		regexp {.+/} $nsWidgetVar::cmd nsGlobal::cmdPath
+	
+	} else {
+		gets $file line ;# scene path
+		set nsGlobal::scenePath [lindex $line 1]
+		set nsWidgetVar::scene ""
+		gets $file line ;# cmd path
+		set nsGlobal::cmdPath [lindex $line 1]
+		set nsWidgetVar::cmd ""
+	}
+	
+	gets $file line ;# name
+	set nsWidgetVar::name [lindex $line 1]
+	gets $file line ;# frame setting
+	set nsWidgetVar::startFrame [lindex $line 1]
+	set nsWidgetVar::endFrame [lindex $line 2]
+	set nsWidgetVar::frameInterval [lindex $line 3]
+	gets $file line ;# camera name
+	set nsWidgetVar::camName [lindex $line 1]
+	gets $file line ;# display resolution
+	set nsWidgetVar::dspyWidth [lindex $line 1]
+	set nsWidgetVar::dspyHeight [lindex $line 2]
+	gets $file line
+	set nsWidgetVar::reuseFrameBuffer [lindex $line 1]
+	gets $file line
+	set nsWidgetVar::render [lindex $line 1]
+	
+	# advanced ---------------------------------------
+	gets $file line
+	set nsWidgetVar::renGrndShd_Do [lindex $line 1]
+	gets $file line
+	set nsWidgetVar::renGrndShd_Render [lindex $line 1]
+	gets $file line
+	set nsWidgetVar::renGrndShd_Src [lindex $line 1]
+	gets $file line
+	set nsWidgetVar::renGrndShd_Target [lindex $line 1]
+	gets $file line
+	set nsWidgetVar::renGrndShd_Light [lindex $line 1]	
+	gets $file line
+	set nsWidgetVar::renGrndShd_Id [lindex $line 1]
+		
+	gets $file line ;# shading rate
+	set nsWidgetVar::shadingRate [lindex $line 1]
+	gets $file line ;# pixel sample
+	set nsWidgetVar::pixelSampleX [lindex $line 1]
+	set nsWidgetVar::pixelSampleY [lindex $line 2]
+	gets $file line ;# shadow bias
+	set nsWidgetVar::shadowBias [lindex $line 1]
+	gets $file line 
+	set nsWidgetVar::onlyExceptRbVar [lindex $line 1]
+	gets $file line ;# render object
+	set nsWidgetVar::onlyExceptObj [lindex $line 1]
+	gets $file line ;# motion blur
+	set nsWidgetVar::motionBlur [lindex $line 1]
+	gets $file line ;# subframe blur
+	set nsWidgetVar::subframeBlur [lindex $line 1]
+	gets $file line ;# blur camera
+	set nsWidgetVar::blurCamera [lindex $line 1]
+	gets $file line ;# file save
+	set nsWidgetVar::fileSave [lindex $line 1]
+	gets $file line ;# crop window
+	set nsWidgetVar::cropWnd [lindex $line 1]
+	gets $file line ;# crop x min
+	set nsWidgetVar::cropWndXMin [lindex $line 1]
+	gets $file line ;# crop x max
+	set nsWidgetVar::cropWndXMax [lindex $line 1]
+	gets $file line ;# crop y min
+	set nsWidgetVar::cropWndYMin [lindex $line 1]
+	gets $file line ;# crop y max
+	set nsWidgetVar::cropWndYMax [lindex $line 1]
+
+	close $file
+}
+
+#---------------------------------------------#
+#-			       proc Render			  	 -#
+#---------------------------------------------#
+proc Render {} {
+
+#	printf $nsGlobal::doMtor
+	set nsGlobal::ribEditOption ""
+	set nsGlobal::mtorOption ""
+	$nsWidget::frButton.mbMsg configure -bg #c0c0c0 -fg black
+	$nsWidget::frButton.mbMsg.m entryconfigure 0 -background #c0c0c0
+	$nsWidget::frButton.mbMsg.m entryconfigure 1 -background #c0c0c0
+	$nsWidget::frButton.mbMsg.m entryconfigure 2 -background #c0c0c0
+	$nsWidget::frButton.mbMsg.m entryconfigure 3 -background #c0c0c0
+	$nsWidget::frButton.mbMsg.m entryconfigure 4 -background #c0c0c0
+	
+	if {![file exists $nsGlobal::scenePath/artx]} {
+    	exec mkdir $nsGlobal::scenePath/artx
+    }
+	
+	if {$nsGlobal::doMtor == 1} {
+    	#----------------------------------#
+    	#-           set option           -#
+    	#----------------------------------#
+    	if [string compare $nsWidgetVar::scene ""] {
+    		set nsGlobal::mtorOption [concat $nsGlobal::mtorOption "-scene $nsWidgetVar::scene"]
+    	}
+    	if [string compare $nsWidgetVar::name ""] {
+    		set nsGlobal::mtorOption [concat $nsGlobal::mtorOption "-cmd rg dspyName $nsWidgetVar::name"]
+    	}
+    	if [string compare $nsWidgetVar::camName ""] {
+    		set nsGlobal::mtorOption [concat $nsGlobal::mtorOption "-cmd rg camName $nsWidgetVar::camName"]
+    	}
+    	if [string compare $nsWidgetVar::dspyWidth ""] {
+    		set nsGlobal::mtorOption [concat $nsGlobal::mtorOption "-cmd rg dspyFormatX $nsWidgetVar::dspyWidth"]
+    	}
+    	if [string compare $nsWidgetVar::dspyHeight ""] {
+    		set nsGlobal::mtorOption [concat $nsGlobal::mtorOption "-cmd rg dspyFormatY $nsWidgetVar::dspyHeight"]
+    	}
+    	
+    	if {![string compare $nsWidgetVar::reuseFrameBuffer "Always"]} {
+    		set nsGlobal::mtorOption [concat $nsGlobal::mtorOption "-cmd rg dspyUnique 0"]
+    	} elseif {![string compare $nsWidgetVar::reuseFrameBuffer "Never"]} {
+    		set nsGlobal::mtorOption [concat $nsGlobal::mtorOption "-cmd rg dspyUnique 2"]
+    	} else {
+    		set nsGlobal::mtorOption [concat $nsGlobal::mtorOption "-cmd rg dspyUnique 1"]
+    	}
+    	
+    	
+    	if [string compare $nsWidgetVar::shadingRate ""] {
+    		set nsGlobal::mtorOption [concat $nsGlobal::mtorOption "-cmd rg shadingRate $nsWidgetVar::shadingRate"]
+    	}
+    	if [string compare $nsWidgetVar::pixelSampleX ""] {
+    		set nsGlobal::mtorOption [concat $nsGlobal::mtorOption "-cmd rg pixelSamplesX $nsWidgetVar::pixelSampleX"]
+    	}
+    	if [string compare $nsWidgetVar::pixelSampleY ""] {
+    		set nsGlobal::mtorOption [concat $nsGlobal::mtorOption "-cmd rg pixelSamplesY $nsWidgetVar::pixelSampleY"]
+    	}
+    	if [string compare $nsWidgetVar::shadowBias ""] {
+    		set nsGlobal::mtorOption [concat $nsGlobal::mtorOption "-cmd rg shadowBias $nsWidgetVar::shadowBias"]
+    	}
+    	if {$nsWidgetVar::motionBlur == 1} {
+    		set nsGlobal::mtorOption [concat $nsGlobal::mtorOption "-cmd rg doMotionBlur 1"]
+    	}
+    	if {$nsWidgetVar::subframeBlur == 1} {
+    		set nsGlobal::mtorOption [concat $nsGlobal::mtorOption "-cmd rg blurSubframe 1"]
+    	}
+    	if {$nsWidgetVar::blurCamera == 1} {
+    		set nsGlobal::mtorOption [concat $nsGlobal::mtorOption "-cmd rg blurCamera 1"]
+    	}
+    	if {$nsWidgetVar::cropWnd == 1} {
+    		set nsGlobal::mtorOption [concat $nsGlobal::mtorOption "-cmd rg doCrop 1"]
+    		set nsGlobal::mtorOption [concat $nsGlobal::mtorOption "-cmd rg cropWinXMin $nsWidgetVar::cropWndXMin"]
+    		set nsGlobal::mtorOption [concat $nsGlobal::mtorOption "-cmd rg cropWinXMax $nsWidgetVar::cropWndXMax"]
+    		set nsGlobal::mtorOption [concat $nsGlobal::mtorOption "-cmd rg cropWinYMin $nsWidgetVar::cropWndYMin"]
+    		set nsGlobal::mtorOption [concat $nsGlobal::mtorOption "-cmd rg cropWinYMax $nsWidgetVar::cropWndYMax"]
+    	}
+    	if {$nsWidgetVar::fileSave == 1} {
+    		set nsGlobal::mtorOption [concat $nsGlobal::mtorOption "-cmd rg dspyServer file"]
+    	} else {
+    		set nsGlobal::mtorOption [concat $nsGlobal::mtorOption "-cmd rg dspyServer it"]
+    	}
+    	set nsGlobal::mtorOption [concat $nsGlobal::mtorOption "-cmd rg dspyServerMode rgba"]
+    	set nsGlobal::mtorOption [concat $nsGlobal::mtorOption "-cmd workspace SetDir torRIBs $nsGlobal::scenePath/artx/rib"]
+    	set nsGlobal::mtorOption [concat $nsGlobal::mtorOption "-cmd workspace SetDir torImgs $nsGlobal::scenePath/artx/rmanpix"]
+    	set nsGlobal::mtorOption [concat $nsGlobal::mtorOption "-cmd workspace SetDir torTmps $nsGlobal::scenePath/artx/rmantmp"]
+    	set nsGlobal::mtorOption [concat $nsGlobal::mtorOption "-cmd workspace SetDir torTextures $nsGlobal::scenePath/artx/rmantex"]
+    	set nsGlobal::mtorOption [concat $nsGlobal::mtorOption "-cmd workspace SetDir torShadows $nsGlobal::scenePath/artx/rmantex/shd"]
+    	set nsGlobal::mtorOption [concat $nsGlobal::mtorOption "-cmd workspace SetDir torReflections $nsGlobal::scenePath/artx/rmantex/env"]
+    	set nsGlobal::mtorOption [concat $nsGlobal::mtorOption "-cmd workspace SetDir torShaders $nsGlobal::scenePath/artx/rmanshader"]
+    
+    #	set nsGlobal::mtorOption [concat $nsGlobal::mtorOption $nsWidgetVar::cmdLine]
+	}
+	#-----------------------------------------------------#
+	#-													 -#
+	#-					render process					 -#
+	#-													 -#
+	#-----------------------------------------------------#
+	
+	#------------------------------------------------#
+	#-			       local machine 				-#
+	#------------------------------------------------#
+	if {![string compare $nsWidgetVar::render "render"]} { 
+	    
+    	for {set i $nsWidgetVar::startFrame} {$i <= $nsWidgetVar::endFrame} {set i [expr $i + $nsWidgetVar::frameInterval]} {
+    		
+    		#------------------------------------#
+    		#-               m t o r            -#
+    		#------------------------------------#
+    		if {$nsGlobal::doMtor == 1} {
+    		#	printf doMtor
+	    		if [catch "exec mtor_maya4 $nsGlobal::mtorOption -cmd genRib $i" nsGlobal::errMsgMtor] {
+    				$nsWidget::frButton.mbMsg configure -bg #d3875f -fg white
+    				$nsWidget::frButton.mbMsg.m entryconfigure 0 -background #d3875f
+    			}
+    		} else {
+    		#	printf noMtor
+    		# 	printf [file exist $nsGlobal::scenePath/artx/rib/$nsWidgetVar::name.[format %04d $i]_original.rib]
+    			if [file exist $nsGlobal::scenePath/artx/rib/$nsWidgetVar::name.[format %04d $i]_original.rib] {
+	    			exec mv $nsGlobal::scenePath/artx/rib/$nsWidgetVar::name.[format %04d $i]_original.rib $nsGlobal::scenePath/artx/rib/$nsWidgetVar::name.[format %04d $i].rib    			
+	    	#		printf "mv $nsGlobal::scenePath/artx/rib/$nsWidgetVar::name.[format %04d $i]_original.rib $nsGlobal::scenePath/artx/rib/$nsWidgetVar::name.[format %04d $i].rib"
+	    		}
+    		}
+    		
+    		set final $nsWidgetVar::name.[format %04d $i].rib
+   			set source $nsWidgetVar::name.[format %04d $i]_original.rib
+   			
+    		#---------------------------------#
+    		#- 			renGrndShd			 -#
+    		#---------------------------------#
+    		if {$nsWidgetVar::renGrndShd_Do == 1} {
+    			if {![file exists $nsGlobal::scenePath/artx/shadowmaps]} {
+    				exec mkdir $nsGlobal::scenePath/artx/shadowmaps
+    			}
+    			if [catch {exec y:/usr/local/bin/X_RENGRNDSHD.BAT $nsGlobal::scenePath/artx/rib/$final $nsWidgetVar::renGrndShd_Light $nsWidgetVar::renGrndShd_Src $nsWidgetVar::renGrndShd_Target $nsGlobal::scenePath/artx/shadowmaps/ $nsWidgetVar::renGrndShd_Id$i} nsGlobal::errMsgRenGrndShd] {
+    				$nsWidget::frButton.mbMsg.m entryconfigure 1 -background #d3875f
+    				$nsWidget::frButton.mbMsg configure -bg #d3875f -fg white
+    			}
+    			#--------------------------#
+    			#-		    s h o         -#
+    			#--------------------------#
+    			if {$nsWidgetVar::renGrndShd_Render == 1} {
+    				exec sho $nsGlobal::scenePath/artx/shadowmaps/$nsWidgetVar::renGrndShd_Id &
+    			}
+    		}
+    		
+    		#---------------------------------#
+    		#-             r  2  r           -#
+    		#---------------------------------#
+    		if [string compare $nsWidgetVar::cmd ""] {
+    			exec mv $nsGlobal::scenePath/artx/rib/$final $nsGlobal::scenePath/artx/rib/$source
+    			
+    			if [catch "exec y:/bin/perl y:/usr/local/bin/r2r $nsGlobal::scenePath/artx/rib/$source $nsWidgetVar::cmd > $nsGlobal::scenePath/artx/rib/$final" nsGlobal::errMsgR2r] {
+    				$nsWidget::frButton.mbMsg.m entryconfigure 2 -background #d3875f
+    				$nsWidget::frButton.mbMsg configure -bg #d3875f -fg white
+    			}
+    		}
+    		
+    		#----------------------------------#
+    		#-      	   rib edit			  -#
+    		#----------------------------------#
+    		if [string compare $nsWidgetVar::onlyExceptObj ""] {
+    			set nsGlobal::ribEditOption "-e \\\\*"
+    			if {$nsWidgetVar::onlyExceptRbVar == 0} {
+    				foreach obj $nsWidgetVar::onlyExceptObj {
+    					set nsGlobal::ribEditOption [concat $nsGlobal::ribEditOption "-r $obj"]
+    				}
+    				if [catch {eval exec y:/bin/perl y:/usr/local/bin/ribEdit $nsGlobal::scenePath/artx/rib/$final $nsGlobal::ribEditOption | prman} nsGlobal::errMsgRibEdit] {
+    					$nsWidget::frButton.mbMsg configure -bg #d3875f -fg white
+    					$nsWidget::frButton.mbMsg.m entryconfigure 3 -background #d3875f					
+    				}
+    	
+    			} elseif {$nsWidgetVar::onlyExceptRbVar == 1} {
+    				set nsGlobal::ribEditOption ""
+    				foreach obj $nsWidgetVar::onlyExceptObj {
+    					set nsGlobal::ribEditOption [concat $nsGlobal::ribEditOption "-e $obj"]
+    				}
+    				if [catch "eval exec y:/bin/perl y:/usr/local/bin/ribEdit $nsGlobal::scenePath/artx/rib/$final $nsGlobal::ribEditOption | prman" nsGlobal::errMsgRibEdit] {
+    					$nsWidget::frButton.mbMsg configure -bg #d3875f -fg white
+    					$nsWidget::frButton.mbMsg.m entryconfigure 3 -background #d3875f
+    				}
+    			}
+    		} else {
+    		
+    			#---------------------------------#
+    			#-           p r m a n	  	     -#
+    			#---------------------------------#
+    			if [catch "exec prman $nsGlobal::scenePath/artx/rib/$final &" nsGlobal::errMsgPrman] {
+    				$nsWidget::frButton.mbMsg configure -bg #d3875f -fg white
+    				$nsWidget::frButton.mbMsg.m entryconfigure 4 -background #d3875f
+    			}			
+    		}
+    	}
+    } else {
+    	#------------------------------------------------------#
+    	#-  				  net render					  -#
+    	#------------------------------------------------------#
+    	MakeJobScript
+	   	exec alfred $nsGlobal::fileJobScript &    	
+    }    
+    #set nsGlobal::doMtor 0
+}
+
+proc MakeJobScript {} {
+	set doPrman 1
+	set sceneName ""
+	regexp {/[^.]+$} $nsWidgetVar::scene sceneName
+	if {![file exists $nsGlobal::scenePath/artx/jobscript]} {
+    	exec mkdir $nsGlobal::scenePath/artx/jobscript
+    }
+    set nsGlobal::fileJobScript $nsGlobal::scenePath/artx/jobscript/$nsWidgetVar::name.job
+	set file [open $nsGlobal::fileJobScript w]
+
+	#------------------------------#
+	#-			 m t o r		  -#
+	#------------------------------#
+	puts $file \
+"##AlfredToDo 3.0
+
+Job -title {artx test...} -subtasks \{
+	Iterate count -from $nsWidgetVar::startFrame -to $nsWidgetVar::endFrame -by $nsWidgetVar::frameInterval -subtasks {
+		Task -title {start job cycle} -subtasks {
+		} -cmds {
+		}
+	} -template \{
+		Task -title {frame \$count} -subtasks \{
+			Task -title {Gen rib... mtor - \$count} -subtasks {
+			} -cmds \{"
+			
+	if {$nsGlobal::doMtor == 1} {
+		puts $file \
+"				RemoteCmd {mtor_maya4 $nsGlobal::mtorOption  -cmd rg dspyServer file -cmd genRib \$count} -service {pixarNrm} -atmost 1 "
+	} else {
+		puts $file \
+"				Cmd {y:/bin/mv $nsGlobal::scenePath/artx/rib/$nsWidgetVar::name.\[format \"%04d\" \$count\]_original.rib $nsGlobal::scenePath/artx/rib/$nsWidgetVar::name.\[format \"%04d\" \$count\].rib} -if {\[file exist $nsGlobal::scenePath/artx/rib/$nsWidgetVar::name.\[format %04d \$count\]_original.rib\]}"
+	}
+
+	#---------------------------------#
+	#-			 Do  r 2 r			 -#
+	#---------------------------------#
+	if [string compare $nsWidgetVar::cmd ""] {
+		puts $file \
+"			\} -cleanup {
+				Cmd {y:/bin/mv $nsGlobal::scenePath/artx/rib/$nsWidgetVar::name.\[format \"%04d\" \$count\].rib $nsGlobal::scenePath/artx/rib/$nsWidgetVar::name.\[format \"%04d\" \$count\]_original.rib}
+			}
+			Task -title {render process - \$count} -subtasks \{ 
+				Task -title {r2r - \$count} -subtasks {
+					Instance {Gen rib... mtor - \$count}
+				} -cmds {
+					RemoteCmd {y:/bin/bash --login -c \"y:/bin/perl y:/usr/local/bin/r2r $nsGlobal::scenePath/artx/rib/$nsWidgetVar::name.\[format \"%04d\" \$count\]_original.rib $nsWidgetVar::cmd > $nsGlobal::scenePath/artx/rib/$nsWidgetVar::name.\[format \"%04d\" \$count\].rib\"} -service {pixarNrm} -atmost 1
+				} "
+				
+		#---------------------------------#
+		#-			  rib edit			 -#
+		#---------------------------------#
+		if [string compare $nsWidgetVar::onlyExceptObj ""] {
+			set doPrman 0
+			set nsGlobal::ribEditOption "-e \\\\\\\\*"
+    		if {$nsWidgetVar::onlyExceptRbVar == 0} {
+    			foreach obj $nsWidgetVar::onlyExceptObj {
+	    			set nsGlobal::ribEditOption [concat $nsGlobal::ribEditOption "-r $obj"]
+	    		}
+	   		} elseif {$nsWidgetVar::onlyExceptRbVar == 1} {
+    			set nsGlobal::ribEditOption ""
+    			foreach obj $nsWidgetVar::onlyExceptObj {
+    				set nsGlobal::ribEditOption [concat $nsGlobal::ribEditOption "-e $obj"]
+    			}
+    		}
+			puts $file \
+"				Task -title {X_RENDER - \$count} -subtasks {
+					Instance {r2r - \$count}
+				} -cmds {
+					RemoteCmd {y:/usr/local/bin/X_RENDER.BAT $nsGlobal::scenePath/artx/rib/$nsWidgetVar::name.\[format \"%04d\" \$count\].rib \"$nsGlobal::ribEditOption\"} -service {pixarNrm} -atmost 1
+				} -chaser {
+					sho $nsGlobal::scenePath/artx/rmanpix/$nsWidgetVar::name.\[format \"%04d\" \$count\]
+				} "
+    	} else {
+    	#--------------------------------------#
+	    #-				p r m a n			  -#
+   		#--------------------------------------#
+        	puts $file \
+"				Task -title {prman - \$count} -subtasks {
+					Instance {r2r - \$count}
+				} -cmds {
+					RemoteCmd {prman -Progress $nsGlobal::scenePath/artx/rib/$nsWidgetVar::name.\[format \"%04d\" \$count\].rib} -service {pixarNrm} -atmost 1 -tags {netrender}
+				} -chaser {
+					sho $nsGlobal::scenePath/artx/rmanpix/$nsWidgetVar::name.\[format \"%04d\" \$count\]
+				}"
+		}
+
+    #---------------------------------#
+	#-			  No  r 2 r			 -#
+	#---------------------------------#
+    } else {
+    	puts $file \
+"			\}
+			Task -title {render process - \$count} -subtasks \{ "
+		    	
+	    #---------------------------------#
+		#-			  rib edit			 -#
+		#---------------------------------#
+		if [string compare $nsWidgetVar::onlyExceptObj ""] {
+			set doPrman 0
+			set nsGlobal::ribEditOption "-e \\\\\\\\*"
+    		if {$nsWidgetVar::onlyExceptRbVar == 0} {
+    			foreach obj $nsWidgetVar::onlyExceptObj {
+	    			set nsGlobal::ribEditOption [concat $nsGlobal::ribEditOption "-r $obj"]
+	    		}
+	   		} elseif {$nsWidgetVar::onlyExceptRbVar == 1} {
+    			set nsGlobal::ribEditOption ""
+    			foreach obj $nsWidgetVar::onlyExceptObj {
+    				set nsGlobal::ribEditOption [concat $nsGlobal::ribEditOption "-e $obj"]
+    			}
+    		}
+			puts $file \
+"				Task -title {X_RENDER - \$count} -subtasks {
+					Instance {Gen rib... mtor - \$count}
+				} -cmds {
+    				RemoteCmd {y:/usr/local/bin/X_RENDER.BAT  $nsGlobal::scenePath/artx/rib/$nsWidgetVar::name.\[format \"%04d\" \$count\].rib \"$nsGlobal::ribEditOption\"} -service {pixarNrm} -atmost 1
+				} -chaser {
+					sho $nsGlobal::scenePath/artx/rmanpix/$nsWidgetVar::name.\[format \"%04d\" \$count\]
+				} "
+    	} else {
+    	#--------------------------------------#
+	    #-				p r m a n			  -#
+   		#--------------------------------------#
+        	puts $file \
+"				Task -title {prman - \$count} -subtasks {
+					Instance {Gen rib... mtor - \$count}
+				} -cmds {
+					RemoteCmd {prman -Progress $nsGlobal::scenePath/artx/rib/$nsWidgetVar::name.\[format \"%04d\" \$count\].rib} -service {pixarNrm} -atmost 1 -tags {netrender}
+				} -chaser {
+					sho $nsGlobal::scenePath/artx/rmanpix/$nsWidgetVar::name.\[format \"%04d\" \$count\]
+				}"
+		}
+    }
+    
+	#---------------------------------#
+	#-			 renGrndShd		     -#
+	#---------------------------------#
+	if {$nsWidgetVar::renGrndShd_Do == 1} {
+		if {![file exists $nsGlobal::scenePath/artx/shadowmaps]} {
+    		exec mkdir $nsGlobal::scenePath/artx/shadowmaps
+    	}
+		puts $file \
+"				Task -title {X_RENGRNDSHD - \$count} -subtasks {
+					Instance {Gen rib... mtor - \$count}
+				} -cmds \{ "
+		if [string compare $nsWidgetVar::cmd ""] {
+			puts $file \
+"					RemoteCmd {y:/usr/local/bin/X_RENGRNDSHD.BAT $nsGlobal::scenePath/artx/rib/$nsWidgetVar::name.\[format \"%04d\" \$count\]_original.rib $nsWidgetVar::renGrndShd_Light $nsWidgetVar::renGrndShd_Src $nsWidgetVar::renGrndShd_Target $nsGlobal::scenePath/artx/4/ iamoh\$count} -service {pixarNrm} -atmost 1 -tags {netrender} "
+		} else {
+			puts $file \
+"					RemoteCmd {y:/usr/local/bin/X_RENGRNDSHD.BAT $nsGlobal::scenePath/artx/rib/$nsWidgetVar::name.\[format \"%04d\" \$count\].rib $nsWidgetVar::renGrndShd_Light $nsWidgetVar::renGrndShd_Src $nsWidgetVar::renGrndShd_Target $nsGlobal::scenePath/artx/shadowmaps/ iamoh\$count} -service {pixarNrm} -atmost 1 -tags {netrender} "
+		}
+		puts $file \
+"				\} -chaser {
+					sho $nsGlobal::scenePath/artx/shadowmaps/iamoh\$count
+				} "
+	}			
+
+	puts $file \
+"			\} -cmds {
+			} ;# render process	
+		\} -cmds {
+		} ;# frame
+	\} ;# template
+\} ;# job subtask
+" ;# make script file 
+  close $file
+} ;# proc end
+
+wm resizable . 0 0
+
+#---------- basic option -----------#
+frame $nsWidget::frScene.frLeft 
+frame $nsWidget::frCmd.frLeft 
+frame $nsWidget::frName.frLeft 
+frame $nsWidget::frFrame.frLeft 
+frame $nsWidget::frCamName.frLeft 
+frame $nsWidget::frDspyResolution.frLeft 
+frame $nsWidget::frReuseFrameBuffer.frLeft
+frame $nsWidget::frRender.frLeft
+frame $nsWidget::frMakeRib.frLeft
+
+frame $nsWidget::frScene.frRight 
+frame $nsWidget::frCmd.frRight 
+frame $nsWidget::frName.frRight 
+frame $nsWidget::frFrame.frRight 
+frame $nsWidget::frCamName.frRight 
+frame $nsWidget::frDspyResolution.frRight 
+frame $nsWidget::frReuseFrameBuffer.frRight
+frame $nsWidget::frRender.frRight
+frame $nsWidget::frMakeRib.frRight
+
+#---------- advanced option ----------#
+frame $nsWidget::frShadingRate.frLeft 
+frame $nsWidget::frPixelSample.frLeft 
+frame $nsWidget::frMotionBlur.frLeft
+frame $nsWidget::frSubframeMotion.frLeft
+frame $nsWidget::frBlurCamera.frLeft 
+frame $nsWidget::frShadowBias.frLeft 
+frame $nsWidget::frRenderOnlyExcept.frLeft 
+frame $nsWidget::frCropWnd.frLeft 
+frame $nsWidget::frFileSave.frLeft
+frame $nsWidget::frRenGrndShd.frLeft
+frame $nsWidget::frRenGrndShd.frLeft.frLeft
+frame $nsWidget::frRenGrndShd.frLeft.frRight
+
+frame $nsWidget::frShadingRate.frRight 
+frame $nsWidget::frPixelSample.frRight 
+frame $nsWidget::frMotionBlur.frRight
+frame $nsWidget::frSubframeMotion.frRight
+frame $nsWidget::frBlurCamera.frRight
+frame $nsWidget::frShadowBias.frRight  -bg orange
+frame $nsWidget::frRenderOnlyExcept.frRight
+frame $nsWidget::frCropWnd.frRight
+frame $nsWidget::frFileSave.frRight
+frame $nsWidget::frRenGrndShd.frRight
+
+label $nsWidget::frMain.laTitle -font {"comic sans ms" 13 italic} -text "artX v.2.01" -bd 2
+
+# scene ------------------------
+image create photo fileOpen -file y:/usr/local/bin/image/open.gif
+label $nsWidget::frScene.frLeft.laScene -text "Scene File" -width 10 -anchor w 
+entry $nsWidget::frScene.frRight.enSceneName -width 35 -relief ridge -bg #f7f5f0 -textvariable nsWidgetVar::scene -fg $nsGlobal::entryColor
+button $nsWidget::frScene.frRight.buFindScene -image fileOpen -relief groov -command {set nsWidgetVar::scene [tk_getOpenFile -initialdir $nsGlobal::scenePath -filetypes $nsGlobal::mayaFile]; regexp {.+/} $nsWidgetVar::scene nsGlobal::scenePath}
+
+# cmd --------------------------
+label $nsWidget::frCmd.frLeft.laCmd -text "Cmd File" -width 10 -anchor w 
+entry $nsWidget::frCmd.frRight.enCmdName -width 35 -relief ridge -bg #f7f5f0 -textvariable nsWidgetVar::cmd -fg $nsGlobal::entryColor
+button $nsWidget::frCmd.frRight.buFindCmd -image fileOpen -relief groov -command {set nsWidgetVar::cmd [concat $nsWidgetVar::cmd [tk_getOpenFile -initialdir $nsGlobal::cmdPath -filetypes $nsGlobal::cmdFile]]; regexp {.+/} $nsWidgetVar::cmd nsGlobal::cmdPath}
+
+# base file name ---------------
+label $nsWidget::frName.frLeft.laName -text "Display Name" 
+entry $nsWidget::frName.frRight.enName -width 15 -relief ridge -bg #f7f5f0 -textvariable nsWidgetVar::name -fg $nsGlobal::entryColor
+
+# frame ------------------------
+label $nsWidget::frFrame.frLeft.laFrame -text "Frame Set" 
+entry $nsWidget::frFrame.frRight.enStartFrame -width 4 -relief ridge -bg #f7f5f0 -textvariable nsWidgetVar::startFrame -fg $nsGlobal::entryColor
+label $nsWidget::frFrame.frRight.laTilde -text "~" -width 2 
+entry $nsWidget::frFrame.frRight.enEndFrame -width 4 -relief ridge -bg #f7f5f0 -textvariable nsWidgetVar::endFrame -fg $nsGlobal::entryColor
+label $nsWidget::frFrame.frRight.laSlash -text "/" -width 2 
+entry $nsWidget::frFrame.frRight.enFrameInterval -width 4 -relief ridge -bg #f7f5f0 -textvariable nsWidgetVar::frameInterval -fg $nsGlobal::entryColor
+
+# camera name ------------------
+label $nsWidget::frCamName.frLeft.laCamName -text "Camera Name" 
+entry $nsWidget::frCamName.frRight.enCamName -width 15 -relief ridge -bg #f7f5f0 -textvariable nsWidgetVar::camName -fg $nsGlobal::entryColor
+
+# display resolution -----------
+label $nsWidget::frDspyResolution.frLeft.laDspyResolution -text "Display Resolution" 
+entry $nsWidget::frDspyResolution.frRight.enWidth -width 7 -relief ridge -bg #f7f5f0 -textvariable nsWidgetVar::dspyWidth -fg $nsGlobal::entryColor
+entry $nsWidget::frDspyResolution.frRight.enHeight -width 7 -relief ridge -bg #f7f5f0 -textvariable nsWidgetVar::dspyHeight -fg $nsGlobal::entryColor
+
+# render only | except
+radiobutton $nsWidget::frRenderOnlyExcept.frLeft.rbOnly -text "only" -value 0 -variable nsWidgetVar::onlyExceptRbVar
+radiobutton $nsWidget::frRenderOnlyExcept.frLeft.rbExcept -text "except" -value 1 -variable nsWidgetVar::onlyExceptRbVar
+entry $nsWidget::frRenderOnlyExcept.frRight.enRenderOnlyExcept  -font "Arial 10" -width 15 -relief ridge -bg #f7f5f0 -textvariable nsWidgetVar::onlyExceptObj -fg $nsGlobal::entryColor
+
+# reuse frame buffer -----------
+label $nsWidget::frReuseFrameBuffer.frLeft.laReuseFrameBuffer -text "Reuse Framebuffer"
+tk_optionMenu $nsWidget::frReuseFrameBuffer.frRight.omReuseFrameBuffer nsWidgetVar::reuseFrameBuffer "Always" "CropOnly" "Never"
+$nsWidget::frReuseFrameBuffer.frRight.omReuseFrameBuffer configure -font "helvetica 9 bold" -foreground $nsGlobal::cbFgColor
+
+# render -----------------------
+label $nsWidget::frRender.frLeft.laRender -text "Render"
+tk_optionMenu $nsWidget::frRender.frRight.omRender nsWidgetVar::render "render" "netrender"
+$nsWidget::frRender.frRight.omRender configure -font "helvetica 9 bold" -foreground $nsGlobal::cbFgColor
+
+# make rib ----------------------
+label $nsWidget::frMakeRib.frLeft.laMakeRib -text "Make Rib"
+checkbutton $nsWidget::frMakeRib.frRight.cbMakeRib -variable nsGlobal::doMtor -fg $nsGlobal::cbFgColor
+
+# render ground shadow ---------
+checkbutton $nsWidget::frRenGrndShd.frLeft.frRight.cbDo -variable nsWidgetVar::renGrndShd_Do -fg $nsGlobal::cbFgColor
+checkbutton $nsWidget::frRenGrndShd.frRight.cbRender -text "render" -variable nsWidgetVar::renGrndShd_Render -fg $nsGlobal::cbFgColor
+entry $nsWidget::frRenGrndShd.frRight.enSrc -width 8 -relief ridge -bg #f7f5f0 -textvariable nsWidgetVar::renGrndShd_Src
+entry $nsWidget::frRenGrndShd.frRight.enTarget -width 8 -relief ridge -bg #f7f5f0 -textvariable nsWidgetVar::renGrndShd_Target
+entry $nsWidget::frRenGrndShd.frRight.enLight -width 8 -relief ridge -bg #f7f5f0 -textvariable nsWidgetVar::renGrndShd_Light
+entry $nsWidget::frRenGrndShd.frRight.enId -width 8 -relief ridge -bg #f7f5f0 -textvariable nsWidgetVar::renGrndShd_Id
+label $nsWidget::frRenGrndShd.frRight.laOn -text "on" -fg $nsGlobal::cbFgColor
+label $nsWidget::frRenGrndShd.frRight.laBy -text "by" -fg $nsGlobal::cbFgColor
+label $nsWidget::frRenGrndShd.frRight.laId -text "ID" -fg $nsGlobal::cbFgColor
+label $nsWidget::frRenGrndShd.frLeft.frLeft.laRenGrndShd -text "renGrndShd"
+
+
+# motion blur ------------------
+label $nsWidget::frMotionBlur.frLeft.laMotionBlur -text "Motion Blur"
+checkbutton $nsWidget::frMotionBlur.frRight.cbMotionBlur -variable nsWidgetVar::motionBlur -fg $nsGlobal::cbFgColor
+
+# subframe motion
+label $nsWidget::frSubframeMotion.frLeft.laSubframeMotion -text "Subframe Blur"
+checkbutton $nsWidget::frSubframeMotion.frRight.cbSubframeMotion -variable nsWidgetVar::subframeMotion -fg $nsGlobal::cbFgColor
+
+# blur camara
+label $nsWidget::frBlurCamera.frLeft.laBlurCamera -text "Blur Camera"
+checkbutton $nsWidget::frBlurCamera.frRight.cbBlurCamera -variable nsWidgetVar::blurCamera -fg $nsGlobal::cbFgColor
+
+# shadow bias
+label $nsWidget::frShadowBias.frLeft.laShadowBias -text "Shadow Bias" 
+entry $nsWidget::frShadowBias.frRight.enShadowBias -width 7 -relief ridge -bg #f7f5f0 -textvariable nsWidgetVar::shadowBias -fg $nsGlobal::entryColor
+
+# crop window
+label $nsWidget::frCropWnd.frLeft.laCropWnd -text "Crop Window"
+checkbutton $nsWidget::frCropWnd.frRight.cbCropWnd -variable nsWidgetVar::cropWnd -fg $nsGlobal::cbFgColor
+
+# crop window option
+label $nsWidget::frCropWndOptionX.laXMinMax -text "X min,max"
+entry $nsWidget::frCropWndOptionX.enXMin -width 6 -relief ridge -textvariable nsWidgetVar::cropWndXMin -fg $nsGlobal::entryColor
+entry $nsWidget::frCropWndOptionX.enXMax -width 6 -relief ridge -textvariable nsWidgetVar::cropWndXMax -fg $nsGlobal::entryColor
+
+label $nsWidget::frCropWndOptionY.laYMinMax -text "Y min,max"
+entry $nsWidget::frCropWndOptionY.enYMin -width 6 -relief ridge -textvariable nsWidgetVar::cropWndYMin -fg $nsGlobal::entryColor
+entry $nsWidget::frCropWndOptionY.enYMax -width 6 -relief ridge -textvariable nsWidgetVar::cropWndYMax -fg $nsGlobal::entryColor
+
+# file save
+label $nsWidget::frFileSave.frLeft.laFileSave -text "File Save"
+checkbutton $nsWidget::frFileSave.frRight.cbFileSave -variable nsWidgetVar::fileSave -fg $nsGlobal::cbFgColor
+
+# shading rate -----------------
+label $nsWidget::frShadingRate.frLeft.laShadingRate -text "Shading rate" 
+entry $nsWidget::frShadingRate.frRight.enShadingRate -width 7 -relief ridge -bg #f7f5f0 -textvariable nsWidgetVar::shadingRate -fg $nsGlobal::entryColor
+
+# pixel sample -----------------
+label $nsWidget::frPixelSample.frLeft.laPixelSample -text "Pixel sample" 
+entry $nsWidget::frPixelSample.frRight.enFirst -width 7 -relief ridge -bg #f7f5f0  -textvariable nsWidgetVar::pixelSampleX -fg $nsGlobal::entryColor
+entry $nsWidget::frPixelSample.frRight.enSecond -width 7 -relief ridge -bg #f7f5f0 -textvariable nsWidgetVar::pixelSampleY -fg $nsGlobal::entryColor
+
+# cmd line ---------------------
+entry $nsWidget::frOption.enCmdLine -relief ridge -bg #f7f5f0 -textvariable nsWidgetVar::cmdLine -fg $nsGlobal::entryColor
+
+# buttons ----------------------
+menubutton $nsWidget::frButton.mbMsg -text "err msg"  -font "helvetica 10 bold" -direction above -menu $nsWidget::frButton.mbMsg.m -relief groov
+button $nsWidget::frButton.buMore -text "more..." -font "helvetica 10 bold" -width 7 -relief groov -command {ShowAdvancedOption} 
+button $nsWidget::frButton.buPreset -text "preset" -font "helvetica 10 bold" -width 7 -relief groov -command {SetVar default}
+button $nsWidget::frButton.buRender -text "render" -font "helvetica 10 bold" -width 7 -relief groov -command {Render}
+					
+menu $nsWidget::frButton.mbMsg.m	-tearoff 0 
+
+$nsWidget::frButton.mbMsg.m add command -label "mtor" -command {ShowErrMsg .wndErr mtor}
+$nsWidget::frButton.mbMsg.m add command -label "renGrndShd" -command {ShowErrMsg .wndErr renGrndShd}
+$nsWidget::frButton.mbMsg.m add command -label "r2r" -command {ShowErrMsg .wndErr r2r}
+$nsWidget::frButton.mbMsg.m add command -label "ribEdit" -command {ShowErrMsg .wndErr ribEdit}
+$nsWidget::frButton.mbMsg.m add command -label "prman" -command {ShowErrMsg .wndErr prman}
+
+#----------------------------------------------------#
+#-                     p a c k					    -#
+#----------------------------------------------------#
+
+# scene frame ------------------
+pack $nsWidget::frScene.frLeft.laScene -anchor w
+pack $nsWidget::frScene.frRight.buFindScene -side right
+pack $nsWidget::frScene.frRight.enSceneName -side right -padx 3
+pack $nsWidget::frScene.frLeft -side left
+pack $nsWidget::frScene.frRight -side left -expand 1 -anchor e
+pack $nsWidget::frScene -fill x 
+
+# cmd frame --------------------
+pack $nsWidget::frCmd.frLeft.laCmd -side left
+pack $nsWidget::frCmd.frRight.buFindCmd -side right
+pack $nsWidget::frCmd.frRight.enCmdName -side right -padx 3
+pack $nsWidget::frCmd.frLeft -side left
+pack $nsWidget::frCmd.frRight -side left -expand 1 -anchor e
+pack $nsWidget::frCmd -fill x
+
+# name frame -------------------
+pack $nsWidget::frName.frLeft.laName -side left
+pack $nsWidget::frName.frRight.enName -side right
+pack $nsWidget::frName.frLeft -side left
+pack $nsWidget::frName.frRight -side left -expand 1 -anchor e
+pack $nsWidget::frName -fill x -pady 3
+
+# frame set --------------------
+pack $nsWidget::frFrame.frLeft.laFrame -side left
+pack $nsWidget::frFrame.frRight.enFrameInterval -side right
+pack $nsWidget::frFrame.frRight.laSlash -side right
+pack $nsWidget::frFrame.frRight.enEndFrame -side right
+pack $nsWidget::frFrame.frRight.laTilde -side right
+pack $nsWidget::frFrame.frRight.enStartFrame -side right
+pack $nsWidget::frFrame.frLeft -side left
+pack $nsWidget::frFrame.frRight -side left -expand 1 -anchor e
+pack $nsWidget::frFrame -fill x -pady 3
+ 
+# camera name frame ------------
+pack $nsWidget::frCamName.frLeft.laCamName -side left
+pack $nsWidget::frCamName.frRight.enCamName -side right
+pack $nsWidget::frCamName.frLeft -side left
+pack $nsWidget::frCamName.frRight -side left -expand 1 -anchor e
+pack $nsWidget::frCamName -fill x -pady 3
+
+# display resolution -----------
+pack $nsWidget::frDspyResolution.frLeft.laDspyResolution -side left
+pack $nsWidget::frDspyResolution.frRight.enHeight -side right
+pack $nsWidget::frDspyResolution.frRight.enWidth -side right -padx 3
+pack $nsWidget::frDspyResolution.frLeft -side left
+pack $nsWidget::frDspyResolution.frRight -side left -expand 1 -anchor e
+pack $nsWidget::frDspyResolution -fill x -pady 3
+
+# render only | except
+pack $nsWidget::frRenderOnlyExcept.frLeft.rbOnly -side left
+pack $nsWidget::frRenderOnlyExcept.frLeft.rbExcept -side left
+pack $nsWidget::frRenderOnlyExcept.frLeft -side left
+pack $nsWidget::frRenderOnlyExcept.frRight.enRenderOnlyExcept
+pack $nsWidget::frRenderOnlyExcept.frRight -side left -expand 1 -anchor e
+pack $nsWidget::frRenderOnlyExcept -fill x -pady 3
+
+# reuse frame buffer -----------
+pack $nsWidget::frReuseFrameBuffer.frLeft.laReuseFrameBuffer
+pack $nsWidget::frReuseFrameBuffer.frRight.omReuseFrameBuffer
+pack $nsWidget::frReuseFrameBuffer.frLeft -side left
+pack $nsWidget::frReuseFrameBuffer.frRight -side left -expand 1 -anchor e
+pack $nsWidget::frReuseFrameBuffer -fill x
+
+# render -----------------------
+pack $nsWidget::frRender.frLeft.laRender 
+pack $nsWidget::frRender.frRight.omRender
+pack $nsWidget::frRender.frLeft -side left
+pack $nsWidget::frRender.frRight -side left -expand 1 -anchor e
+pack $nsWidget::frRender -fill x -pady 3
+
+# make rib ---------------------
+pack $nsWidget::frMakeRib.frLeft.laMakeRib
+pack $nsWidget::frMakeRib.frLeft -side left
+pack $nsWidget::frMakeRib.frRight.cbMakeRib
+pack $nsWidget::frMakeRib.frRight -side left -expand 1 -anchor e
+pack $nsWidget::frMakeRib -fill x -pady 1
+
+# render groung shadow ---------
+pack $nsWidget::frRenGrndShd.frLeft.frLeft.laRenGrndShd 
+pack $nsWidget::frRenGrndShd.frLeft.frRight.cbDo
+pack $nsWidget::frRenGrndShd.frLeft.frLeft -side left
+pack $nsWidget::frRenGrndShd.frLeft.frRight  -side left -expand 1 -anchor e
+
+pack $nsWidget::frRenGrndShd.frRight.enId -side right
+pack $nsWidget::frRenGrndShd.frRight.laId -side right
+pack $nsWidget::frRenGrndShd.frRight.enLight -side right
+pack $nsWidget::frRenGrndShd.frRight.laBy -side right
+pack $nsWidget::frRenGrndShd.frRight.enTarget -side right
+pack $nsWidget::frRenGrndShd.frRight.laOn -side right
+pack $nsWidget::frRenGrndShd.frRight.enSrc -side right
+pack $nsWidget::frRenGrndShd.frRight.cbRender -side right
+pack $nsWidget::frRenGrndShd.frLeft -fill x
+pack $nsWidget::frRenGrndShd.frRight -expand 1 -anchor e
+pack $nsWidget::frRenGrndShd -fill x -pady 3
+
+# shading rate -----------------
+pack $nsWidget::frShadingRate.frLeft.laShadingRate -side left
+pack $nsWidget::frShadingRate.frRight.enShadingRate -side right
+pack $nsWidget::frShadingRate.frLeft -side left
+pack $nsWidget::frShadingRate.frRight -side left -expand 1 -anchor e
+pack $nsWidget::frShadingRate -fill x -pady 3
+
+# pixel sample -----------------
+pack $nsWidget::frPixelSample.frLeft.laPixelSample -side left
+pack $nsWidget::frPixelSample.frRight.enSecond -side right
+pack $nsWidget::frPixelSample.frRight.enFirst -side right -padx 3
+pack $nsWidget::frPixelSample.frLeft -side left
+pack $nsWidget::frPixelSample.frRight -side left -expand 1 -anchor e
+pack $nsWidget::frPixelSample -fill x -pady 3
+
+# shadow bias
+pack $nsWidget::frShadowBias.frLeft.laShadowBias
+pack $nsWidget::frShadowBias.frLeft -side left
+pack $nsWidget::frShadowBias.frRight.enShadowBias 
+pack $nsWidget::frShadowBias.frRight -side left -expand 1 -anchor e
+pack $nsWidget::frShadowBias -fill x -pady 3
+
+# motion blur
+pack $nsWidget::frMotionBlur.frLeft.laMotionBlur
+pack $nsWidget::frMotionBlur.frLeft -side left
+pack $nsWidget::frMotionBlur.frRight.cbMotionBlur
+pack $nsWidget::frMotionBlur.frRight -side left -expand 1 -anchor e
+pack $nsWidget::frMotionBlur -fill x -pady 1
+
+# subframe motion
+pack $nsWidget::frSubframeMotion.frLeft.laSubframeMotion
+pack $nsWidget::frSubframeMotion.frLeft -side left
+pack $nsWidget::frSubframeMotion.frRight.cbSubframeMotion
+pack $nsWidget::frSubframeMotion.frRight -side left -expand 1 -anchor e
+pack $nsWidget::frSubframeMotion -fill x -pady 1
+
+# blur camera
+pack $nsWidget::frBlurCamera.frLeft.laBlurCamera
+pack $nsWidget::frBlurCamera.frLeft -side left
+pack $nsWidget::frBlurCamera.frRight.cbBlurCamera
+pack $nsWidget::frBlurCamera.frRight -side left -expand 1 -anchor e
+pack $nsWidget::frBlurCamera -fill x -pady 1
+
+# file save
+pack $nsWidget::frFileSave.frLeft.laFileSave
+pack $nsWidget::frFileSave.frLeft -side left
+pack $nsWidget::frFileSave.frRight.cbFileSave
+pack $nsWidget::frFileSave.frRight -side left -expand 1 -anchor e
+pack $nsWidget::frFileSave -fill x -pady 1
+
+# crop window
+pack $nsWidget::frCropWnd.frLeft.laCropWnd
+pack $nsWidget::frCropWnd.frLeft -side left
+pack $nsWidget::frCropWnd.frRight.cbCropWnd
+pack $nsWidget::frCropWnd.frRight -side left -expand 1 -anchor e
+pack $nsWidget::frCropWnd -fill x -pady 1
+
+# crop window option x
+pack $nsWidget::frCropWndOptionX.laXMinMax -side left -padx 2
+pack $nsWidget::frCropWndOptionX.enXMin -side left -padx 5
+pack $nsWidget::frCropWndOptionX.enXMax -side left 
+pack $nsWidget::frCropWndOptionX 
+
+# crop window option y
+pack $nsWidget::frCropWndOptionY.laYMinMax -side left -padx 2
+pack $nsWidget::frCropWndOptionY.enYMin -side left -padx 5
+pack $nsWidget::frCropWndOptionY.enYMax -side left 
+pack $nsWidget::frCropWndOptionY -pady 5
+
+# cmd line ---------------------
+#pack $nsWidget::frOption.enCmdLine -fill x -pady 2 -padx 3
+
+# buttons ----------------------
+pack $nsWidget::frButton.buRender -side right 
+pack $nsWidget::frButton.buMore -side right 
+pack $nsWidget::frButton.buPreset -side right 
+pack $nsWidget::frButton.mbMsg -side right -fill y
+
+pack $nsWidget::frMain.laTitle -anchor w 
+pack $nsWidget::frOption -pady 3 -padx 3 -fill x
+if $nsGlobal::showAdvancedOption { pack $nsWidget::frOptionMore -pady 2 -padx 3 -fill x }
+pack $nsWidget::frMain
+pack $nsWidget::frButton -fill x 
+
+#--------------------------------------------------------------------#
+#-                           m   a   i   n                          -#
+#--------------------------------------------------------------------#
+bind . <KeyPress-Escape> "SaveSetting ; destroy ."
+bind . <Return> {Render}
+bind . <Destroy> "SaveSetting"
+SetVar init

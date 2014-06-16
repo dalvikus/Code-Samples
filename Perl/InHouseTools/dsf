@@ -1,0 +1,312 @@
+#!/usr/local/tcltk-8.3.4/bin/wish83.exe
+image create photo fileOpen -file /usr/local/bin/image/open.gif
+package require BWidget
+option add *TitleFrame.l.font {helvetica 13 bold}
+#option add *background #005490
+#option add *foreground black
+#option add *background #ece9d5
+
+proc printf {msg} {
+	tk_dialog .dialog {message is ......} $msg {} 0 OK
+}
+
+namespace eval nsGlobal {
+	set show "cr"
+	set seq "bk"
+	set shot "bk3a"
+	set dept "td"
+	set layer "led"
+	set revision "r8"
+	set elem "ball"
+	set quality "tv"
+	set path ""
+	set shakeCmd ""
+	set doShakeCmd 0
+	set frames 1
+	set startFrame 1
+	set endFrame 0
+	set proxys 1
+	set doFrameSet 0
+	set fileExtenstion ""
+	set baseFileName ""
+}
+
+source ~/.dsf_ini
+
+proc SearchImg {} {
+	$::frList.frList.lbList delete 0 end
+	
+	
+	if {![file isdirectory $nsGlobal::path]} {
+		printf "cannot find such directory! \n check please!"
+		set nsGlobal::path ""
+	} else {
+		cd $nsGlobal::path
+		set count 0
+		foreach file [glob "*.$nsGlobal::quality.*"] {			
+			$::frList.frList.lbList insert end $file 
+			set count [expr $count+1]
+		}
+		
+		$::frList.frList.lbList selection set 0
+		set nsGlobal::frames "$count frs"
+		if {$count>0} {
+			regexp -- {[^.]+$} $file nsGlobal::fileExtension
+			regexp -- .*$nsGlobal::quality $file nsGlobal::baseFileName
+		} else {
+			set nsGlobal::fileExtenstion ""
+			set nsGlobal::baseFileName ""
+		}
+	}
+}
+
+proc SetWgInf {} {
+	set initDir "//Chunji/show/"
+	set temp ""
+	set go 1
+	
+	if {[string compare $nsGlobal::show ""]} {
+		set initDir [append initDir $nsGlobal::show/]
+	} else {
+		set go 0
+	}
+	
+	if {$go != 0 && [string compare $nsGlobal::seq ""]} {
+		set initDir [append initDir $nsGlobal::seq/]
+	} else {
+		set go 0
+	}
+	
+	if {$go != 0 && [string compare $nsGlobal::shot ""]} {
+		set initDir [append initDir $nsGlobal::shot/]
+	} else {
+		set go 0
+	}
+	
+	if {$go != 0 && [string compare $nsGlobal::dept ""]} {
+		set initDir [append initDir image/$nsGlobal::dept/]
+	} else {
+		set go 0
+	}
+	
+	if {$go != 0 && [string compare $nsGlobal::layer ""]} {
+		set initDir [append initDir $nsGlobal::layer/]
+	} else {
+		set go 0
+	}
+	
+	if {$go != 0 && [string compare $nsGlobal::revision ""]} {
+		set initDir [append initDir $nsGlobal::revision/]
+	} else {
+		set go 0
+	}
+	
+	if {$go != 0 && [string compare $nsGlobal::elem ""]} {
+		set initDir [append initDir renders/$nsGlobal::elem/]
+	} else {
+		set go 0
+	}
+	
+	if {$go != 0 && [string compare $nsGlobal::quality ""]} {
+		set initDir [append initDir $nsGlobal::quality/]
+	} else {
+		set go 0
+	}
+
+	set temp [tk_getOpenFile -initialdir $initDir];
+	if {[string compare $temp ""]} {
+		if {![regexp -- {//[cC]hunji/show/([a-z0-9_]+)/([a-z0-9_]+)/([a-z0-9_]+)/image/([a-z0-9_]+)/([a-z0-9_]+)/([a-z0-9_]+)/renders/([a-z0-9_]+)/([a-z0-9_]+)/*} $temp \
+			garbage nsGlobal::show nsGlobal::seq nsGlobal::shot nsGlobal::dept nsGlobal::layer nsGlobal::revision nsGlobal::elem nsGlobal::quality]} {
+			printf "invalid directory name \n please check!! -__-;"
+		} else {
+			set nsGlobal::path //Chunji/show/$nsGlobal::show/$nsGlobal::seq/$nsGlobal::shot/image/$nsGlobal::dept/$nsGlobal::layer/$nsGlobal::revision/renders/$nsGlobal::elem/$nsGlobal::quality/
+			SearchImg
+		}	
+	}
+}
+
+proc SaveSetting {} {
+	set file [open ~/.dsf_ini w]
+	
+	puts $file "set nsGlobal::show \"$nsGlobal::show\""
+	puts $file "set nsGlobal::seq \"$nsGlobal::seq\""
+	puts $file "set nsGlobal::shot \"$nsGlobal::shot\""
+	puts $file "set nsGlobal::dept \"$nsGlobal::dept\""
+	puts $file "set nsGlobal::layer \"$nsGlobal::layer\""
+	puts $file "set nsGlobal::revision \"$nsGlobal::revision\""
+	puts $file "set nsGlobal::elem \"$nsGlobal::elem\""
+	puts $file "set nsGlobal::quality \"$nsGlobal::quality\""
+	puts $file "set nsGlobal::path \"$nsGlobal::path\""
+}
+
+proc Display {} {
+	set firstImg ""
+	set finalImg ""
+	set singleFrame 0
+	
+	if {$nsGlobal::doShakeCmd == 0} {
+		if {$nsGlobal::doFrameSet == 1} {
+			if {![string compare $nsGlobal::startFrame ""]} {
+				printf "check frame setting... (--^)"
+			} else {
+				set firstImg [format %04d $nsGlobal::startFrame]
+				if {![string compare $nsGlobal::endFrame ""]} {
+					set singleFrame 1
+				} else {
+					set finalImg [format %04d $nsGlobal::endFrame]
+				}
+				
+				if {$singleFrame == 0} {
+					#printf "shake -t $firstImg-$finalImg $nsGlobal::baseFileName.@@@@.$nsGlobal::fileExtension -proxys $nsGlobal::proxys &"
+					
+					if [catch {exec shake -t $firstImg-$finalImg $nsGlobal::baseFileName.@@@@.$nsGlobal::fileExtension -proxys $nsGlobal::proxys &} msg] {
+						#printf $msg
+					}
+					
+				} else {
+					#printf "shake $nsGlobal::baseFileName.$firstImg.$nsGlobal::fileExtension -proxys $nsGlobal::proxys &"
+					if [catch {exec shake $nsGlobal::baseFileName.$firstImg.$nsGlobal::fileExtension -proxys $nsGlobal::proxys &} msg] {
+						#printf $msg
+					}
+				}
+			}
+		} else {
+			set selectionList [$::frList.frList.lbList curselection]
+			set firstImg [$::frList.frList.lbList get [lindex $selectionList 0]]
+			set finalImg [$::frList.frList.lbList get [lindex $selectionList end]]
+			regexp -- {[0-9]{4}} $firstImg firstImg
+			regexp -- {[0-9]{4}} $finalImg finalImg
+			if [catch {exec shake -t $firstImg-$finalImg $nsGlobal::baseFileName.@@@@.$nsGlobal::fileExtension -proxys $nsGlobal::proxys &} msg] {
+				#printf $msg
+			}
+		}
+			
+	} else {
+		set shakeCmdLine "exec shake $nsGlobal::shakeCmd -proxys $nsGlobal::proxys"
+		#printf $shakeCmdLine
+		if [catch {eval $shakeCmdLine} msg] {
+			printf $msg
+		}
+	}
+}
+
+set frMain [frame .frMain -relief ridge -bd 3]
+set frInput [frame $frMain.frInput]
+set frPath [frame $frMain.frPath -relief groov -bd 1]
+set frList [frame $frMain.frList]
+set frShakeCmd [frame $frMain.frShakeCmd]
+
+TitleFrame $frInput.tfShow -text "show"
+set tfShow [$frInput.tfShow getframe]
+entry $tfShow.enShow -width 5 -font "arial 12 bold" -textvariable nsGlobal::show 
+
+TitleFrame $frInput.tfSeq -text "seq"
+set tfSeq [$frInput.tfSeq getframe]
+entry $tfSeq.enSeq -width 5 -font "arial 12 bold" -textvariable nsGlobal::seq 
+
+TitleFrame $frInput.tfShot -text "shot"
+set tfShot [$frInput.tfShot getframe]
+entry $tfShot.enShot -width 5 -font "arial 12 bold" -textvariable nsGlobal::shot 
+
+TitleFrame $frInput.tfDept -text "dept"
+set tfDept [$frInput.tfDept getframe]
+entry $tfDept.enDept -width 5 -font "arial 12 bold" -textvariable nsGlobal::dept 
+
+TitleFrame $frInput.tfLayer -text "layer"
+set tfLayer [$frInput.tfLayer getframe]
+entry $tfLayer.enLayer -width 5 -font "arial 12 bold" -textvariable nsGlobal::layer 
+
+TitleFrame $frInput.tfRevision -text "rev"
+set tfRevision [$frInput.tfRevision getframe]
+entry $tfRevision.enRevision -width 5 -font "arial 12 bold" -textvariable nsGlobal::revision 
+
+TitleFrame $frInput.tfElem -text "elem"
+set tfElem [$frInput.tfElem getframe]
+entry $tfElem.enElem -width 5 -font "arial 12 bold" -textvariable nsGlobal::elem 
+
+TitleFrame $frInput.tfQuality -text "..."
+set tfQuality [$frInput.tfQuality getframe]
+entry $tfQuality.enQuality -width 5 -font "arial 12 bold" -textvariable nsGlobal::quality 
+
+button $frInput.buGo -text "Go" -font "arial 13 bold"  -command {set nsGlobal::path //Chunji/show/$nsGlobal::show/$nsGlobal::seq/$nsGlobal::shot/image/$nsGlobal::dept/$nsGlobal::layer/$nsGlobal::revision/renders/$nsGlobal::elem/$nsGlobal::quality/ ; SearchImg}  -background #005490 -fg white
+
+pack $tfShow.enShow  -pady 2
+pack $frInput.tfShow -side left -padx 2 
+pack $tfSeq.enSeq -pady 2
+pack $frInput.tfSeq -side left -padx 2 
+pack $tfShot.enShot -pady 2
+pack $frInput.tfShot -side left -padx 2 
+pack $tfDept.enDept -pady 2
+pack $frInput.tfDept -side left -padx 2 
+pack $tfLayer.enLayer -pady 2
+pack $frInput.tfLayer -side left -padx 2 
+pack $tfRevision.enRevision -pady 2
+pack $frInput.tfRevision -side left -padx 2 
+pack $tfElem.enElem -pady 2
+pack $frInput.tfElem -side left -padx 2 
+pack $tfQuality.enQuality -pady 2
+pack $frInput.tfQuality -side left -padx 2 
+pack $frInput.buGo -side left
+pack $frInput -padx 5 
+
+button $frPath.buPath -text "PATH" -font "arial 12 bold" -bg #005490 -fg white -bd 1 -command {SetWgInf}
+entry $frPath.enPath -font "arial 10 bold" -textvariable nsGlobal::path 
+Entry $frPath.laFrameNum -font "arial 12 bold" -textvariable nsGlobal::frames -width 6 -relief groov -editable 0 
+pack $frPath.buPath -side left -pady 3 -padx 5 
+pack $frPath.enPath -side left -pady 3 -padx 3 -fill x -expand yes 
+pack $frPath.laFrameNum -side left -padx 5 
+pack $frPath -fill both -pady 5 -padx 5 
+
+frame $frList.frList -relief sunken -bd 1
+listbox $frList.frList.lbList -font "arial 12 bold" -exportselection 1 -selectmode extended -yscroll "$frList.frList.scResultY set" -selectbackground #d3875f -fg black
+scrollbar $frList.frList.scResultY -command "$frList.frList.lbList yview" -background #005490
+
+
+frame $frList.frFrameSet
+checkbutton $frList.frFrameSet.cbDo -text "\[^___^\]" -variable nsGlobal::doFrameSet -font "arial 12 bold"
+entry $frList.frFrameSet.enStartFrame -font "arial 12 bold" -textvariable nsGlobal::startFrame -width 10 -relief ridge 
+entry $frList.frFrameSet.enEndFrame -font "arial 12 bold" -textvariable nsGlobal::endFrame -width 10 -relief ridge
+button $frList.frFrameSet.buSelectAll -text "select all" -font {"arial" 12 bold} -width 10 -bg #303030 -fg white -command {$::frList.frList.lbList selection set 0 end}
+TitleFrame $frList.frFrameSet.tfProxys -text "Proxys"
+set frFrameSet_tfProxys [$frList.frFrameSet.tfProxys getframe]
+radiobutton $frFrameSet_tfProxys.rbOneOne -text "1   "  -font "arial 10 bold" -value 1 -variable nsGlobal::proxys
+radiobutton $frFrameSet_tfProxys.rbOneTwo -text "2/3"  -font "arial 10 bold" -value .7 -variable nsGlobal::proxys
+radiobutton $frFrameSet_tfProxys.rbOneThree -text "1/2"  -font "arial 10 bold" -value .5 -variable nsGlobal::proxys
+radiobutton $frFrameSet_tfProxys.rbOneFour -text "1/4"  -font "arial 10 bold" -value .2 -variable nsGlobal::proxys
+
+
+pack $frFrameSet_tfProxys.rbOneOne  
+pack $frFrameSet_tfProxys.rbOneTwo 
+pack $frFrameSet_tfProxys.rbOneThree 
+pack $frFrameSet_tfProxys.rbOneFour  
+
+pack $frList.frFrameSet.cbDo -padx 5 
+pack $frList.frFrameSet.enStartFrame -padx 5 -pady 5 
+pack $frList.frFrameSet.enEndFrame -pady 5 -padx 5 
+pack $frList.frFrameSet.buSelectAll -pady 5 -padx 5 
+pack $frList.frFrameSet.tfProxys -padx 5 -pady 5 -fill both 
+
+bind $frList.frList.lbList <ButtonRelease> {if {$nsGlobal::doShakeCmd == 1} {set nsGlobal::shakeCmd [concat $nsGlobal::shakeCmd [$::frList.frList.lbList get [$::frList.frList.lbList curselection]]]}}
+
+pack $frList.frList.lbList -padx 3 -expand yes -fill both  -side left
+pack $frList.frList.scResultY -side left -fill y
+pack $frList.frList -expand yes -fill both -side left
+pack $frList.frFrameSet -fill both -side left -pady 5 
+pack $frList -expand yes -fill both -padx 5  
+
+TitleFrame $frShakeCmd.tfShakeCmd -text "Shake Command" -fg black -font "helvetica 14 bold italic"
+set tfShakeCmd [$frShakeCmd.tfShakeCmd getframe]
+entry $tfShakeCmd.enShakeCmd -font "arial 10 bold" -textvariable nsGlobal::shakeCmd
+button $tfShakeCmd.buFileOpen -image fileOpen -bd 1 -command {set nsGlobal::shakeCmd [concat $nsGlobal::shakeCmd [tk_getOpenFile -initialdir $nsGlobal::path]]}
+button $tfShakeCmd.buShakeCmd -font "arial 12 bold" -text "Display" -command Display -background #005490 -fg white
+checkbutton $tfShakeCmd.cbShakeCmd -font "arial 12 bold"  -text "Do" -variable nsGlobal::doShakeCmd -command {if {$nsGlobal::doShakeCmd == 1} {$::frList.frList.lbList configure -selectmode single} else {$frList.frList.lbList configure -selectmode extended}}
+pack $tfShakeCmd.cbShakeCmd -side left
+pack $tfShakeCmd.enShakeCmd -expand yes -fill x -side left -padx 2
+pack $tfShakeCmd.buFileOpen -side left -padx 1
+pack $tfShakeCmd.buShakeCmd -side left -padx 2
+pack $frShakeCmd.tfShakeCmd -expand yes -fill x -padx 5 
+pack $frShakeCmd -fill x 
+
+pack $frMain -expand yes -fill both -padx 5 -pady 5
+
+bind . <Destroy> {SaveSetting}

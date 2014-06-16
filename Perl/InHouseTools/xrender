@@ -1,0 +1,12 @@
+#!/bin/sh
+
+RIB=$1
+EDIT_ARGS=$2
+if [ "$EDIT_ARGS" != "" ]
+then
+	ribEdit $RIB > $RIB-
+	prman $RIB-
+	rm -f $RIB-
+else
+	prman -Progress $RIB
+fi

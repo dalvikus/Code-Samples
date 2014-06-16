@@ -1,0 +1,102 @@
+#!/bin/sh
+
+if [ "$#" != 6 ]
+then
+	cat <<USAGE
+Usage:
+	$0 RIB LIGHT SRC DEST IMAGE_DIR UNIQUE_ID
+
+	IMAGE_DIR: last '/' required!
+USAGE
+	exit 1
+fi
+
+DEBUG=0
+
+prog__TEE=tee
+prog__RENDER=prman
+prog__SPLIT_RIB=splitRib-1.03
+prog__R2R=r2r
+prog__RIB_EDIT=ribEdit
+
+RIB=$1
+MAIN=main
+LIGHT=$2
+SRC=$3
+DEST=$4
+
+if [ "$DOS_PWD" != "" ]
+then
+	m_PWD=`cygpath -u $DOS_PWD\\`
+else
+	m_PWD=`pwd`/
+fi
+#CMD=$5${LIGHT}_${SRC}_${DEST}.$6.dscmd
+#SHD=$5`basename $RIB`.${LIGHT}.shd.tex
+CMD=$5`basename $RIB`.$6.dscmd
+SHD=$5`basename $RIB`.$6.shd.tex
+SHADOW="Display \"$SHD\" \"shadow\" \"z\""
+if [ "$5" != "-" ]
+then
+	IMAGE="Display \"$5$6\" \"tiff\" \"rgba\""
+else
+	IMAGE="Display \"$5$6\" \"it\" \"rgba\""
+fi
+
+if [ "$DEBUG" -eq "1" ]
+then
+	cat <<EOT
+RIB	= "$RIB"
+MAIN	= "$MAIN"
+LIGTH	= "$LIGHT"
+SRC	= "$SRC"
+DEST	= "$DEST"
+CMD	= "$CMD"
+SHADOW	= "$SHADOW"
+IMAGE	= "$IMAGE"
+EOT
+fi
+
+#$prog__SPLIT_RIB $RIB $LIGHT:-:$SHADOW | $prog__TEE $LIGHT.shd.rib | $prog__RIB_EDIT - -e \* -r $SRC | $prog__TEE $LIGHT-.shd.rib | $prog__RENDER
+#$prog__SPLIT_RIB $RIB -:-: | $prog__TEE $MAIN.rib | $prog__RIB_EDIT - -e \* -r $DEST | $prog__TEE $MAIN-.rib | $prog__R2R - $CMD | $prog__TEE $MAIN--.rib | $prog__RENDER
+
+#	Display "F:/.../rmantex/shd/preview.fillShape.shd.0001.tex" "shadow" "z"
+#	Display "F:/.../rmanpix/preview.0001" "it" "rgb" "int merge" [1] "string dspyParams" ["dspyRender -context F:/CyGWin/home/ghkim/maya/projects/default/scenes/shadow.mb -time 1 -crop 0 1 0 1 -port 0 -workspace F:/CyGWin/home/ghkim/maya/projects/default/;"]
+#	Display "F:/.../rmanpix/file.0001.tif" "tiff" "rgba" "int merge" [1]
+#	Display "F:/.../rmanpix/mayaiff.0001" "mayaiff" "rgbaz" "int merge" [1]
+
+#$prog__SPLIT_RIB $RIB "$LIGHT:-:$SHADOW" | $prog__RIB_EDIT - -e \* -r $SRC | $prog__RENDER
+
+# In ALFRED job script, when using RemoteCmd we cannot use PIPE("|")
+# Without pipe("|")
+$prog__SPLIT_RIB $RIB "$LIGHT:-:$SHADOW" > $5$6.x
+if [ -s $5$6.x ]
+then
+	$prog__RIB_EDIT $5$6.x -e \* -r $SRC > $5$6.y
+	$prog__RENDER $5$6.y
+
+	#$prog__SPLIT_RIB $RIB "-:-:$IMAGE" | $prog__RIB_EDIT - -e \* -r $DEST | $prog__R2R - $CMD | prman
+	cat > $CMD <<EOT
+SHADER_PATH = "//WINDOWS2000S/share/shader/"
+SHADER_PATH = "//chunji/share/shader/ds/standardShaders/"
+
+========================================================================
+ObjectName	"$DEST"	"Surface"
+------------------------------------------------------------------------
+Surface "shadowMaterial" "string shadowmap" [ "$SHD" ]
+========================================================================
+EOT
+
+	$prog__SPLIT_RIB $RIB "-:-:$IMAGE" > $5$6.x
+	if [ -s $5$6.x ]
+	then
+		$prog__RIB_EDIT $5$6.x -e \* -r $DEST  > $5$6.y
+		$prog__R2R $5$6.y $CMD  > $5$6.x
+		prman $5$6.x
+	fi
+fi
+
+rm -f $5$6.x
+rm -f $5$6.y
+rm -f "$CMD"
+rm -f "$SHD"

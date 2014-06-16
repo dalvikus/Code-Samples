@@ -1,0 +1,497 @@
+#!/usr/local/tcltk-8.3.4/bin/wish83.exe
+
+package require BWidget
+image create photo findFolder -file /usr/local/bin/image/folder.gif
+#option add *background black
+#option add *foreground white
+proc printf {msg} {
+		tk_dialog .dialog {message is ......} $msg {} 0 OK}
+
+namespace eval nsGlobal {
+	set imgDir ""
+	set baseFileName ""
+	set dept ""
+	set loginName "oz"
+	set startFrame ""
+	set endFrame ""
+	set dailyDate [clock format [clock scan tomorrow] -format "%Y%m%d"]
+	set show ""
+	set shot ""
+	set mailTo ""
+	set timer "NOW"
+	set dailyNum ""
+	set shakeCmdLine ""
+	set frameRange ""
+	set imgFile ""
+	set shkFile ""
+	set shkFileDir ""
+	set shkFileType {{{shake script file} {.shk}}}
+	set doWhat "render only"
+	set crew ""
+	set netStartFrame ""
+	set netEndFrame ""
+}	
+
+namespace eval nsSlate {
+	set date "[clock format [clock scan tomorrow] -format "%a %b %d %H:%M %Y"]"
+	set creator ""
+	set mm ""
+	set anim ""
+	set fx ""
+	set td ""
+	set roto ""
+	set comp ""
+	set coord ""
+	set background ""
+	set cameraMove ""
+	set pixsSrate ""
+	set audio ""
+	set filmio ""
+	set cmd ""
+	set note ""	
+}
+
+namespace eval nsWg {	
+	set frMain [frame .frMain -bd 3 -relief ridge -width 430 -height 550]
+	set frTop [frame .frMain.frTop -relief groov -bd 2 ]
+	set nbInf [NoteBook .frMain.nbInf -width 420 -height 500  -activebackground #707070]
+	set pgImgInf [$nsWg::nbInf insert end pgImgInf]
+	set pgSlateInf [$nsWg::nbInf insert end pgSlateInf]
+	set pgNetRender [$nsWg::nbInf insert end pgNetRender]
+   	set buDo [button $nsWg::frMain.buDo -text "Push me!" -font "helvetica 14 bold" -command DoCompman  ]
+}
+
+source ~/compman_init
+
+#--------------------------------------------#
+#-				 run compman				-#
+#--------------------------------------------#
+proc DoCompman {} {
+	if {![file exists y:/home/$nsGlobal::loginName/comp]} {
+    	exec mkdir y:/home/$nsGlobal::loginName/comp
+    }
+    set file [open y:/home/$nsGlobal::loginName/comp/compman.[clock format [clock scan tomorrow] -format "%Y%m%d"].job w]
+    
+    #-------------------------------------------------------#
+    #-					   daily only					   -#
+    #-------------------------------------------------------#
+	
+	if {![string compare $nsGlobal::doWhat "daily only"]} {
+    
+    	set nsGlobal::frameRange [expr $nsGlobal::endFrame - $nsGlobal::startFrame + 2]
+    	#- make dps file    
+    	set dpsFileName "//dps1/daily/DPS/daily/$nsGlobal::show/$nsGlobal::dailyDate-$nsGlobal::dept-$nsGlobal::loginName-$nsGlobal::show.$nsGlobal::shot.$nsGlobal::dailyNum.dps"
+    	set dpsImgName "//dps1/daily/TIF/daily/$nsGlobal::show/$nsGlobal::dailyDate-$nsGlobal::dept-$nsGlobal::loginName-$nsGlobal::show.$nsGlobal::shot.$nsGlobal::dailyNum.dps/$nsGlobal::dailyDate-$nsGlobal::dept-$nsGlobal::loginName-$nsGlobal::show.$nsGlobal::shot.$nsGlobal::dailyNum"
+    	set dpsMediaUtility "//Chunji/share/DPS/DPSMediaUtility"
+    	set slateName "//dps1/daily/TIF/daily/$nsGlobal::show/$nsGlobal::dailyDate-$nsGlobal::dept-$nsGlobal::loginName-$nsGlobal::show.$nsGlobal::shot.$nsGlobal::dailyNum.dps/$nsGlobal::dailyDate-$nsGlobal::dept-$nsGlobal::loginName-$nsGlobal::show.$nsGlobal::shot.$nsGlobal::dailyNum[format %04d 0].TIF"
+    	#printf "$dpsMediaUtility -Batch -F$dpsFileName -D$nsGlobal::frameRange"
+        exec $dpsMediaUtility -Batch -F$dpsFileName -D$nsGlobal::frameRange
+        
+        puts $file \
+"##AlfredToDo 3.0
+
+Job -title {compMan... Make daily} -crews {$nsGlobal::crew} -init {
+} -subtasks {
+	Task {make slate} -subtasks {
+	} -cmds {
+		RemoteCmd {CMD /C SET NR_INCLUDE_PATH=//chunji/shakemacro/nreal/include& shake -digislate \"$nsGlobal::shot\" \"$nsGlobal::show\" \"$nsSlate::date\" \"$nsGlobal::loginName\" \"$nsGlobal::startFrame\" \"\" \"$nsSlate::mm\" \"$nsSlate::anim\" \"$nsSlate::fx\" \"$nsSlate::td\" \"$nsSlate::roto\" \"$nsSlate::comp\" \"$nsSlate::coord\" \"$nsSlate::background\" \"$nsSlate::cameraMove\" \"$nsSlate::pixsSrate\" \"$nsSlate::audio\" \"$nsSlate::cmd\" \"$nsSlate::note\" -setalpha 0 -fo $nsGlobal::imgDir/$nsGlobal::baseFileName.0000.new.tif} -service {shake} -atmost 1
+	} -cleanup {
+		Cmd {CMD /C CP $nsGlobal::imgDir/$nsGlobal::baseFileName.0000.new.tif $dpsImgName\[format %04d 0\].TIF} -tags {DPSCopy}
+	} -chaser {
+		sho $dpsImgName\[format %04d 0\].TIF
+	}
+
+	Task {make dps image file} -subtasks {
+		Iterate count -from 1 -to [expr $nsGlobal::endFrame-$nsGlobal::startFrame+1] -by 1 -template {
+		
+			Task {frame -\$count} -subtasks {			
+				Task {tab sign -\$count} -subtasks {
+				} -cmds {
+					RemoteCmd {shake $nsGlobal::imgDir/$nsGlobal::baseFileName.\[format %04d \[expr \$count+$nsGlobal::startFrame-1\]\].tif -addtext \"$nsGlobal::show$nsGlobal::shot.$nsGlobal::dailyNum $nsGlobal::loginName \$count\" \"arial\" 22 22 1 165 35 -setalpha 0 -fo $nsGlobal::imgDir/$nsGlobal::baseFileName.\[format %04d \[expr \$count+$nsGlobal::startFrame-1\]\].new.tif}  -service {shake} -atmost 1
+				}
+				Task {copy to dps} -subtasks {
+					Instance {tab sign -\$count}
+				} -cmds {
+					Cmd {CMD /C CP $nsGlobal::imgDir/$nsGlobal::baseFileName.\[format %04d \[expr \$count+$nsGlobal::startFrame-1\]\].new.tif $dpsImgName\[format %04d \$count\].TIF} -tags {DPSCopy}
+				} -chaser {
+					sho $dpsImgName\[format %04d \$count\].TIF
+				}
+			} -cmds {
+			}
+		}
+	} -cmds {
+	}
+}"
+	} elseif {![string compare $nsGlobal::doWhat "render only"]} {
+        puts $file \
+"##AlfredToDo 3.0
+
+Job -title {compMan... Render} -crews {$nsGlobal::crew} -init {
+} -subtasks {
+	Task {Render} -subtasks {
+		Iterate count -from $nsGlobal::netStartFrame -to $nsGlobal::netEndFrame -by 1 -template {
+			Task {Do shk script - \$count} -subtasks {			
+			} -cmds {
+				RemoteCmd {CMD /C SET NR_INCLUDE_PATH=//chunji/shakemacro/nreal/include& shake -exec $nsGlobal::shkFile -t \$count $nsGlobal::shakeCmdLine} -service {shake} -atmost 1
+			}
+		}
+	}
+}"	
+	} else {
+		set nsGlobal::frameRange [expr $nsGlobal::endFrame - $nsGlobal::startFrame + 2]
+    	#- make dps file    
+    	set dpsFileName "//dps1/daily/DPS/daily/$nsGlobal::show/$nsGlobal::dailyDate-$nsGlobal::dept-$nsGlobal::loginName-$nsGlobal::show.$nsGlobal::shot.$nsGlobal::dailyNum.dps"
+    	set dpsImgName "//dps1/daily/TIF/daily/$nsGlobal::show/$nsGlobal::dailyDate-$nsGlobal::dept-$nsGlobal::loginName-$nsGlobal::show.$nsGlobal::shot.$nsGlobal::dailyNum.dps/$nsGlobal::dailyDate-$nsGlobal::dept-$nsGlobal::loginName-$nsGlobal::show.$nsGlobal::shot.$nsGlobal::dailyNum"
+    	set dpsMediaUtility "//Chunji/share/DPS/DPSMediaUtility"
+    	set slateName "//dps1/daily/TIF/daily/$nsGlobal::show/$nsGlobal::dailyDate-$nsGlobal::dept-$nsGlobal::loginName-$nsGlobal::show.$nsGlobal::shot.$nsGlobal::dailyNum.dps/$nsGlobal::dailyDate-$nsGlobal::dept-$nsGlobal::loginName-$nsGlobal::show.$nsGlobal::shot.$nsGlobal::dailyNum[format %04d 0].TIF"
+    	#printf "$dpsMediaUtility -Batch -F$dpsFileName -D$nsGlobal::frameRange"
+        exec $dpsMediaUtility -Batch -F$dpsFileName -D$nsGlobal::frameRange
+        puts $file \
+"##AlfredToDo 3.0
+
+Job -title {compMan... Render} -crews {$nsGlobal::crew} -init {
+} -subtasks {
+	Task {make slate} -subtasks {
+	} -cmds {
+		RemoteCmd {CMD /C SET NR_INCLUDE_PATH=//chunji/shakemacro/nreal/include& shake -digislate \"$nsGlobal::shot\" \"$nsGlobal::show\" \"$nsSlate::date\" \"$nsGlobal::loginName\" \"$nsGlobal::startFrame\" \"\" \"$nsSlate::mm\" \"$nsSlate::anim\" \"$nsSlate::fx\" \"$nsSlate::td\" \"$nsSlate::roto\" \"$nsSlate::comp\" \"$nsSlate::coord\" \"$nsSlate::background\" \"$nsSlate::cameraMove\" \"$nsSlate::pixsSrate\" \"$nsSlate::audio\" \"$nsSlate::cmd\" \"$nsSlate::note\" -setalpha 0 -fo $nsGlobal::imgDir/$nsGlobal::baseFileName.0000.new.tif} -service {shake} -atmost 1
+	} -cleanup {
+		Cmd {CMD /C CP $nsGlobal::imgDir/$nsGlobal::baseFileName.0000.new.tif $dpsImgName\[format %04d 0\].TIF} -tags {DPSCopy}
+	} -chaser {
+		sho $dpsImgName\[format %04d 0\].TIF
+	}
+
+	Task {Render} -subtasks {
+		Iterate count -from $nsGlobal::netStartFrame -to $nsGlobal::netEndFrame -by 1 -template {
+			Task {Do shk script - \$count} -subtasks {			
+			} -cmds {
+				RemoteCmd {CMD /C SET NR_INCLUDE_PATH=//chunji/shakemacro/nreal/include& shake -exec $nsGlobal::shkFile -t \$count $nsGlobal::shakeCmdLine} -service {shake} -atmost 1
+			}
+		}
+	}
+	Task {make dps image file} -subtasks {
+		Instance {Render}
+		Iterate count -from 1 -to [expr $nsGlobal::endFrame-$nsGlobal::startFrame+1] -by 1 -template {
+		
+			Task {frame -\$count} -subtasks {			
+				Task {tab sign -\$count} -subtasks {
+				} -cmds {
+					RemoteCmd {shake $nsGlobal::imgDir/$nsGlobal::baseFileName.\[format %04d \[expr \$count+$nsGlobal::startFrame-1\]\].tif -addtext \"$nsGlobal::show$nsGlobal::shot.$nsGlobal::dailyNum $nsGlobal::loginName \$count\" \"arial\" 22 22 1 165 35 -setalpha 0 -fo $nsGlobal::imgDir/$nsGlobal::baseFileName.\[format %04d \[expr \$count+$nsGlobal::startFrame-1\]\].new.tif}  -service {shake} -atmost 1
+				}
+				Task {copy to dps} -subtasks {
+					Instance {tab sign -\$count}
+				} -cmds {
+					Cmd {CMD /C CP $nsGlobal::imgDir/$nsGlobal::baseFileName.\[format %04d \[expr \$count+$nsGlobal::startFrame-1\]\].new.tif $dpsImgName\[format %04d \$count\].TIF} -tags {DPSCopy}
+				} -chaser {
+					sho $dpsImgName\[format %04d \$count\].TIF
+				}
+			} -cmds {
+			}
+		}
+	} -cmds {
+	}
+}"	
+	
+	}
+	
+	close $file
+#	exec alfred y:/home/$nsGlobal::loginName/comp/compman.[clock format [clock scan tomorrow] -format "%Y%m%d"].job &
+}
+
+proc GetImgDir {} {
+	regexp {[^/]+$} $nsGlobal::imgFile nsGlobal::baseFileName
+	set imgNum ""
+	regexp -- {.[0-9]{4}} $nsGlobal::baseFileName imgNum
+	set nsGlobal::baseFileName [string replace $nsGlobal::baseFileName [string first $imgNum $nsGlobal::baseFileName] end ""]
+	set nsGlobal::imgDir [string replace $nsGlobal::imgFile [string first $nsGlobal::baseFileName $nsGlobal::imgFile] end ""]
+}
+
+proc SaveSetting {} {
+	set file [open compman_init w]
+	puts $file "set nsGlobal::imgDir \"$nsGlobal::imgDir\""
+	puts $file "set nsGlobal::baseFileName \"$nsGlobal::baseFileName\""
+	puts $file "set nsGlobal::dept \"$nsGlobal::dept\""
+	puts $file "set nsGlobal::loginName \"$nsGlobal::loginName\""
+	puts $file "set nsGlobal::show \"$nsGlobal::show\""
+	puts $file "set nsGlobal::shot \"$nsGlobal::shot\""
+	puts $file "set nsGlobal::mailTo \"$nsGlobal::mailTo\""
+}
+	
+#--------------------------------------------------------#
+# 					    interface 						-#
+#--------------------------------------------------------#
+wm resizable . 0 0
+
+$nsWg::nbInf configure -font "helvetica 14 bold" -bd 2
+$nsWg::nbInf itemconfigure pgImgInf -text "Image Inf"
+$nsWg::nbInf itemconfigure pgSlateInf -text "Slate Inf"
+$nsWg::nbInf itemconfigure pgNetRender -text "NetRender" 
+
+$nsWg::nbInf raise [$nsWg::nbInf page 0]
+
+$nsWg::nbInf see pgImgInf
+grid columnconfigure $nsWg::frTop 0 -weight 1
+grid columnconfigure $nsWg::frTop 1 -weight 1
+label $nsWg::frTop.laCompMan -text "CompMan..." -font {"comic sans ms" 15 bold italic} 
+tk_optionMenu $nsWg::frTop.omDoWhat nsGlobal::doWhat "render only" "daily only" "render & daily"
+$nsWg::frTop.omDoWhat configure -font {"comic sans ms" 11 bold}  -highlightcolor #707070 -activebackground #707070 -width 13
+grid $nsWg::frTop.laCompMan -row 0 -column 0 -padx 5 -pady 3 -sticky w
+grid $nsWg::frTop.omDoWhat -row 0 -column 1 -padx 5 -pady 3 -sticky e
+pack $nsWg::frTop -fill x -expand yes
+
+#---------------------------------------------#
+#			   slate information			 -#
+#---------------------------------------------#
+frame $nsWg::pgSlateInf.frSlateInf -relief sunken -bd 2 
+label $nsWg::pgSlateInf.frSlateInf.laDate -text "date" -font "arial 12 bold" 
+entry $nsWg::pgSlateInf.frSlateInf.enDate -width 20 -font "arial 12 bold" -textvariable nsSlate::date
+
+label $nsWg::pgSlateInf.frSlateInf.laMm -text "mm" -font "arial 12 bold" 
+entry $nsWg::pgSlateInf.frSlateInf.enMm -width 20 -font "arial 12 bold" -textvariable nsSlate::mm
+
+label $nsWg::pgSlateInf.frSlateInf.laAnim -text "anim" -font "arial 12 bold" 
+entry $nsWg::pgSlateInf.frSlateInf.enAnim -width 20 -font "arial 12 bold" -textvariable nsSlate::anim
+
+label $nsWg::pgSlateInf.frSlateInf.laFx -text "fx" -font "arial 12 bold" 
+entry $nsWg::pgSlateInf.frSlateInf.enFx -width 20 -font "arial 12 bold" -textvariable nsSlate::fx
+
+label $nsWg::pgSlateInf.frSlateInf.laTd -text "td" -font "arial 12 bold" 
+entry $nsWg::pgSlateInf.frSlateInf.enTd -width 20 -font "arial 12 bold" -textvariable nsSlate::td
+
+label $nsWg::pgSlateInf.frSlateInf.laRoto -text "roto" -font "arial 12 bold" 
+entry $nsWg::pgSlateInf.frSlateInf.enRoto -width 20 -font "arial 12 bold" -textvariable nsSlate::roto
+
+label $nsWg::pgSlateInf.frSlateInf.laComp -text "comp" -font "arial 12 bold" 
+entry $nsWg::pgSlateInf.frSlateInf.enComp -width 20 -font "arial 12 bold" -textvariable nsSlate::comp
+
+label $nsWg::pgSlateInf.frSlateInf.laCoord -text "coord" -font "arial 12 bold" 
+entry $nsWg::pgSlateInf.frSlateInf.enCoord -width 20 -font "arial 12 bold" -textvariable nsSlate::coord
+
+label $nsWg::pgSlateInf.frSlateInf.laBackground -text "background" -font "arial 12 bold" 
+entry $nsWg::pgSlateInf.frSlateInf.enBackground -width 20 -font "arial 12 bold" -textvariable nsSlate::background
+
+label $nsWg::pgSlateInf.frSlateInf.laCameraMove -text "camera move" -font "arial 12 bold" 
+entry $nsWg::pgSlateInf.frSlateInf.enCameraMove -width 20 -font "arial 12 bold" -textvariable nsSlate::cameraMove
+
+label $nsWg::pgSlateInf.frSlateInf.laPixsRate -text "pixel rate" -font "arial 12 bold" 
+entry $nsWg::pgSlateInf.frSlateInf.enPixsRate -width 20 -font "arial 12 bold" -textvariable nsSlate::pixsSRate
+
+label $nsWg::pgSlateInf.frSlateInf.laAudio -text "audio" -font "arial 12 bold" 
+entry $nsWg::pgSlateInf.frSlateInf.enAudio -width 20 -font "arial 12 bold" -textvariable nsSlate::audio
+
+label $nsWg::pgSlateInf.frSlateInf.laFilmio -text "filmIo" -font "arial 12 bold" 
+entry $nsWg::pgSlateInf.frSlateInf.enFilmio -width 20 -font "arial 12 bold" -textvariable nsSlate::filmIo
+
+label $nsWg::pgSlateInf.frSlateInf.laCmd -text "cmd" -font "arial 12 bold" 
+entry $nsWg::pgSlateInf.frSlateInf.enCmd -width 35 -font "arial 10 bold" -textvariable nsSlate::cmd
+
+label $nsWg::pgSlateInf.frSlateInf.laNote -text "notes" -font "arial 12 bold" 
+entry $nsWg::pgSlateInf.frSlateInf.enNote -width 35 -font "arial 10 bold" -textvariable nsSlate::note
+
+#---------------------------------------------#
+#			   image information			 -#
+#---------------------------------------------#
+frame $nsWg::pgImgInf.frImgInf -bd 2 -relief sunken 
+
+TitleFrame $nsWg::pgImgInf.frImgInf.tfImgDir -text "Image Directory" -font "helvetica 13 bold italic" 
+set pgImgInf_tfImgDir [$nsWg::pgImgInf.frImgInf.tfImgDir getframe]
+entry $pgImgInf_tfImgDir.enImgDir -width 48  -font "arial 10 bold" -textvariable nsGlobal::imgDir
+button $pgImgInf_tfImgDir.buFind -image findFolder -relief groov   -command {set nsGlobal::imgFile [tk_getOpenFile -title "select image directory" -initialdir $nsGlobal::imgDir]; GetImgDir}
+
+label $nsWg::pgImgInf.frImgInf.laCrew -text "Your crew" -font "arial 12 bold" 
+entry $nsWg::pgImgInf.frImgInf.enCrew -width 17 -font "arial 11 bold" -textvariable nsGlobal::crew
+
+label $nsWg::pgImgInf.frImgInf.laBaseFileName -text "Base file name" -font "arial 12 bold" 
+entry $nsWg::pgImgInf.frImgInf.enBaseFileName -width 17 -font "arial 11 bold" -textvariable nsGlobal::baseFileName
+
+label $nsWg::pgImgInf.frImgInf.laShow -text "Show" -font "arial 12 bold" 
+entry $nsWg::pgImgInf.frImgInf.enShow -width 15 -font "arial 12 bold" -textvariable nsGlobal::show
+
+label $nsWg::pgImgInf.frImgInf.laShot -text "Shot" -font "arial 12 bold" 
+entry $nsWg::pgImgInf.frImgInf.enShot -width 15 -font "arial 12 bold" -textvariable nsGlobal::shot
+
+label $nsWg::pgImgInf.frImgInf.laDept -text "Dept" -font "arial 12 bold" 
+entry $nsWg::pgImgInf.frImgInf.enDept -width 15 -font "arial 12 bold" -textvariable nsGlobal::dept
+
+label $nsWg::pgImgInf.frImgInf.laLoginName -text "Login name" -font "arial 12 bold" 
+entry $nsWg::pgImgInf.frImgInf.enLoginName -width 15 -font "arial 12 bold" -textvariable nsGlobal::loginName
+
+label $nsWg::pgImgInf.frImgInf.laDailyDate -text "Daily date" -font "arial 12 bold" 
+entry $nsWg::pgImgInf.frImgInf.enDailyDate -width 15 -font "arial 12 bold" -textvariable nsGlobal::dailyDate
+
+label $nsWg::pgImgInf.frImgInf.laDailyNum -text "Daily num" -font "arial 12 bold" 
+entry $nsWg::pgImgInf.frImgInf.enDailyNum -width 15 -font "arial 12 bold" -textvariable nsGlobal::dailyNum
+
+frame $nsWg::pgImgInf.frImgInf.frFrame 
+label $nsWg::pgImgInf.frImgInf.laFrame -text "Frame" -font "arial 12 bold" 
+entry $nsWg::pgImgInf.frImgInf.frFrame.enStartFrame -width 5 -font "arial 12 bold" -textvariable nsGlobal::startFrame
+entry $nsWg::pgImgInf.frImgInf.frFrame.enEndFrame -width 5 -font "arial 12 bold" -textvariable nsGlobal::endFrame
+label $nsWg::pgImgInf.frImgInf.frFrame.laTilde -text "~" -font "arial 15 bold"  
+
+label $nsWg::pgImgInf.frImgInf.laTimer -text "Timer" -font "arial 12 bold" 
+entry $nsWg::pgImgInf.frImgInf.enTimer -width 15 -font "arial 12 bold" -textvariable nsGlobal::timer
+
+label $nsWg::pgImgInf.frImgInf.laMailTo -text "Mail to" -font "arial 12 bold" 
+entry $nsWg::pgImgInf.frImgInf.enMailTo -width 15 -font "arial 12 bold" -textvariable nsGlobal::mailTo
+
+#-----------------------------------------------------#
+#-					  net render					 -#
+#-----------------------------------------------------#
+frame $nsWg::pgNetRender.frNetRender -bd 2 -relief sunken  
+
+TitleFrame $nsWg::pgNetRender.frNetRender.tfShkFile -text "Load shk file" -font "helvetica 13 bold italic"  
+set pgNetRender_tfShkFile [$nsWg::pgNetRender.frNetRender.tfShkFile getframe]
+entry $pgNetRender_tfShkFile.enShkFile -width 48  -font "arial 10 bold" -textvariable nsGlobal::shkFile
+button $pgNetRender_tfShkFile.buFind -image findFolder -relief groov  -command {set nsGlobal::shkFile [tk_getOpenFile -title "select shk directory" -filetypes $nsGlobal::shkFileType -initialdir $nsGlobal::shkFileDir]}
+
+TitleFrame $nsWg::pgNetRender.frNetRender.tfShakeOption -text "Option" -font "helvetica 13 bold italic" 
+set pgNetRender_tfShakeOption [$nsWg::pgNetRender.frNetRender.tfShakeOption getframe]
+frame $pgNetRender_tfShakeOption.frShakeOption -bd 2 -relief sunken 
+frame $pgNetRender_tfShakeOption.frShakeOption.frFrame 
+label $pgNetRender_tfShakeOption.frShakeOption.frFrame.laFrame -text "frame" -font "arial 12 bold" 
+entry $pgNetRender_tfShakeOption.frShakeOption.frFrame.enStartFrame -width 5 -font "arial 12 bold" -textvariable nsGlobal::netStartFrame
+entry $pgNetRender_tfShakeOption.frShakeOption.frFrame.enEndFrame -width 5 -font "arial 12 bold" -textvariable nsGlobal::netEndFrame
+label $pgNetRender_tfShakeOption.frShakeOption.frFrame.laTilde -text "~" -font "arial 12 bold" 
+
+grid columnconfigure $pgNetRender_tfShakeOption.frShakeOption.frFrame 1 -weight 1
+grid $pgNetRender_tfShakeOption.frShakeOption.frFrame.laFrame -row 0 -column 0 -padx 10 -pady 5 -sticky w
+grid $pgNetRender_tfShakeOption.frShakeOption.frFrame.enStartFrame -row 0 -column 2 -padx 10 -pady 5 -sticky e
+grid $pgNetRender_tfShakeOption.frShakeOption.frFrame.laTilde -row 0 -column 3 -pady 5 -sticky e
+grid $pgNetRender_tfShakeOption.frShakeOption.frFrame.enEndFrame -row 0 -column 4 -padx 10 -pady 5 -sticky e
+pack $pgNetRender_tfShakeOption.frShakeOption.frFrame -side top -fill x
+
+TitleFrame $nsWg::pgNetRender.frNetRender.tfShakeCmdLine -text "Shake cmd line" -font "helvetica 13 bold italic" 
+set pgNetRender_tfShakeCmdLine [$nsWg::pgNetRender.frNetRender.tfShakeCmdLine getframe]
+entry $pgNetRender_tfShakeCmdLine.enShakeCmdLine -font "arial 11 bold italic" -width 44 -textvariable nsGlobal::shakeCmdLine
+
+pack $pgNetRender_tfShkFile.enShkFile -side left -pady 5 -fill x -expand yes
+pack $pgNetRender_tfShkFile.buFind -side left -pady 5
+pack $nsWg::pgNetRender.frNetRender.tfShkFile -fill x -padx 5 -pady 5 -side top
+
+pack $pgNetRender_tfShakeOption.frShakeOption -padx 5 -pady 5 -fill both -expand yes
+pack $nsWg::pgNetRender.frNetRender.tfShakeOption -padx 5 -pady 5 -fill both -expand yes
+
+pack $pgNetRender_tfShakeCmdLine.enShakeCmdLine -fill x -expand yes -padx 5 -pady 5
+pack $nsWg::pgNetRender.frNetRender.tfShakeCmdLine -padx 5 -pady 5 -fill x -side bottom
+
+pack $nsWg::pgNetRender.frNetRender -fill both -expand yes
+
+
+#------------------------------------------------------#
+#					   p  a  c  k					  -#
+#------------------------------------------------------#
+#---------------------------------------------#
+#			   slate information			 -#
+#---------------------------------------------#
+grid columnconfigure $nsWg::pgSlateInf.frSlateInf 0 -weight 1
+grid columnconfigure $nsWg::pgSlateInf.frSlateInf 1 -weight 1
+
+grid $nsWg::pgSlateInf.frSlateInf.laDate -row 0 -column 0 -pady 3 -padx 5 -sticky w
+grid $nsWg::pgSlateInf.frSlateInf.enDate -row 0 -column 1 -pady 3 -padx 5 -sticky e
+
+grid $nsWg::pgSlateInf.frSlateInf.laMm -row 1 -column 0 -pady 3 -padx 5 -sticky w
+grid $nsWg::pgSlateInf.frSlateInf.enMm -row 1 -column 1 -pady 3 -padx 5 -sticky e
+
+grid $nsWg::pgSlateInf.frSlateInf.laAnim -row 2 -column 0 -pady 3 -padx 5 -sticky w
+grid $nsWg::pgSlateInf.frSlateInf.enAnim -row 2 -column 1 -pady 3 -padx 5 -sticky e
+
+grid $nsWg::pgSlateInf.frSlateInf.laFx -row 3 -column 0 -pady 3 -padx 5 -sticky w
+grid $nsWg::pgSlateInf.frSlateInf.enFx -row 3 -column 1 -pady 3 -padx 5 -sticky e
+
+grid $nsWg::pgSlateInf.frSlateInf.laTd -row 4 -column 0 -pady 3 -padx 5 -sticky w
+grid $nsWg::pgSlateInf.frSlateInf.enTd -row 4 -column 1 -pady 3 -padx 5 -sticky e
+
+grid $nsWg::pgSlateInf.frSlateInf.laRoto -row 5 -column 0 -pady 3 -padx 5 -sticky w
+grid $nsWg::pgSlateInf.frSlateInf.enRoto -row 5 -column 1 -pady 3 -padx 5 -sticky e
+
+grid $nsWg::pgSlateInf.frSlateInf.laComp -row 6 -column 0 -pady 3 -padx 5 -sticky w
+grid $nsWg::pgSlateInf.frSlateInf.enComp -row 6 -column 1 -pady 3 -padx 5 -sticky e
+
+grid $nsWg::pgSlateInf.frSlateInf.laCoord -row 7 -column 0 -pady 3 -padx 5 -sticky w
+grid $nsWg::pgSlateInf.frSlateInf.enCoord -row 7 -column 1 -pady 3 -padx 5 -sticky e
+
+grid $nsWg::pgSlateInf.frSlateInf.laBackground -row 8 -column 0 -pady 3 -padx 5 -sticky w
+grid $nsWg::pgSlateInf.frSlateInf.enBackground -row 8 -column 1 -pady 3 -padx 5 -sticky e
+
+grid $nsWg::pgSlateInf.frSlateInf.laCameraMove -row 9 -column 0 -pady 3 -padx 5 -sticky w
+grid $nsWg::pgSlateInf.frSlateInf.enCameraMove -row 9 -column 1 -pady 3 -padx 5 -sticky e
+
+grid $nsWg::pgSlateInf.frSlateInf.laPixsRate -row 10 -column 0 -pady 3 -padx 5 -sticky w
+grid $nsWg::pgSlateInf.frSlateInf.enPixsRate -row 10 -column 1 -pady 3 -padx 5 -sticky e
+
+grid $nsWg::pgSlateInf.frSlateInf.laAudio -row 11 -column 0 -pady 3 -padx 5 -sticky w
+grid $nsWg::pgSlateInf.frSlateInf.enAudio -row 11 -column 1 -pady 3 -padx 5 -sticky e
+
+grid $nsWg::pgSlateInf.frSlateInf.laFilmio -row 12 -column 0 -pady 3 -padx 5 -sticky w
+grid $nsWg::pgSlateInf.frSlateInf.enFilmio -row 12 -column 1 -pady 3 -padx 5 -sticky e
+
+grid $nsWg::pgSlateInf.frSlateInf.laCmd -row 13 -column 0 -pady 3 -padx 5 -sticky w
+grid $nsWg::pgSlateInf.frSlateInf.enCmd -row 13 -column 1 -pady 3 -padx 5 -sticky e
+
+grid $nsWg::pgSlateInf.frSlateInf.laNote -row 14 -column 0 -pady 3 -padx 5 -sticky w
+grid $nsWg::pgSlateInf.frSlateInf.enNote -row 14 -column 1 -pady 3 -padx 5 -sticky e
+
+pack $nsWg::pgSlateInf.frSlateInf -padx 2 -fill both -expand yes
+
+#---------------------------------------------#
+#			   image information			 -#
+#---------------------------------------------#
+grid columnconfigure $nsWg::pgSlateInf.frSlateInf 0 -weight 1
+grid columnconfigure $nsWg::pgSlateInf.frSlateInf 1 -weight 1
+grid columnconfigure $nsWg::pgSlateInf.frSlateInf 2 -weight 1
+
+grid rowconfigure $nsWg::pgSlateInf.frSlateInf 9 -weight 2
+
+pack $pgImgInf_tfImgDir.buFind -side right
+pack $pgImgInf_tfImgDir.enImgDir -side right -fill y
+grid $nsWg::pgImgInf.frImgInf.tfImgDir -row 0 -column 0 -columnspan 3 -pady 3 -padx 5
+
+grid $nsWg::pgImgInf.frImgInf.laCrew  -row 1 -column 0 -columnspan 2 -stick w -pady 5 -padx 5
+grid $nsWg::pgImgInf.frImgInf.enCrew  -row 1 -column 2 -stick e -pady 5 -padx 5
+
+grid $nsWg::pgImgInf.frImgInf.laBaseFileName  -row 2 -column 0 -columnspan 2 -stick w -pady 5 -padx 5
+grid $nsWg::pgImgInf.frImgInf.enBaseFileName  -row 2 -column 2 -stick e -pady 5 -padx 5
+
+grid $nsWg::pgImgInf.frImgInf.laShow  -row 3 -column 0 -stick w -pady 5 -padx 5
+grid $nsWg::pgImgInf.frImgInf.enShow  -row 3 -column 2 -stick e -pady 5 -padx 5
+
+grid $nsWg::pgImgInf.frImgInf.laShot  -row 4 -column 0 -stick w -pady 5 -padx 5
+grid $nsWg::pgImgInf.frImgInf.enShot  -row 4 -column 2 -stick e -pady 5 -padx 5
+
+grid $nsWg::pgImgInf.frImgInf.laDept  -row 5 -column 0 -stick w -pady 5 -padx 5
+grid $nsWg::pgImgInf.frImgInf.enDept  -row 5 -column 2 -stick e -pady 5 -padx 5
+
+grid $nsWg::pgImgInf.frImgInf.laLoginName  -row 6 -column 0 -stick w -pady 5 -padx 5
+grid $nsWg::pgImgInf.frImgInf.enLoginName  -row 6 -column 2 -stick e -pady 5 -padx 5
+
+grid $nsWg::pgImgInf.frImgInf.laDailyDate  -row 7 -column 0 -stick w -pady 5 -padx 5
+grid $nsWg::pgImgInf.frImgInf.enDailyDate  -row 7 -column 2 -stick e -pady 5 -padx 5
+
+grid $nsWg::pgImgInf.frImgInf.laDailyNum  -row 8 -column 0 -stick w -pady 5 -padx 5
+grid $nsWg::pgImgInf.frImgInf.enDailyNum  -row 8 -column 2 -stick e -pady 5 -padx 5
+
+pack $nsWg::pgImgInf.frImgInf.frFrame.enEndFrame -side right
+pack $nsWg::pgImgInf.frImgInf.frFrame.laTilde -side right -padx 5
+pack $nsWg::pgImgInf.frImgInf.frFrame.enStartFrame -anchor e -side right 
+
+grid $nsWg::pgImgInf.frImgInf.laFrame -row 9 -column 0 -stick w -pady 5 -padx 5 
+grid $nsWg::pgImgInf.frImgInf.frFrame -row 9 -column 2 -stick e -pady 5 -padx 5
+
+grid $nsWg::pgImgInf.frImgInf.laTimer  -row 10 -column 0 -stick w -pady 5 -padx 5
+grid $nsWg::pgImgInf.frImgInf.enTimer  -row 10 -column 2 -stick e -pady 5 -padx 5
+
+#grid $nsWg::pgImgInf.frImgInf.laMailTo  -row 11 -column 0 -stick w -pady 5 -padx 5
+#grid $nsWg::pgImgInf.frImgInf.enMailTo  -row 11 -column 2 -stick e -pady 5 -padx 5
+
+#pack $pgImgInf_tfShakeCmdLine.enShakeCmdLine -fill x -pady 5 -padx 3
+#grid $nsWg::pgImgInf.frImgInf.tfShakeCmdLine -row 10 -column 0 -columnspan 3 -pady 3 -padx 5
+
+pack $nsWg::pgImgInf.frImgInf -fill both -expand yes -padx 2
+
+pack $nsWg::nbInf -padx 5 -pady 5
+pack $nsWg::buDo -fill x -padx 5 -pady 1
+pack $nsWg::frMain
+
+#-----------------------------------------------------------#
+#-					  M    A    I    N					   -#
+#-----------------------------------------------------------#
+bind . <Destroy> "SaveSetting"

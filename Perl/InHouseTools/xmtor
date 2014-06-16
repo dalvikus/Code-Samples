@@ -1,0 +1,22 @@
+#!/bin/sh
+
+# $0 "" //chunji/show/fs/sd/sd1/image/prog/ghkim/r1/ sd1ghkim_r1 0051 {......}
+# $0 xxx.dscmd //chunji/show/fs/sd/sd1/image/prog/ghkim/r1/ sd1ghkim_r1 0051 {......}
+# xmtor //chunji/show/fs/sd/sd1/image/prog/ghkim/r1/cmds/polygon.dscmd //chunji/show/fs/sd/sd1/image/prog/ghkim/r1/ribs/ sd1ghkim_r1 0051 -scene //chunji/show/fs/sd/sd1/scene/prog/FS_sd1_prog_ghkim_maya/scenes/fsPROG-sd1ghkimanprogr1.mb -cmd workspace SetDir torRIBs "C:/TMP/ribs/" -cmd workspace SetDir torImgs "C:/TMP/renders/hero/tv/" -cmd workspace SetDir torShadows "C:/TMP/shadowmaps/" -cmd rg dspyName sd1ghkim_r1 -cmd rg dspyServer tiff -cmd rg dspyServerMode rgba -cmd genRib 51
+
+CMD_FILE=$1
+SERVER_PATH=$2
+BASENAME=$3
+FRAME=$4
+
+shift 4
+
+mtor_maya4 $@
+RIB_FILE=$BASENAME.$FRAME.rib
+if [ "$1" != "" ]
+then
+	TMP_RIB_FILE=$BASENAME-.$FRAME.rib
+	mv C:/TMP/ribs/$RIB_FILE C:/TMP/ribs/$TMP_RIB_FILE
+	Y:/bin/bash --login -c "r2r C:/TMP/ribs/$TMP_RIB_FILE $CMD_FILE > C:/TMP/ribs/$RIB_FILE"
+fi
+cp C:/TMP/ribs/$RIB_FILE $SERVER_PATH

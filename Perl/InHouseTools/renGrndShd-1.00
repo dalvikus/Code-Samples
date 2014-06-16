@@ -1,0 +1,60 @@
+#!/bin/sh
+
+if [ "$#" != 4 ]
+then
+	cat <<USAGE
+Usage:
+	$0 RIB LIGHT SRC DEST
+USAGE
+	exit 1
+USAGE
+fi
+
+DEBUG=0
+
+prog__TEE=tee
+prog__RENDER=prman
+prog__SPLIT_RIB=splitRib-1.02
+prog__R2R=r2r
+prog__RIB_EDIT=ribEdit
+
+RIB=$1
+MAIN=main
+LIGHT=$2
+SRC=$3
+DEST=$4
+
+CMD=`pwd`/${LIGHT}_${SRC}_${DEST}.dscmd
+SHD=`pwd`/${RIB}.${LIGHT}.shd.tex
+
+if [ "$DEBUG" -eq "1" ]
+then
+	cat <<EOT
+RIB	= "$RIB"
+MAIN	= "$MAIN"
+LIGTH	= "$LIGHT"
+SRC	= "$SRC"
+DEST	= "$DEST"
+CMD	= "$CMD"
+SHD	= "$SHD"
+EOT
+fi
+
+cat > $CMD <<EOT
+SHADER_PATH = "//chunji/share/shader/ds/standardShaders/"
+
+========================================================================
+ObjectName	"$DEST"	"Surface"
+------------------------------------------------------------------------
+Surface "shadowMaterial" "string shadowmap" [ "$SHD" ]
+========================================================================
+EOT
+
+
+#$prog__SPLIT_RIB $RIB $LIGHT:-:$SHD | $prog__TEE $LIGHT.shd.rib | $prog__RIB_EDIT - -e \* -r $SRC | $prog__TEE $LIGHT-.shd.rib | $prog__RENDER
+#$prog__SPLIT_RIB $RIB -:-: | $prog__TEE $MAIN.rib | $prog__RIB_EDIT - -e \* -r $DEST | $prog__TEE $MAIN-.rib | $prog__R2R - $CMD | $prog__TEE $MAIN--.rib | $prog__RENDER
+$prog__SPLIT_RIB $RIB $LIGHT:-:$SHD | $prog__RIB_EDIT - -e \* -r $SRC | $prog__RENDER
+$prog__SPLIT_RIB $RIB -:-: | $prog__RIB_EDIT - -e \* -r $DEST | $prog__R2R - $CMD | $prog__RENDER
+
+rm $CMD
+rm $SHD

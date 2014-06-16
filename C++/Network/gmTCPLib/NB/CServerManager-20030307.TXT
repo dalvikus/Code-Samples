@@ -1,0 +1,522 @@
+DWORD	WINAPI ThreadProc(LPVOID lpVoid);
+
+class CServerManager
+{
+	enum CServerManagerStatus {
+		CServerManagerStatusServerNotYet,
+		CServerManagerStatusServerRunning,
+		CServerManagerStatusServerPaused,
+	};
+
+	enum CServerManagerAction {
+		CServerManagerActionNone,
+		CServerManagerActionQuitThread,
+		CServerManagerActionPauseThread,
+		CServerManagerActionResumeThread
+	};
+
+private:
+	INT	m__state;
+	INT	m__action;
+
+private:
+	HANDLE	m__hThread;
+	HANDLE	m__hEventManagerToThread;
+	HANDLE	m__hEventThreadToManager;
+
+
+private:
+	VOID	mf__cleanUp(VOID);
+	INT	mf__pauseOrResumeServer(CServerManagerAction);
+
+public:
+	INT	mf__startServer(VOID);
+	INT	mf__quitServer(VOID);
+
+	INT	mf__pauseServer(VOID) {
+		mf__pauseOrResumeServer(CServerManagerActionPauseThread);
+	}
+	INT	mf__resumeServer(VOID) {
+		mf__pauseOrResumeServer(CServerManagerActionResumeThread);
+	}
+
+	INT	mf__runThread(VOID);
+};
+
+CServerManager::CServerManager(INT* lpStatus)
+{
+	m__state		= CServerManager::CServerManagerStatusNotYet;
+	m__action		= CServerManager::CServerManagerActionNone;
+	m__hThread		= NULL;
+	m__hEventManagerToThread	= NULL;
+	m__hEventThreadToManager	= NULL;
+
+	INT	iReturnVal = 0;
+
+	if ((m__hEventManagerToThread = CreateEvent(
+	)) == NULL) {
+		myPrintf(
+			TEXT("HANDLE CreateEvent(...m__hEventManagerToThread...) fails: ")
+			TEXT("DWORD GetLastError(VOID) = 0x%08X")
+			TEXT("\n")
+			,
+			GetLastError()
+		);
+		iReturnVal = -1;
+		goto END;
+	}
+	if ((m__hEventThreadToManager = CreateEvent(
+	)) == NULL) {
+		myPrintf(
+			TEXT("HANDLE CreateEvent(...m__hEventThreadToManager...) fails: ")
+			TEXT("DWORD GetLastError(VOID) = 0x%08X")
+			TEXT("\n")
+			,
+			GetLastError()
+		);
+		iReturnVal = -1;
+		goto END;
+	}
+
+	// ......
+
+END:
+	if (iReturnVal == -1)
+		mf__cleanUp();
+
+	if (lpStatus)
+		*lpStatus = iReturnVal;
+
+	return;
+}
+
+INT
+CServerManager::mf__startServer(VOID)
+{
+	......	// Start up!
+
+	// If (there is an error during start-up)
+	//	return -1;
+
+	m__hThread = CreateThread(
+		NULL,
+		0,
+		ThreadProcControlledByCServerManager,
+		this,
+		0,
+		NULL
+	);
+	if (!m__hThread) {
+		myPrintf(
+			TEXT("HANDLE CreateThread(...) fails: ")
+			TEXT("DWORD GetLastStatus(VOID) = 0x%08X")
+			TEXT("\n")
+			,
+			GetLastError()
+		);
+		return -1;
+	}
+	m__status = CServerManagerStatusRunning;
+}
+
+CServerManager::~CServerManager()
+{
+	if (m__status != CServerManagerStatusNotYet) {
+		if (mf__quitServer() == -1) {
+			myPrintf(
+				TEXT("INT CServerManager::mf__quitServer(VOID) fails!")
+				TEXT("\n")
+			);
+			exit(1);
+		}
+	}
+
+	mf__cleanUp();
+
+	return;
+}
+
+VOID
+CServerManager::mf__cleanUp(VOID)
+{
+	if (m__hEventManagerToThread) {
+		if (CloseHandle(m__hEventManagerToThread)) {
+			myPrintf(
+				TEXT("BOOL CloseHandle(m__hEventManagerToThread) fails: ")
+				TEXT("DWORD GetLastStatus(VOID) = 0x%08X")
+				TEXT("\n")
+				,
+				GetLastError()
+			);
+			exit(1);
+		}
+	}
+	if (m__hEventThreadToManager) {
+		if (CloseHandle(m__hEventThreadToManager)) {
+			myPrintf(
+				TEXT("BOOL CloseHandle(m__hEventThreadToManager) fails: ")
+				TEXT("DWORD GetLastStatus(VOID) = 0x%08X")
+				TEXT("\n")
+				,
+				GetLastError()
+			);
+			exit(1);
+		}
+	}
+	if (m__isCs4SyncActionDone) {
+		DeleteCriticalSection(&m__cs4SyncAction);
+		m__isCs4SyncActionDone = FALSE;
+	}
+}
+
+INT
+CServerManager::mf__quitServer(VOID)
+{
+	m__action = CServerManagerActionQuitThread;
+	if (!SetEvent(m__hEventManagerToThread)) {
+		myPrintf(
+			TEXT("BOOL SetEvent(m__hEventManagerToThread) fails: ")
+			TEXT("DWORD GetLastError(VOID) = %u")
+			TEXT("\n")
+			,
+			GetLastError()
+		);
+		exit(1);
+	}
+	if (WaitForSingleObject(m__hThread, INFINITE) != WAIT_OBJECT_0) {
+		myPrintf(
+			TEXT("DWORD WaitForSingleObject(...) fails: !WAIT_OBJECT_0: ")
+			TEXT("DWORD GetLastError(VOID) = 0x%08X")
+			TEXT("\n")
+			,
+			GetLastError()
+		);
+		exit(1);
+	}
+
+	DWORD	dwExitCodeThread;
+	if (!GetExitCodeThread(m__hThread, &dwExitCodeThread)) {
+		myPrintf(
+			TEXT("BOOL GetExitCodeThread(HANDLE, LPDWORD) fails: ")
+			TEXT("DWORD GetLastError(VOID) = 0x%08X")
+			TEXT("\n")
+			,
+			GetLastError()
+		);
+		exit(1);
+	}
+
+	......		// delete ...
+
+	return 0;
+}
+
+INT
+CServerManager::mf__pauseOrResumeServer(
+	CServerManagerAction	myCServerManagerActionXXXThread
+)
+{
+	m__action = myCServerManagerActionXXXThread;
+	if (!SetEvent(m__hEventManagerToThread)) {
+		myPrintf(
+			TEXT("BOOL SetEvent(m__hEventManagerToThread) fails: ")
+			TEXT("DWORD GetLastError(VOID) = %u")
+			TEXT("\n")
+			,
+			GetLastError()
+		);
+		exit(1);
+	}
+	if (WaitForSingleObject(m__hEventThreadToManager, INFINITE) != WAIT_OBJECT_0) {
+		myPrintf(
+			TEXT("DWORD WaitForSingleObject(m__hEventThreadToManager, INFINITE) fails: !WAIT_OBJECT_0: ")
+			TEXT("DWORD GetLastError(VOID) = 0x%08X")
+			TEXT("\n")
+			,
+			GetLastError()
+		);
+		exit(1);
+	}
+	m__state =
+		myCServerManagerActionXXXThread == CServerManagerActionPauseThread
+		? CServerManagerStatusPaused
+		: CServerManagerStatusRunning;
+
+	return 0;
+}
+INT
+CServerManager::mf__quitServer(VOID)
+{
+	m__action = CServerManagerActionQuitThread;
+	if (!SetEvent(m__hEventManagerToThread)) {
+		myPrintf(
+			TEXT("BOOL SetEvent(m__hEventManagerToThread) fails: ")
+			TEXT("DWORD GetLastError(VOID) = %u")
+			TEXT("\n")
+			,
+			GetLastError()
+		);
+		exit(1);
+	}
+	if (WaitForSingleObject(m__hThread, INFINITE) != WAIT_OBJECT_0) {
+		myPrintf(
+			TEXT("DWORD WaitForSingleObject(...) fails: !WAIT_OBJECT_0: ")
+			TEXT("DWORD GetLastError(VOID) = 0x%08X")
+			TEXT("\n")
+			,
+			GetLastError()
+		);
+		exit(1);
+	}
+
+	DWORD	dwExitCodeThread;
+	if (!GetExitCodeThread(m__hThread, &dwExitCodeThread)) {
+		myPrintf(
+			TEXT("BOOL GetExitCodeThread(HANDLE, LPDWORD) fails: ")
+			TEXT("DWORD GetLastError(VOID) = 0x%08X")
+			TEXT("\n")
+			,
+			GetLastError()
+		);
+		exit(1);
+	}
+
+	......		// delete ...
+
+	return 0;
+}
+
+DWORD
+WINAPI ThreadProcControlledByCServerManager(LPVOID lpVoid)
+{
+	return (DWORD) (((CServerManager *) lpVoid)->mf__runThread());
+}
+
+INT
+CServerManager::mf__runThread(VOID)
+{
+	DWORD	dwWaitResult;
+	DWORD	dwMilliSeconds4Wait = 0;
+	for (;;) {
+		dwWaitResult = WaitForSingleObject(m__hEventManagerToThread, dwMilliSeconds4Wait);
+
+////////////////////////////////////////////////////////////////////////
+		if (dwWaitResult == WAIT_FAILED) {
+			myPritnf(
+				TEXT("DWORD WaitForSingleObject(m__EventManagerToThread, %u) fails: ")
+				TEXT("DWORD GetLastError(VOID) = %u")
+				TEXT("\n")
+				,
+				dwMilliSeconds4Wait,
+				GetLastError()
+			);
+			ExitThread((DWORD) -2);
+		}
+
+		if (dwWaitResult == WAIT_OBJECT) {
+			myPrintf(
+				TEXT("CServerManagerThread: Got a signal: ")
+			);
+			if (m__action == CServerManagerActionQuitThread) {
+				myPrintf(
+					TEXT("CServerManagerActionQuitThread")
+					TEXT("\n")
+				);
+				// 정리할 일이 있다면 그것을 처리한 후에,
+				// 이 쓰레드를 종료한다.
+				ExitThread((DWORD) 0);
+			}
+
+			myPrintf(
+				TEXT("%s")
+				TEXT("\n")
+				,
+				m__action == CServerManagerActionPauseThread
+				? TEXT("CServerManagerActionPauseThread")
+				: TEXT("CServerManagerActionResumeThread")
+			);
+			dwMilliSeconeds4Wait = m__action == CServerManagerActionPauseThread ? INFINITE : 0;
+
+			// 이벤트 신호를 잘 받았고,
+			// 적절한 일을 마쳤음을 알린다.
+			if (!SetEvent(m__hEventThreadToManager)) {
+				myPrintf(
+				TEXT("BOOL SetEvent(m__hEventThreadToManager) fails: ")
+				TEXT("DWORD GetLastError(VOID) = %u")
+				TEXT("\n")
+				,
+				GetLastError()
+				);
+				exit(1);
+			}
+			continue;
+		}
+////////////////////////////////////////////////////////////////////////
+
+		ASSERT(dwWaitResult == WAIT_TIMEOUT);
+
+		.....
+
+		// If (there is an error during normal process)
+		//	ExitThread(ErrorCode);
+	}
+
+	// Unreachable!
+	return 0;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+INT
+CServerManager::StartServer(HINSTANCE hInstance)
+{
+	......
+
+	Create();	// ghkim: INT CServerManager::Create(VOID)
+
+	......
+	CServerMiddleManager::StartServer(hInstance);
+	return OK;
+}
+
+INT
+CServerManager::Create(VOID)
+{
+	......
+
+	CServerMiddleManager::Create(2000);
+	return OK;
+}
+
+INT
+CServerMiddleManager::Create(UINT nTcpPort)
+{
+	// TCP
+	......
+	return NET_OK;
+}
+
+////////
+
+INT
+CServerMiddleManager::StartServer(...)
+{
+	m_ServerMainThread = CreateThread(..., (LPTHREAD_THREAD_ROUTINE) run_server, ...);
+	return NET_OK;
+}
+
+DWORD	run_server(LPVOID)
+{
+	g__ServerMiddleManager->Run();	// ghkim: CServerManager::Run(VOID)
+	return NET_OK;
+}
+
+VOID
+CServerManager::Run(VOID)
+{
+	......
+
+	for (;;) {
+		if (m_Action == SERVER_ACTION_QUIT)
+			break;
+
+		.....
+	}
+
+	......
+
+	return;
+}
+
+
+1. 
+class CServerManager:
+	public CServerMiddleManager,
+	public Singleton <CServerManager>
+{
+	......
+};
+
+CServerManager::CServerManager():
+	CServerMiddleManager()
+
+2.
+class CServerMiddleManager
+{
+	......
+protected:
+	HANDLE	m_ServerMainThread;
+
+	......
+};
+
+
+////////
+
+
+int
+cmd_stop(int argc, char* argv[])
+{
+	return g_ServerManager->QuitServer();	// ghkim: CServerMiddleManager::QuitServer()
+}
+
+INT
+CServerMiddleManager::QuitServer(VOID)
+{
+	......
+
+	m_Action = SERVER_ACTION_QUIT;
+	WaitForSingleObject(m_ServerMainThread, INFINITE);
+
+	return NET_OK;
+}
+
+INT
+cmd_DestroyBroker(INT argc, LPCHAR argv[])
+{
+	......
+
+	delete g_ServerManager;
+}
+
+CServerManager::~CServerManager()
+{
+	if (m_State != SERVER_IDLE)
+		Destroy();
+}
+
+INT
+CServerManager::Destroy(VOID)
+{
+	if (CServerMiddleManager::Destroy() == NET_ERR)
+		return NET_ERR;
+
+	......
+}
+
+
+INT
+CServerMiddleManager::Destroy(VOID)
+{
+	if (m_State == SERVER_RUNNING || m_State == SERVER_STOPPED) {
+		QuitServer();
+		return NET_ERR;
+	}
+
+	......
+
+	return NET_OK;
+}
+

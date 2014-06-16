@@ -1,0 +1,8 @@
+2005/03/06 - 1.9.3
+----------------
+
+1. Project Settings -> C/C++ -> Code Generation -> Use run-time library
+에서 Multithread DLL을 사용하도록 했다.
+
+2. 두 군데(gmPseudoTCP, gmTCPServer.cpp)에서 _DEBUG가 정의되었을 때에만,
+메시지를 출력하도록 했다.

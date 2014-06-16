@@ -1,0 +1,6 @@
+2005/04/08 - 1.c.2$
+----------------
+
+1. 각 연결(gmPseudoTCP)마다 독립적인 Context핸들을 사용하므로,
+EncryptMessage, DecryptMessage를 호출할 때, Lock을 걸 필요가 없다.(?)
+

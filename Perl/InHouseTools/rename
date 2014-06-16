@@ -1,0 +1,13 @@
+#!/usr/local/tcltk-8.3.4/bin/tclsh83.exe
+
+set sourceStr [lindex $argv 0]
+set destStr [lindex $argv 1]
+set destFile ""
+
+foreach file [glob *] {
+	if {[regexp ".*$sourceStr.*" $file]} {
+		set destFile [string map "$sourceStr $destStr" $file]
+		exec mv $file $destFile
+	}
+}
+

@@ -1,0 +1,581 @@
+##RenderMan RIB-Structure 1.1
+##Creator mtor 6.5.3, RAT 6.5.3 (May 15 2006 06:47:38)
+##For icentrik
+##CreationDate Sun Jun 10 20:58:05 2007
+
+version 3.04
+Declare "resource" "string"
+Declare "dirmap" "string"
+Declare "minmax" "int"
+Declare "serverresource" "string"
+Option "searchpath" "resource" ["/home/icentrik/maya/:/opt/pixar/rat-6.5.3-maya7.0/lib/shaders:/opt/pixar/rat-6.5.3-maya7.0/lib:/opt/pixar/RenderManProServer-13.0.4/lib/shaders:/opt/pixar/RenderManProServer-13.0.4/lib:.:@"]
+Option "statistics" "endofframe" [0]
+FrameBegin 1
+Option "user" "int RATFilterLightSource" [1]
+Attribute "dice" "string strategy" ["planarprojection"]
+Attribute "dice" "string referencecamera" ["worldcamera"]
+Attribute "dice" "int rasterorient" [1]
+Option "user" "float tracebreadthfactor" [0] "float tracedepthfactor" [0]
+Hider "hidden" "int jitter" [0] "string depthfilter" ["min"] "float[2] shutteropening" [0 1]
+Option "limits" "zthreshold" [0.5 0.5 0.5]
+PixelSamples 1 1
+PixelFilter "box" 2 2
+#Shutter 1 1
+Shutter 0.0416667 0.0416667
+DisplayChannel "color Ci" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "color Cs" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "color Oi" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "color Os" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "color _Ci" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "color _Oi" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "color _albedo" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "color _ambient" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "color _backscattering" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "color _color" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "color _diffuse" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "color _diffusemeanfreepath" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "color _incandescence" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "color _indirect" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "color _indirectdiffuse" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "color _radiance_t" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "color _reflection" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "color _refraction" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "color _rim" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "color _shadow" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "color _specular" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "color _subsurfacescattering" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "color _surfacecolor" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "color _thintranslucence" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "float __CPUtime" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "float _area" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "float _float" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "float _occlusion" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "float du" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "float dv" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "float s" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "float t" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "float u" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "float v" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "normal N" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "normal Ng" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "point P" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "vector E" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "vector _environmentdir" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "vector dPdtime" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "vector dPdu" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "vector dPdv" "int[4] quantize" [0 0 0 0] "float dither" [0]
+Format 512 512 1
+Display "/home/icentrik/maya/rmantex/shd/RenderStats.spotLightShape1.shd.0001.tex" "shadow" "z" 
+Clipping 0.001 10000
+Projection "perspective" "fov" [40]
+ScreenWindow -1 1 -1 1
+ConcatTransform [0.898794 0.356775 0.254718 0 8.4917e-09 0.581055 -0.813864 0 0.438371 -0.731496 -0.522249 0 0.121113 -0.487399 8.38703 1]
+WorldBegin 
+	TransformBegin 
+		Rotate 90 0 1 0
+		CoordinateSystem "_XTOZ"
+	TransformEnd 
+	TransformBegin 
+		Rotate -90 1 0 0
+		CoordinateSystem "_YTOZ"
+	TransformEnd 
+	TransformBegin 
+		Scale -1 1 1
+		CoordinateSystem "_world_lefthanded"
+	TransformEnd 
+	TransformBegin 
+		CoordSysTransform "_YTOZ"
+		CoordinateSystem "worldspace"
+		CoordinateSystem "_environment"
+	TransformEnd 
+	ReverseOrientation 
+	ShadingRate 1
+	ShadingInterpolation "constant"
+	Surface "null" 
+	AttributeBegin 
+		ResourceBegin 
+		Attribute "identifier" "name" ["|nurbsSphere1|nurbsSphereShape1"]
+		ConcatTransform [1 0 0 0 0 1 0 0 0 0 1 0 0 1.35132 0.809403 1]
+		ShadingInterpolation "smooth"
+		IfBegin "!defined(RATFilterLightSource)"
+		IfEnd 
+		NuPatch 11 4 [-0.25 -0.25 -0.125
+		0 0.125 0.25 0.375 0.5 0.625 0.75 0.875 1 1.125 1.25 1.25] 0 1 7 4 [0 0 0 0 0.25 0.5 0.75 1 1 1 1] 0 1 "Pw" [9.59616e-17 -1 -2.53153e-16 1 9.59616e-17 -1 -2.53153e-16 1
+		9.59616e-17 -1 -2.53153e-16 1 9.59616e-17 -1 -2.53153e-16 1 9.59616e-17 -1 -2.53153e-16 1
+		9.59616e-17 -1 -2.53153e-16 1 9.59616e-17 -1 -2.53153e-16 1 9.59616e-17 -1 -2.53153e-16 1
+		9.59616e-17 -1 -2.53153e-16 1 9.59616e-17 -1 -2.53153e-16 1 9.59616e-17 -1 -2.53153e-16 1
+		0.199917 -1 -0.199917 1 0.282725 -1 -5.51255e-17 1 0.199917 -1 0.199917 1
+		8.074e-17 -1 0.282725 1 -0.199917 -1 0.199917 1 -0.282725 -1 9.82081e-17 1
+		-0.199917 -1 -0.199917 1 -1.89918e-16 -1 -0.282725 1 0.199917 -1 -0.199917 1
+		0.282725 -1 -5.51255e-17 1 0.199917 -1 0.199917 1 0.61643 -0.783612 -0.61643 1
+		0.871764 -0.783612 1.26897e-16 1 0.61643 -0.783612 0.61643 1 9.2902e-17 -0.783612 0.871764 1
+		-0.61643 -0.783612 0.61643 1 -0.871764 -0.783612 2.87582e-16 1 -0.61643 -0.783612 -0.61643 1
+		-4.29544e-16 -0.783612 -0.871764 1 0.61643 -0.783612 -0.61643 1 0.871764 -0.783612 1.26897e-16 1
+		0.61643 -0.783612 0.61643 1 0.867202 1.50311e-16 -0.867202 1 1.22641 9.72116e-17 3.20824e-16 1
+		0.867202 4.41125e-17 0.867202 1 5.58926e-17 2.21182e-17 1.22641 1 -0.867202 4.41125e-17 0.867202 1
+		-1.22641 9.72116e-17 3.97272e-16 1 -0.867202 1.50311e-16 -0.867202 1 -5.29485e-16 1.72305e-16 -1.22641 1
+		0.867202 1.50311e-16 -0.867202 1 1.22641 9.72116e-17 3.20824e-16 1 0.867202 4.41125e-17 0.867202 1
+		0.61643 0.783612 -0.61643 1 0.871764 0.783612 3.29203e-16 1 0.61643 0.783612 0.61643 1
+		-1.34421e-17 0.783612 0.871764 1 -0.61643 0.783612 0.61643 1 -0.871764 0.783612 2.772e-16 1
+		-0.61643 0.783612 -0.61643 1 -3.232e-16 0.783612 -0.871764 1 0.61643 0.783612 -0.61643 1
+		0.871764 0.783612 3.29203e-16 1 0.61643 0.783612 0.61643 1 0.199917 1 -0.199917 1
+		0.282725 1 2.03045e-16 1 0.199917 1 0.199917 1 -5.49701e-17 1 0.282725 1
+		-0.199917 1 0.199917 1 -0.282725 1 8.49586e-17 1 -0.199917 1 -0.199917 1
+		-5.42075e-17 1 -0.282725 1 0.199917 1 -0.199917 1 0.282725 1 2.03045e-16 1
+		0.199917 1 0.199917 1 1.23042e-16 1 3.41495e-17 1 1.23042e-16 1 3.41495e-17 1
+		1.23042e-16 1 3.41495e-17 1 1.23042e-16 1 3.41495e-17 1 1.23042e-16 1 3.41495e-17 1
+		1.23042e-16 1 3.41495e-17 1 1.23042e-16 1 3.41495e-17 1 1.23042e-16 1 3.41495e-17 1
+		1.23042e-16 1 3.41495e-17 1 1.23042e-16 1 3.41495e-17 1 1.23042e-16 1 3.41495e-17 1]
+		ResourceEnd 
+	AttributeEnd 
+	AttributeBegin 
+		ResourceBegin 
+		Attribute "identifier" "name" ["|nurbsSphere2|nurbsSphereShape2"]
+		ConcatTransform [1 0 0 0 0 1 0 0 0 0 1 0 0 1.35132 -1.10605 1]
+		ShadingInterpolation "smooth"
+		Attribute "grouping" "string membership" ["+RManTraceSet"]
+		IfBegin "!defined(RATFilterLightSource)"
+		IfEnd 
+		IfBegin "!defined(RATFilterSurface)"
+		IfEnd 
+		NuPatch 11 4 [-0.25 -0.25 -0.125
+		0 0.125 0.25 0.375 0.5 0.625 0.75 0.875 1 1.125 1.25 1.25] 0 1 7 4 [0 0 0 0 0.25 0.5 0.75 1 1 1 1] 0 1 "Pw" [9.59616e-17 -1 -2.53153e-16 1 9.59616e-17 -1 -2.53153e-16 1
+		9.59616e-17 -1 -2.53153e-16 1 9.59616e-17 -1 -2.53153e-16 1 9.59616e-17 -1 -2.53153e-16 1
+		9.59616e-17 -1 -2.53153e-16 1 9.59616e-17 -1 -2.53153e-16 1 9.59616e-17 -1 -2.53153e-16 1
+		9.59616e-17 -1 -2.53153e-16 1 9.59616e-17 -1 -2.53153e-16 1 9.59616e-17 -1 -2.53153e-16 1
+		0.199917 -1 -0.199917 1 0.282725 -1 -5.51255e-17 1 0.199917 -1 0.199917 1
+		8.074e-17 -1 0.282725 1 -0.199917 -1 0.199917 1 -0.282725 -1 9.82081e-17 1
+		-0.199917 -1 -0.199917 1 -1.89918e-16 -1 -0.282725 1 0.199917 -1 -0.199917 1
+		0.282725 -1 -5.51255e-17 1 0.199917 -1 0.199917 1 0.61643 -0.783612 -0.61643 1
+		0.871764 -0.783612 1.26897e-16 1 0.61643 -0.783612 0.61643 1 9.2902e-17 -0.783612 0.871764 1
+		-0.61643 -0.783612 0.61643 1 -0.871764 -0.783612 2.87582e-16 1 -0.61643 -0.783612 -0.61643 1
+		-4.29544e-16 -0.783612 -0.871764 1 0.61643 -0.783612 -0.61643 1 0.871764 -0.783612 1.26897e-16 1
+		0.61643 -0.783612 0.61643 1 0.867202 1.50311e-16 -0.867202 1 1.22641 9.72116e-17 3.20824e-16 1
+		0.867202 4.41125e-17 0.867202 1 5.58926e-17 2.21182e-17 1.22641 1 -0.867202 4.41125e-17 0.867202 1
+		-1.22641 9.72116e-17 3.97272e-16 1 -0.867202 1.50311e-16 -0.867202 1 -5.29485e-16 1.72305e-16 -1.22641 1
+		0.867202 1.50311e-16 -0.867202 1 1.22641 9.72116e-17 3.20824e-16 1 0.867202 4.41125e-17 0.867202 1
+		0.61643 0.783612 -0.61643 1 0.871764 0.783612 3.29203e-16 1 0.61643 0.783612 0.61643 1
+		-1.34421e-17 0.783612 0.871764 1 -0.61643 0.783612 0.61643 1 -0.871764 0.783612 2.772e-16 1
+		-0.61643 0.783612 -0.61643 1 -3.232e-16 0.783612 -0.871764 1 0.61643 0.783612 -0.61643 1
+		0.871764 0.783612 3.29203e-16 1 0.61643 0.783612 0.61643 1 0.199917 1 -0.199917 1
+		0.282725 1 2.03045e-16 1 0.199917 1 0.199917 1 -5.49701e-17 1 0.282725 1
+		-0.199917 1 0.199917 1 -0.282725 1 8.49586e-17 1 -0.199917 1 -0.199917 1
+		-5.42075e-17 1 -0.282725 1 0.199917 1 -0.199917 1 0.282725 1 2.03045e-16 1
+		0.199917 1 0.199917 1 1.23042e-16 1 3.41495e-17 1 1.23042e-16 1 3.41495e-17 1
+		1.23042e-16 1 3.41495e-17 1 1.23042e-16 1 3.41495e-17 1 1.23042e-16 1 3.41495e-17 1
+		1.23042e-16 1 3.41495e-17 1 1.23042e-16 1 3.41495e-17 1 1.23042e-16 1 3.41495e-17 1
+		1.23042e-16 1 3.41495e-17 1 1.23042e-16 1 3.41495e-17 1 1.23042e-16 1 3.41495e-17 1]
+		ResourceEnd 
+	AttributeEnd 
+	AttributeBegin 
+		ResourceBegin 
+		Attribute "identifier" "name" ["|nurbsPlane1|nurbsPlaneShape1"]
+		ConcatTransform [11.8208 0 0 0 0 11.8208 0 0 0 0 11.8208 0 0 0 0 1]
+		ShadingInterpolation "smooth"
+		IfBegin "!defined(RATFilterLightSource)"
+		IfEnd 
+		NuPatch 4 4 [0 0 0 0 1 1 1 1] 0 1 4 4 [0 0 0 0 1 1 1 1] 0 1 "Pw" [-0.5 -3.06152e-17 0.5 1
+		-0.5 -1.02051e-17 0.166667 1 -0.5 1.02051e-17 -0.166667 1 -0.5 3.06152e-17 -0.5 1
+		-0.166667 -3.06152e-17 0.5 1 -0.166667 -1.02051e-17 0.166667 1 -0.166667 1.02051e-17 -0.166667 1
+		-0.166667 3.06152e-17 -0.5 1 0.166667 -3.06152e-17 0.5 1 0.166667 -1.02051e-17 0.166667 1
+		0.166667 1.02051e-17 -0.166667 1 0.166667 3.06152e-17 -0.5 1 0.5 -3.06152e-17 0.5 1
+		0.5 -1.02051e-17 0.166667 1 0.5 1.02051e-17 -0.166667 1 0.5 3.06152e-17 -0.5 1]
+		ResourceEnd 
+	AttributeEnd 
+WorldEnd 
+FrameEnd 
+FrameBegin 1
+Option "user" "int RATFilterLightSource" [1]
+Attribute "dice" "string strategy" ["planarprojection"]
+Attribute "dice" "string referencecamera" ["worldcamera"]
+Attribute "dice" "int rasterorient" [1]
+Option "user" "float tracebreadthfactor" [0] "float tracedepthfactor" [0]
+Hider "hidden" "int jitter" [0] "string depthfilter" ["min"] "float[2] shutteropening" [0 1]
+Option "limits" "zthreshold" [0.5 0.5 0.5]
+PixelSamples 1 1
+PixelFilter "box" 2 2
+#Shutter 1 1
+Shutter 0.0416667 0.0416667
+DisplayChannel "color Ci" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "color Cs" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "color Oi" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "color Os" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "color _Ci" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "color _Oi" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "color _albedo" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "color _ambient" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "color _backscattering" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "color _color" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "color _diffuse" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "color _diffusemeanfreepath" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "color _incandescence" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "color _indirect" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "color _indirectdiffuse" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "color _radiance_t" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "color _reflection" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "color _refraction" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "color _rim" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "color _shadow" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "color _specular" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "color _subsurfacescattering" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "color _surfacecolor" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "color _thintranslucence" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "float __CPUtime" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "float _area" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "float _float" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "float _occlusion" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "float du" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "float dv" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "float s" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "float t" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "float u" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "float v" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "normal N" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "normal Ng" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "point P" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "vector E" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "vector _environmentdir" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "vector dPdtime" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "vector dPdu" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "vector dPdv" "int[4] quantize" [0 0 0 0] "float dither" [0]
+Format 512 512 1
+Display "/home/icentrik/maya/rmantex/shd/RenderStats.spotLightShape2.shd.0001.tex" "shadow" "z" 
+Clipping 0.001 10000
+Projection "perspective" "fov" [40]
+ScreenWindow -1 1 -1 1
+ConcatTransform [-0.129594 0.932729 0.336484 0 1.43411e-17 0.339346 -0.940662 0 0.991567 0.121904 0.0439772 0 0.0836422 1.31652 7.41345 1]
+WorldBegin 
+	TransformBegin 
+		Rotate 90 0 1 0
+		CoordinateSystem "_XTOZ"
+	TransformEnd 
+	TransformBegin 
+		Rotate -90 1 0 0
+		CoordinateSystem "_YTOZ"
+	TransformEnd 
+	TransformBegin 
+		Scale -1 1 1
+		CoordinateSystem "_world_lefthanded"
+	TransformEnd 
+	TransformBegin 
+		CoordSysTransform "_YTOZ"
+		CoordinateSystem "worldspace"
+		CoordinateSystem "_environment"
+	TransformEnd 
+	ReverseOrientation 
+	ShadingRate 1
+	ShadingInterpolation "constant"
+	Surface "null" 
+	AttributeBegin 
+		ResourceBegin 
+		Attribute "identifier" "name" ["|nurbsSphere1|nurbsSphereShape1"]
+		ConcatTransform [1 0 0 0 0 1 0 0 0 0 1 0 0 1.35132 0.809403 1]
+		ShadingInterpolation "smooth"
+		IfBegin "!defined(RATFilterLightSource)"
+		IfEnd 
+		NuPatch 11 4 [-0.25 -0.25 -0.125
+		0 0.125 0.25 0.375 0.5 0.625 0.75 0.875 1 1.125 1.25 1.25] 0 1 7 4 [0 0 0 0 0.25 0.5 0.75 1 1 1 1] 0 1 "Pw" [9.59616e-17 -1 -2.53153e-16 1 9.59616e-17 -1 -2.53153e-16 1
+		9.59616e-17 -1 -2.53153e-16 1 9.59616e-17 -1 -2.53153e-16 1 9.59616e-17 -1 -2.53153e-16 1
+		9.59616e-17 -1 -2.53153e-16 1 9.59616e-17 -1 -2.53153e-16 1 9.59616e-17 -1 -2.53153e-16 1
+		9.59616e-17 -1 -2.53153e-16 1 9.59616e-17 -1 -2.53153e-16 1 9.59616e-17 -1 -2.53153e-16 1
+		0.199917 -1 -0.199917 1 0.282725 -1 -5.51255e-17 1 0.199917 -1 0.199917 1
+		8.074e-17 -1 0.282725 1 -0.199917 -1 0.199917 1 -0.282725 -1 9.82081e-17 1
+		-0.199917 -1 -0.199917 1 -1.89918e-16 -1 -0.282725 1 0.199917 -1 -0.199917 1
+		0.282725 -1 -5.51255e-17 1 0.199917 -1 0.199917 1 0.61643 -0.783612 -0.61643 1
+		0.871764 -0.783612 1.26897e-16 1 0.61643 -0.783612 0.61643 1 9.2902e-17 -0.783612 0.871764 1
+		-0.61643 -0.783612 0.61643 1 -0.871764 -0.783612 2.87582e-16 1 -0.61643 -0.783612 -0.61643 1
+		-4.29544e-16 -0.783612 -0.871764 1 0.61643 -0.783612 -0.61643 1 0.871764 -0.783612 1.26897e-16 1
+		0.61643 -0.783612 0.61643 1 0.867202 1.50311e-16 -0.867202 1 1.22641 9.72116e-17 3.20824e-16 1
+		0.867202 4.41125e-17 0.867202 1 5.58926e-17 2.21182e-17 1.22641 1 -0.867202 4.41125e-17 0.867202 1
+		-1.22641 9.72116e-17 3.97272e-16 1 -0.867202 1.50311e-16 -0.867202 1 -5.29485e-16 1.72305e-16 -1.22641 1
+		0.867202 1.50311e-16 -0.867202 1 1.22641 9.72116e-17 3.20824e-16 1 0.867202 4.41125e-17 0.867202 1
+		0.61643 0.783612 -0.61643 1 0.871764 0.783612 3.29203e-16 1 0.61643 0.783612 0.61643 1
+		-1.34421e-17 0.783612 0.871764 1 -0.61643 0.783612 0.61643 1 -0.871764 0.783612 2.772e-16 1
+		-0.61643 0.783612 -0.61643 1 -3.232e-16 0.783612 -0.871764 1 0.61643 0.783612 -0.61643 1
+		0.871764 0.783612 3.29203e-16 1 0.61643 0.783612 0.61643 1 0.199917 1 -0.199917 1
+		0.282725 1 2.03045e-16 1 0.199917 1 0.199917 1 -5.49701e-17 1 0.282725 1
+		-0.199917 1 0.199917 1 -0.282725 1 8.49586e-17 1 -0.199917 1 -0.199917 1
+		-5.42075e-17 1 -0.282725 1 0.199917 1 -0.199917 1 0.282725 1 2.03045e-16 1
+		0.199917 1 0.199917 1 1.23042e-16 1 3.41495e-17 1 1.23042e-16 1 3.41495e-17 1
+		1.23042e-16 1 3.41495e-17 1 1.23042e-16 1 3.41495e-17 1 1.23042e-16 1 3.41495e-17 1
+		1.23042e-16 1 3.41495e-17 1 1.23042e-16 1 3.41495e-17 1 1.23042e-16 1 3.41495e-17 1
+		1.23042e-16 1 3.41495e-17 1 1.23042e-16 1 3.41495e-17 1 1.23042e-16 1 3.41495e-17 1]
+		ResourceEnd 
+	AttributeEnd 
+	AttributeBegin 
+		ResourceBegin 
+		Attribute "identifier" "name" ["|nurbsSphere2|nurbsSphereShape2"]
+		ConcatTransform [1 0 0 0 0 1 0 0 0 0 1 0 0 1.35132 -1.10605 1]
+		ShadingInterpolation "smooth"
+		Attribute "grouping" "string membership" ["+RManTraceSet"]
+		IfBegin "!defined(RATFilterLightSource)"
+		IfEnd 
+		IfBegin "!defined(RATFilterSurface)"
+		IfEnd 
+		NuPatch 11 4 [-0.25 -0.25 -0.125
+		0 0.125 0.25 0.375 0.5 0.625 0.75 0.875 1 1.125 1.25 1.25] 0 1 7 4 [0 0 0 0 0.25 0.5 0.75 1 1 1 1] 0 1 "Pw" [9.59616e-17 -1 -2.53153e-16 1 9.59616e-17 -1 -2.53153e-16 1
+		9.59616e-17 -1 -2.53153e-16 1 9.59616e-17 -1 -2.53153e-16 1 9.59616e-17 -1 -2.53153e-16 1
+		9.59616e-17 -1 -2.53153e-16 1 9.59616e-17 -1 -2.53153e-16 1 9.59616e-17 -1 -2.53153e-16 1
+		9.59616e-17 -1 -2.53153e-16 1 9.59616e-17 -1 -2.53153e-16 1 9.59616e-17 -1 -2.53153e-16 1
+		0.199917 -1 -0.199917 1 0.282725 -1 -5.51255e-17 1 0.199917 -1 0.199917 1
+		8.074e-17 -1 0.282725 1 -0.199917 -1 0.199917 1 -0.282725 -1 9.82081e-17 1
+		-0.199917 -1 -0.199917 1 -1.89918e-16 -1 -0.282725 1 0.199917 -1 -0.199917 1
+		0.282725 -1 -5.51255e-17 1 0.199917 -1 0.199917 1 0.61643 -0.783612 -0.61643 1
+		0.871764 -0.783612 1.26897e-16 1 0.61643 -0.783612 0.61643 1 9.2902e-17 -0.783612 0.871764 1
+		-0.61643 -0.783612 0.61643 1 -0.871764 -0.783612 2.87582e-16 1 -0.61643 -0.783612 -0.61643 1
+		-4.29544e-16 -0.783612 -0.871764 1 0.61643 -0.783612 -0.61643 1 0.871764 -0.783612 1.26897e-16 1
+		0.61643 -0.783612 0.61643 1 0.867202 1.50311e-16 -0.867202 1 1.22641 9.72116e-17 3.20824e-16 1
+		0.867202 4.41125e-17 0.867202 1 5.58926e-17 2.21182e-17 1.22641 1 -0.867202 4.41125e-17 0.867202 1
+		-1.22641 9.72116e-17 3.97272e-16 1 -0.867202 1.50311e-16 -0.867202 1 -5.29485e-16 1.72305e-16 -1.22641 1
+		0.867202 1.50311e-16 -0.867202 1 1.22641 9.72116e-17 3.20824e-16 1 0.867202 4.41125e-17 0.867202 1
+		0.61643 0.783612 -0.61643 1 0.871764 0.783612 3.29203e-16 1 0.61643 0.783612 0.61643 1
+		-1.34421e-17 0.783612 0.871764 1 -0.61643 0.783612 0.61643 1 -0.871764 0.783612 2.772e-16 1
+		-0.61643 0.783612 -0.61643 1 -3.232e-16 0.783612 -0.871764 1 0.61643 0.783612 -0.61643 1
+		0.871764 0.783612 3.29203e-16 1 0.61643 0.783612 0.61643 1 0.199917 1 -0.199917 1
+		0.282725 1 2.03045e-16 1 0.199917 1 0.199917 1 -5.49701e-17 1 0.282725 1
+		-0.199917 1 0.199917 1 -0.282725 1 8.49586e-17 1 -0.199917 1 -0.199917 1
+		-5.42075e-17 1 -0.282725 1 0.199917 1 -0.199917 1 0.282725 1 2.03045e-16 1
+		0.199917 1 0.199917 1 1.23042e-16 1 3.41495e-17 1 1.23042e-16 1 3.41495e-17 1
+		1.23042e-16 1 3.41495e-17 1 1.23042e-16 1 3.41495e-17 1 1.23042e-16 1 3.41495e-17 1
+		1.23042e-16 1 3.41495e-17 1 1.23042e-16 1 3.41495e-17 1 1.23042e-16 1 3.41495e-17 1
+		1.23042e-16 1 3.41495e-17 1 1.23042e-16 1 3.41495e-17 1 1.23042e-16 1 3.41495e-17 1]
+		ResourceEnd 
+	AttributeEnd 
+	AttributeBegin 
+		ResourceBegin 
+		Attribute "identifier" "name" ["|nurbsPlane1|nurbsPlaneShape1"]
+		ConcatTransform [11.8208 0 0 0 0 11.8208 0 0 0 0 11.8208 0 0 0 0 1]
+		ShadingInterpolation "smooth"
+		IfBegin "!defined(RATFilterLightSource)"
+		IfEnd 
+		NuPatch 4 4 [0 0 0 0 1 1 1 1] 0 1 4 4 [0 0 0 0 1 1 1 1] 0 1 "Pw" [-0.5 -3.06152e-17 0.5 1
+		-0.5 -1.02051e-17 0.166667 1 -0.5 1.02051e-17 -0.166667 1 -0.5 3.06152e-17 -0.5 1
+		-0.166667 -3.06152e-17 0.5 1 -0.166667 -1.02051e-17 0.166667 1 -0.166667 1.02051e-17 -0.166667 1
+		-0.166667 3.06152e-17 -0.5 1 0.166667 -3.06152e-17 0.5 1 0.166667 -1.02051e-17 0.166667 1
+		0.166667 1.02051e-17 -0.166667 1 0.166667 3.06152e-17 -0.5 1 0.5 -3.06152e-17 0.5 1
+		0.5 -1.02051e-17 0.166667 1 0.5 1.02051e-17 -0.166667 1 0.5 3.06152e-17 -0.5 1]
+		ResourceEnd 
+	AttributeEnd 
+WorldEnd 
+FrameEnd 
+FrameBegin 1
+Identity 
+Attribute "dice" "string strategy" ["planarprojection"]
+Attribute "dice" "string referencecamera" ["worldcamera"]
+Attribute "dice" "int rasterorient" [1]
+Option "user" "float tracebreadthfactor" [1] "float tracedepthfactor" [1]
+Option "trace" "int maxdepth" [10]
+PixelSamples 3 3
+Exposure 1 1
+Hider "hidden" "jitter" [1] "float[2] shutteropening" [0 1]
+PixelFilter "separable-catmull-rom" 2 2
+#Shutter 1 1.25
+Shutter 0.0416667 0.0520833
+DisplayChannel "color Ci" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "color Cs" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "color Oi" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "color Os" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "color _Ci" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "color _Oi" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "color _albedo" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "color _ambient" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "color _backscattering" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "color _color" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "color _diffuse" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "color _diffusemeanfreepath" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "color _incandescence" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "color _indirect" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "color _indirectdiffuse" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "color _radiance_t" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "color _reflection" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "color _refraction" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "color _rim" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "color _shadow" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "color _specular" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "color _subsurfacescattering" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "color _surfacecolor" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "color _thintranslucence" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "float __CPUtime" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "float _area" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "float _float" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "float _occlusion" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "float du" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "float dv" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "float s" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "float t" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "float u" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "float v" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "normal N" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "normal Ng" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "point P" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "vector E" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "vector _environmentdir" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "vector dPdtime" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "vector dPdu" "int[4] quantize" [0 0 0 0] "float dither" [0]
+DisplayChannel "vector dPdv" "int[4] quantize" [0 0 0 0] "float dither" [0]
+Format 640 480 1
+Display "/home/icentrik/maya/rmanpix/RenderStats.0001" "it" "rgba" "int merge" [0] "string dspyParams" ["dspyRender -context /home/icentrik/maya/scenes/RenderStatsRefr.mb -time 1 -renderer 0 -crop 0 1 0 1 -port 0 -workspace /home/icentrik/maya/;"]
+Display "+/home/icentrik/maya/rmanpix/RenderStats.diffuse.0001.tif" "tiff" "_diffuse" 
+Display "+/home/icentrik/maya/rmanpix/RenderStats.specular.0001.tif" "tiff" "_specular" 
+Clipping 0.1 1000
+Projection "perspective" "fov" [54.4322]
+ScreenWindow -1 1 -0.75 0.75
+ConcatTransform [0.768284 -0.351793 -0.534773 0 2.03613e-17 0.83544 -0.549582 0 -0.64011 -0.422235 -0.641855 0 2.55686e-15 7.21108e-14 19.4109 1]
+WorldBegin 
+	TransformBegin 
+		Rotate 90 0 1 0
+		CoordinateSystem "_XTOZ"
+	TransformEnd 
+	TransformBegin 
+		Rotate -90 1 0 0
+		CoordinateSystem "_YTOZ"
+	TransformEnd 
+	TransformBegin 
+		Scale -1 1 1
+		CoordinateSystem "_world_lefthanded"
+	TransformEnd 
+	TransformBegin 
+		CoordSysTransform "_YTOZ"
+		CoordinateSystem "worldspace"
+		CoordinateSystem "_environment"
+	TransformEnd 
+	ReverseOrientation 
+	ShadingRate 5
+	ShadingInterpolation "smooth"
+	Surface "defaultsurface" 
+	Attribute "visibility" "int camera" [1] "int trace" [1] "int photon" [1] "string transmission" ["opaque"]
+	Attribute "trace" "int maxspeculardepth" [2]
+	Attribute "trace" "int maxdiffusedepth" [1]
+	Attribute "trace" "float bias" [0.05] "int displacements" [0] "int samplemotion" [0]
+	Attribute "photon" "string shadingmodel" ["matte"]
+	Attribute "photon" "int estimator" [50]
+	IfBegin "!defined(RATFilterLightSource)"
+	TransformBegin 
+		Attribute "identifier" "string name" ["directionalLightShape1"]
+		Transform [-1 0 8.74228e-08 0 0 1 0 0 -8.74228e-08 0 -1 0 0 0 0 1]
+		LightSource "mtorDirectionalLight" "directionalLightShape1" "float intensity" [1] "color lightcolor" [1 1 1] "float decayRate" [0]
+	TransformEnd 
+	TransformBegin 
+		Attribute "identifier" "string name" ["spotLightShape1"]
+		Transform [-0.898794 6.26586e-08 -0.438371 0 0.356775 0.581055 -0.731496 0 0.254718 -0.813864 -0.522249 0 -2.07129 7.10911 3.97049 1]
+		LightSource "mtorSpotLight" "spotLightShape1" "float intensity" [1] "color lightcolor" [1 1 1] "float decayRate" [0] "float coneAngle" [0.349066] "float penumbraAngle" [0] "float dropOff" [0] "float useBarnDoors" [0] "float[4] barnDoors" [0.349066 0.349066 0.349066 0.349066] 
+		"float useDecayRegions" [0] "float[6] decayRegions" [1 2 3 6 8 10] "string shadowname" ["rmantex/shd/RenderStats.spotLightShape1.shd.0001.tex"] "color shadowcolor" [0 0 0]
+	TransformEnd 
+	TransformBegin 
+		Attribute "identifier" "string name" ["spotLightShape2"]
+		Transform [0.129594 8.22353e-08 -0.991567 0 0.932729 0.339346 0.121904 0 0.336484 -0.940662 0.0439771 0 -3.71162 6.52679 -0.569449 1]
+		LightSource "mtorSpotLight" "spotLightShape2" "float intensity" [1] "color lightcolor" [1 1 1] "float decayRate" [0] "float coneAngle" [0.349066] "float penumbraAngle" [0] "float dropOff" [0] "float useBarnDoors" [0] "float[4] barnDoors" [0.349066 0.349066 0.349066 0.349066] 
+		"float useDecayRegions" [0] "float[6] decayRegions" [1 2 3 6 8 10] "string shadowname" ["rmantex/shd/RenderStats.spotLightShape2.shd.0001.tex"] "color shadowcolor" [0 0 0]
+	TransformEnd 
+	IfEnd 
+	AttributeBegin 
+		ResourceBegin 
+		Attribute "identifier" "name" ["|nurbsSphere1|nurbsSphereShape1"]
+		ConcatTransform [1 0 0 0 0 1 0 0 0 0 1 0 0 1.35132 0.809403 1]
+		ShadingInterpolation "smooth"
+		Attribute "visibility" "int camera" [1] "int trace" [1] "int photon" [1]
+		IfBegin "!defined(RATFilterLightSource)"
+		IfEnd 
+		IfBegin "!defined(user:RATFilterSurface)"
+		#slim shadingmodel_aov Delux 
+		TransformBegin
+		Surface "rmanshader/Delux" 
+		TransformEnd
+		IfEnd
+		NuPatch 11 4 [-0.25 -0.25 -0.125
+		0 0.125 0.25 0.375 0.5 0.625 0.75 0.875 1 1.125 1.25 1.25] 0 1 7 4 [0 0 0 0 0.25 0.5 0.75 1 1 1 1] 0 1 "Pw" [9.59616e-17 -1 -2.53153e-16 1 9.59616e-17 -1 -2.53153e-16 1
+		9.59616e-17 -1 -2.53153e-16 1 9.59616e-17 -1 -2.53153e-16 1 9.59616e-17 -1 -2.53153e-16 1
+		9.59616e-17 -1 -2.53153e-16 1 9.59616e-17 -1 -2.53153e-16 1 9.59616e-17 -1 -2.53153e-16 1
+		9.59616e-17 -1 -2.53153e-16 1 9.59616e-17 -1 -2.53153e-16 1 9.59616e-17 -1 -2.53153e-16 1
+		0.199917 -1 -0.199917 1 0.282725 -1 -5.51255e-17 1 0.199917 -1 0.199917 1
+		8.074e-17 -1 0.282725 1 -0.199917 -1 0.199917 1 -0.282725 -1 9.82081e-17 1
+		-0.199917 -1 -0.199917 1 -1.89918e-16 -1 -0.282725 1 0.199917 -1 -0.199917 1
+		0.282725 -1 -5.51255e-17 1 0.199917 -1 0.199917 1 0.61643 -0.783612 -0.61643 1
+		0.871764 -0.783612 1.26897e-16 1 0.61643 -0.783612 0.61643 1 9.2902e-17 -0.783612 0.871764 1
+		-0.61643 -0.783612 0.61643 1 -0.871764 -0.783612 2.87582e-16 1 -0.61643 -0.783612 -0.61643 1
+		-4.29544e-16 -0.783612 -0.871764 1 0.61643 -0.783612 -0.61643 1 0.871764 -0.783612 1.26897e-16 1
+		0.61643 -0.783612 0.61643 1 0.867202 1.50311e-16 -0.867202 1 1.22641 9.72116e-17 3.20824e-16 1
+		0.867202 4.41125e-17 0.867202 1 5.58926e-17 2.21182e-17 1.22641 1 -0.867202 4.41125e-17 0.867202 1
+		-1.22641 9.72116e-17 3.97272e-16 1 -0.867202 1.50311e-16 -0.867202 1 -5.29485e-16 1.72305e-16 -1.22641 1
+		0.867202 1.50311e-16 -0.867202 1 1.22641 9.72116e-17 3.20824e-16 1 0.867202 4.41125e-17 0.867202 1
+		0.61643 0.783612 -0.61643 1 0.871764 0.783612 3.29203e-16 1 0.61643 0.783612 0.61643 1
+		-1.34421e-17 0.783612 0.871764 1 -0.61643 0.783612 0.61643 1 -0.871764 0.783612 2.772e-16 1
+		-0.61643 0.783612 -0.61643 1 -3.232e-16 0.783612 -0.871764 1 0.61643 0.783612 -0.61643 1
+		0.871764 0.783612 3.29203e-16 1 0.61643 0.783612 0.61643 1 0.199917 1 -0.199917 1
+		0.282725 1 2.03045e-16 1 0.199917 1 0.199917 1 -5.49701e-17 1 0.282725 1
+		-0.199917 1 0.199917 1 -0.282725 1 8.49586e-17 1 -0.199917 1 -0.199917 1
+		-5.42075e-17 1 -0.282725 1 0.199917 1 -0.199917 1 0.282725 1 2.03045e-16 1
+		0.199917 1 0.199917 1 1.23042e-16 1 3.41495e-17 1 1.23042e-16 1 3.41495e-17 1
+		1.23042e-16 1 3.41495e-17 1 1.23042e-16 1 3.41495e-17 1 1.23042e-16 1 3.41495e-17 1
+		1.23042e-16 1 3.41495e-17 1 1.23042e-16 1 3.41495e-17 1 1.23042e-16 1 3.41495e-17 1
+		1.23042e-16 1 3.41495e-17 1 1.23042e-16 1 3.41495e-17 1 1.23042e-16 1 3.41495e-17 1]
+		ResourceEnd 
+	AttributeEnd 
+	AttributeBegin 
+		ResourceBegin 
+		Attribute "identifier" "name" ["|nurbsSphere2|nurbsSphereShape2"]
+		ConcatTransform [1 0 0 0 0 1 0 0 0 0 1 0 0 1.35132 -1.10605 1]
+		ShadingInterpolation "smooth"
+		Attribute "visibility" "int camera" [1] "int trace" [1] "int photon" [1]
+		Attribute "grouping" "string membership" ["+RManTraceSet"]
+		IfBegin "!defined(RATFilterLightSource)"
+		IfEnd 
+		IfBegin "!defined(RATFilterSurface)"
+		Color [0.197358 0.204519 0.518]
+		Opacity [1 1 1]
+		Surface "mtorBlinn" "float refractiveIndex" [1] "float diffuseCoeff" [0.8] "color ambientColor" [0 0 0] "color incandescence" [0 0 0] "float translucenceCoeff" [0] "float glowIntensity" [0] "float reflectivity" [0.5] "color specularColor" [0.5 0.5 0.5] 
+		"float eccentricity" [0.3] "float specularRollOff" [0.7]
+		IfEnd 
+		NuPatch 11 4 [-0.25 -0.25 -0.125
+		0 0.125 0.25 0.375 0.5 0.625 0.75 0.875 1 1.125 1.25 1.25] 0 1 7 4 [0 0 0 0 0.25 0.5 0.75 1 1 1 1] 0 1 "Pw" [9.59616e-17 -1 -2.53153e-16 1 9.59616e-17 -1 -2.53153e-16 1
+		9.59616e-17 -1 -2.53153e-16 1 9.59616e-17 -1 -2.53153e-16 1 9.59616e-17 -1 -2.53153e-16 1
+		9.59616e-17 -1 -2.53153e-16 1 9.59616e-17 -1 -2.53153e-16 1 9.59616e-17 -1 -2.53153e-16 1
+		9.59616e-17 -1 -2.53153e-16 1 9.59616e-17 -1 -2.53153e-16 1 9.59616e-17 -1 -2.53153e-16 1
+		0.199917 -1 -0.199917 1 0.282725 -1 -5.51255e-17 1 0.199917 -1 0.199917 1
+		8.074e-17 -1 0.282725 1 -0.199917 -1 0.199917 1 -0.282725 -1 9.82081e-17 1
+		-0.199917 -1 -0.199917 1 -1.89918e-16 -1 -0.282725 1 0.199917 -1 -0.199917 1
+		0.282725 -1 -5.51255e-17 1 0.199917 -1 0.199917 1 0.61643 -0.783612 -0.61643 1
+		0.871764 -0.783612 1.26897e-16 1 0.61643 -0.783612 0.61643 1 9.2902e-17 -0.783612 0.871764 1
+		-0.61643 -0.783612 0.61643 1 -0.871764 -0.783612 2.87582e-16 1 -0.61643 -0.783612 -0.61643 1
+		-4.29544e-16 -0.783612 -0.871764 1 0.61643 -0.783612 -0.61643 1 0.871764 -0.783612 1.26897e-16 1
+		0.61643 -0.783612 0.61643 1 0.867202 1.50311e-16 -0.867202 1 1.22641 9.72116e-17 3.20824e-16 1
+		0.867202 4.41125e-17 0.867202 1 5.58926e-17 2.21182e-17 1.22641 1 -0.867202 4.41125e-17 0.867202 1
+		-1.22641 9.72116e-17 3.97272e-16 1 -0.867202 1.50311e-16 -0.867202 1 -5.29485e-16 1.72305e-16 -1.22641 1
+		0.867202 1.50311e-16 -0.867202 1 1.22641 9.72116e-17 3.20824e-16 1 0.867202 4.41125e-17 0.867202 1
+		0.61643 0.783612 -0.61643 1 0.871764 0.783612 3.29203e-16 1 0.61643 0.783612 0.61643 1
+		-1.34421e-17 0.783612 0.871764 1 -0.61643 0.783612 0.61643 1 -0.871764 0.783612 2.772e-16 1
+		-0.61643 0.783612 -0.61643 1 -3.232e-16 0.783612 -0.871764 1 0.61643 0.783612 -0.61643 1
+		0.871764 0.783612 3.29203e-16 1 0.61643 0.783612 0.61643 1 0.199917 1 -0.199917 1
+		0.282725 1 2.03045e-16 1 0.199917 1 0.199917 1 -5.49701e-17 1 0.282725 1
+		-0.199917 1 0.199917 1 -0.282725 1 8.49586e-17 1 -0.199917 1 -0.199917 1
+		-5.42075e-17 1 -0.282725 1 0.199917 1 -0.199917 1 0.282725 1 2.03045e-16 1
+		0.199917 1 0.199917 1 1.23042e-16 1 3.41495e-17 1 1.23042e-16 1 3.41495e-17 1
+		1.23042e-16 1 3.41495e-17 1 1.23042e-16 1 3.41495e-17 1 1.23042e-16 1 3.41495e-17 1
+		1.23042e-16 1 3.41495e-17 1 1.23042e-16 1 3.41495e-17 1 1.23042e-16 1 3.41495e-17 1
+		1.23042e-16 1 3.41495e-17 1 1.23042e-16 1 3.41495e-17 1 1.23042e-16 1 3.41495e-17 1]
+		ResourceEnd 
+	AttributeEnd 
+	AttributeBegin 
+		ResourceBegin 
+		Attribute "identifier" "name" ["|nurbsPlane1|nurbsPlaneShape1"]
+		ConcatTransform [11.8208 0 0 0 0 11.8208 0 0 0 0 11.8208 0 0 0 0 1]
+		ShadingInterpolation "smooth"
+		Attribute "visibility" "int camera" [1] "int trace" [1] "int photon" [1]
+		IfBegin "!defined(RATFilterLightSource)"
+		IfEnd 
+		IfBegin "!defined(user:RATFilterSurface)"
+		#slim shadingmodel_aov Delux 
+		TransformBegin
+		Surface "rmanshader/Delux" 
+		TransformEnd
+		IfEnd
+		NuPatch 4 4 [0 0 0 0 1 1 1 1] 0 1 4 4 [0 0 0 0 1 1 1 1] 0 1 "Pw" [-0.5 -3.06152e-17 0.5 1
+		-0.5 -1.02051e-17 0.166667 1 -0.5 1.02051e-17 -0.166667 1 -0.5 3.06152e-17 -0.5 1
+		-0.166667 -3.06152e-17 0.5 1 -0.166667 -1.02051e-17 0.166667 1 -0.166667 1.02051e-17 -0.166667 1
+		-0.166667 3.06152e-17 -0.5 1 0.166667 -3.06152e-17 0.5 1 0.166667 -1.02051e-17 0.166667 1
+		0.166667 1.02051e-17 -0.166667 1 0.166667 3.06152e-17 -0.5 1 0.5 -3.06152e-17 0.5 1
+		0.5 -1.02051e-17 0.166667 1 0.5 1.02051e-17 -0.166667 1 0.5 3.06152e-17 -0.5 1]
+		ResourceEnd 
+	AttributeEnd 
+WorldEnd 
+FrameEnd 

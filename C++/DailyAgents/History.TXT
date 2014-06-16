@@ -1,0 +1,12 @@
+1.0-4
+	2007/8/30 (KST)
+	Gwang-Ho Kim <iccentric@gmail.com>
+
+1. New features
+1) Included a history file(this).
+2) In DBBloomUs.TDaily, change the type of a column, Frame;
+	ALTER TABLE TDaily CHANGE Frame FRAME CHAR(64) NOT NULL;
+3) New image type(bmp, tga)
+
+2. Bugs
+1) Disallow "bloomus" account in DailyAccount.exe.

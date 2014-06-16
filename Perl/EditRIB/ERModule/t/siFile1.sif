@@ -1,0 +1,18 @@
+$SHADER_PATH = '//FileServer/ShaderPath/';
+$TEXTURE_PATH = '//FileServer/TexturePath/';
+my	$TEXTURE_EXTRA_PATH = '//FileServer/TextureExtraPath/';
+
+my	@AoHShaderInfoByArtShape1 = (
+	{
+		'type'		=> $SHADER_TYPE__SURFACE,
+		'set'		=> [ qw( shape1) ],
+		'content'	=> qq|
+Displacement "Combine"
+	"string map" [ "-$TEXTURE_EXTRA_PATH/b.tex" ]
+Surface "rmanshader/Delux2"
+	"string shadowName" [ "a.tex" ]
+|
+	}
+);
+
+\@AoHShaderInfoByArtShape1;

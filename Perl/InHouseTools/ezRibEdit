@@ -1,0 +1,1177 @@
+#!/bin/perl
+
+# ver 2.20
+#    -edit LightSource
+#    -delete
+#    -matte
+#    -color 
+#    -opacity
+
+# define
+$DEBUG	        = 1;
+
+$BIND	        = 0;
+$UNBIND	        = 1;
+
+$ATTRIBUTE      = 2;
+$EXCLUDE        = 100;
+$EXCLUDELIGHT   = 200;
+$INCLUDELIGHT   = 300;
+
+# globals--------------------
+@g_buffer       = ();	 # buffer of 'AttributeBegin/End','TransformBegin/End' block of level #0
+$g_bufIndex     = -1;
+$g_curModel     = "";
+@g_splitCurModel = ();   # split g_curModel by '|'
+$g_curFrame     = 0;	 # 0: shd , 1: env , 2: ref , 3: main
+$g_curLight     = "";	 # from Display ".../rmantex/shd/frame.keyShape.shd.0001.tex" "shadow" "z" => keyShape
+
+$g_shdDir       = "";
+$g_envDir       = "";
+$g_outDir       = "";
+$g_outName      = "";
+$g_refDir       = "";
+$g_shdOnly      = 0;
+%g_hLightHandle = ();
+
+# delete option
+@g_aDelBindSet  = ();
+$g_delBindCount = 0;
+
+# edit 'LightSource'
+@g_aLSBindSet = ();	 # array of binding set
+@g_aLSBindIndex   = ();
+$g_LSIndex      = -1;
+$g_LSBindCount      = 0;	 # number of binding set
+
+# exclude option
+@g_aEXBindSet = ();
+@g_aEXBindIndex = ();
+$g_EXBindCount = 0;
+
+# noshadowmap option
+@g_aNoShdMapBindSet = ();
+$g_noShdMapBindCount = 0;
+
+# excludelight & includeLight option
+@g_aELBindSet = (); # Exclude Include Light
+@g_aELBindIndex = ();
+@g_ELBindCount = 0;
+
+@g_aILBindSet = (); # Exclude Include Light
+@g_aILBindIndex = ();
+@g_ILBindCount = 0;
+
+# edit Primitives Attributes
+@g_aPABindSet   = ();
+@g_aPABindIndex = ();
+$g_PABindCount  = 0;
+$g_PAIndex      = -1;
+
+# edit Surface (shader params)
+$g_SFIndex      = -1;
+
+%g_hPatMap = (
+     '*'  => '.*'
+);
+
+#--------------------------------------------------------------------------#
+#-								          -#
+#-			   M      A     I     N     		          -#
+#-								          -#
+#--------------------------------------------------------------------------#
+
+ParseArg();		 # parsing argument & set @g_aLSBindSet (array of binding set)
+LetsTravelRib();	 # parsing rib file & edit
+close (ribFile);	 # close file handle was opened in subrutine ParseArg()
+
+print STDERR "+-------------------------------------+\n";
+print STDERR "| Light handle table\n";
+print STDERR "+-------------------------------------+\n";
+
+foreach $light (keys(%g_hLightHandle)) {
+     print STDERR "$light     =>   $g_hLightHandle{$light}\n";
+}
+print STDERR "\n\n";
+
+#--------------------------------------------------------------------------#
+#--------------------------------------------------------------------------#
+
+
+sub ParseArg {
+     my $state		 = 0;	   # 0:ribFile 1:bind 2:unbind 3:light attribute 4:primitives attribute 
+				   # 5:exclude 6:excludelight 7:includelight 
+				   # 8:shdDir 9:envDir 10:refDir 11:outDir
+				   # 12:noshadowmap 13:outName
+     my $currentAtt	 = "";
+     my @a_bindLight	 = ();
+     my @a_unbindLight	 = ();
+     my @a_exclude	 = ();	   # exclude option
+     my @a_excludelight	 = ();	   # excludelight option
+     my @a_includelight	 = ();	   # includelight option
+     my %h_attribute	 = ();
+     my %h_bindSet	 = ();
+     my $bindWhat	 = 0;	   # 0:nothing 1:light 2:model 3:global
+     my $arg		 = "";
+     my $rib		 = "";
+ 
+     foreach $token (@ARGV) {
+	  #case option
+	  if ($token =~ /^-(\w+)/) {
+	       $arg = $1;
+	       if ($token eq "-bind") {
+		    #save previous binding
+		    $h_bindSet{$BIND}	     = [@a_bindLight];
+		    $h_bindSet{$UNBIND}	     = [@a_unbindLight];
+		    $h_bindSet{$ATTRIBUTE}   = {%h_attribute};
+
+		    if ($bindWhat == 1 && scalar(%h_attribute)) {  #case bind light
+			 $g_LSBindCount	+= 1;
+			 push @g_aLSBindSet, {%h_bindSet};
+		    } elsif ($bindWhat == 2 && scalar(%h_attribute)) {
+			 $g_PABindCount += 1;
+			 push @g_aPABindSet, {%h_bindSet};
+		    }
+    
+		    #initialize for new binding
+		    @a_bindLight   = ();
+		    @a_unbindLight = ();  
+		    %h_attribute   = ();
+		    %h_bindSet	   = ();
+		    $state	   = 1;		  # case bind option
+		    $bindWhat	   = 1;		  # case light object
+		    
+	       } elsif ($token eq "-unbind") {	  
+		    $state = 2;			  # case unbind option
+
+	       } elsif ($token eq "-delete") {	  #case delete object
+		    $g_delBindCount += 1;
+		    $h_bindSet{$BIND} = [@a_bindLight];
+		    $h_bindSet{$UNBIND} = [@a_unbindLight];
+		    push @g_aDelBindSet, {%h_bindSet};
+		    $bindWhat   = 0;		  # case model object
+
+	       } elsif ($token eq "-matte") {
+		    $state = 4;
+		    substr($arg,0,1) ="M";
+		    $currentAtt = $arg;
+		    $bindWhat = 2;
+
+	       } elsif ($token eq "-opacity") {
+		    $state = 4;
+		    substr($arg,0,1) ="O";
+		    $currentAtt = $arg;
+		    $bindWhat = 2;
+
+	       } elsif ($token eq "-color") {
+		    $state = 4;
+		    substr($arg,0,1) ="C";
+		    $currentAtt = $arg;
+		    $bindWhat = 2;
+
+	       } elsif ($token eq "-shadingrate") {
+		    $state = 4;
+		    substr($arg,0,1) ="S";
+		    substr($arg,7,1) ="R";
+		    $currentAtt = $arg;
+		    $bindWhat = 2;
+
+	       } elsif ($token eq "-exclude") {
+		    $g_EXBindCount += 1;
+		    $h_bindSet{$BIND} = [@a_bindLight];
+		    $h_bindSet{$UNBIND} = [@a_unbindLight];
+		    $h_bindSet{$EXCLUDE} = [@a_exclude];
+		    push @g_aEXBindSet, {%h_bindSet};
+
+		    %h_bindSet = ();
+		    @a_exclude = ();
+		    $state = 5;
+	       
+	       } elsif ($token eq "-excludelight") {
+		    $g_ELBindCount += 1;
+		    $h_bindSet{$BIND} = [@a_bindLight];
+		    $h_bindSet{$UNBIND} = [@a_unbindLight];
+		    $h_bindSet{$EXCLUDELIGHT} = [@a_excludelight];
+		    push @g_aELBindSet, {%h_bindSet};
+
+		    %h_bindSet	    = ();
+		    @a_excludelight = ();
+		    $state	    = 6;
+		    
+	       } elsif ($token eq "-includelight") {
+		    $g_ILBindCount += 1;
+		    $h_bindSet{$BIND} = [@a_bindLight];
+		    $h_bindSet{$UNBIND} = [@a_unbindLight];
+		    $h_bindSet{$INCLUDELIGHT} = [@a_includelight];
+		    push @g_aILBindSet, {%h_bindSet};
+
+		    %h_bindSet	    = ();
+		    @a_includelight = ();
+		    $state	    = 7;
+		    
+	       } elsif ($token eq "-shddir") {
+		    $state    = 8;
+		    $bindWhat = 3;
+		    @a_bindLight = ();
+		    @a_unbindLight = ();
+		    push @a_bindLight,'*'
+
+	       } elsif ($token eq "-envdir") {
+		    $state    = 9;
+		    $bindWhat = 3;
+		    
+	       } elsif ($token eq "-refdir") {
+		    $state    = 10;
+		    $bindWhat = 3;
+		    
+	       } elsif ($token eq "-outdir") {
+		    $state    = 11;
+		    $bindWhat = 3;
+		    
+	       } elsif ($token eq "-outName") {
+		    $state    = 13;
+		    $bindWhat = 3;
+
+	       } elsif ($token eq "-noshadowmap") {
+		    $g_noShdMapBindCount += 1;
+		    $h_bindSet{$BIND}	 = [@a_bindLight];
+		    $h_bindSet{$UNBIND}	 = [@a_unbindLight]; 
+		    push @g_aNoShdMapBindSet, {%h_bindSet};
+		    $bindWhat = 0;
+
+	       } elsif ($token eq "-onlyshadowmap") {
+		    $g_shdOnly = 1;
+		    $bindWhat  = 3;
+
+	       } elsif ($token eq "-coneangle") {
+		    substr($arg,4,1) ="A";
+		    $state = 3;			  # case light attribute
+		    $currentAtt = $arg;
+		    
+	       } elsif ($token eq "-spreadangle") {
+		    substr($arg,6,1) ="A";
+		    $state = 3;			  # case light attribute
+		    $currentAtt = $arg;
+		    
+	       } elsif ($token eq "-shadowdarkness") {
+		    substr($arg,6,1) ="D";
+		    $state = 3;			  # case light attribute
+		    $currentAtt = $arg;
+
+	       } else {				  
+		    $state = 3;			  # case light attribute
+		    $currentAtt = $arg;
+	       }
+
+	  #else : case value
+	  } else {
+	       if ($state == 0) {  
+		    open (ribFile , "< $token")
+			      or die "$! : $token"; 
+		    $rib = $token;
+	       } elsif ($state == 1) {			    #case bind
+		    $token =~ s/(\*)/$g_hPatMap{$1}/g;
+	       	    push @a_bindLight,$token;
+
+	       } elsif ($state == 2) {			    #case unbind
+		    $token =~ s/(\*)/$g_hPatMap{$1}/g;
+		    push @a_unbindLight,$token;     
+
+	       } elsif ($state == 3 | $state == 4) {
+		    $h_attribute{$currentAtt} = $token;	    #option
+
+	       } elsif ($state == 5) {
+		    $token =~ s/(\*)/$g_hPatMap{$1}/g;
+		    push @{$g_aEXBindSet[$g_EXBindCount-1]{$EXCLUDE}}, $token;		  #case exclude
+
+	       } elsif ($state == 6) {
+		    $token =~ s/(\*)/$g_hPatMap{$1}/g;
+		    push @{$g_aELBindSet[$g_ELBindCount-1]{$EXCLUDELIGHT}}, $token;	  #case excludelight
+
+	       } elsif ($state == 7) {
+		    $token =~ s/(\*)/$g_hPatMap{$1}/g;
+		    push @{$g_aILBindSet[$g_ILBindCount-1]{$INCLUDELIGHT}}, $token;	  #case includelight
+	       } elsif ($state == 8) {
+		    $g_shdDir = $token;
+	       } elsif ($state == 9) {
+		    $g_envDir = $token;
+	       } elsif ($state == 10) {
+		    $g_refDir = $token;
+	       } elsif ($state == 11) {
+		    $g_outDir = $token;
+	       } elsif ($state == 13) {
+		    $g_outName = $token;
+	       }
+	  }
+     }
+     #save previous binding
+     $h_bindSet{$BIND} = [@a_bindLight];
+     $h_bindSet{$UNBIND} = [@a_unbindLight];
+     $h_bindSet{$ATTRIBUTE} = {%h_attribute};
+     
+     if ($bindWhat == 1 && scalar(%h_attribute)) {     # case light object
+	  $g_LSBindCount	  += 1;
+	  push @g_aLSBindSet, {%h_bindSet};
+
+     } elsif ($bindWhat == 2 && scalar(%h_attribute)) {
+	  $g_PABindCount += 1;
+	  push @g_aPABindSet, {%h_bindSet};
+     }
+     
+     #---------------------------------------------------------#
+     #-		          case : DEBUG mode		      -#
+     #---------------------------------------------------------#
+     my ($count); 
+     if ($DEBUG) {
+	  print STDERR "===================================================\n";
+	  print STDERR "=                   R E P O R T                   =\n";
+	  print STDERR "===================================================\n";
+	  print STDERR "RIB file	: $rib\n";
+	  print STDERR "===================================================\n";
+	  
+	  if ($g_LSBindCount > 0) {
+	       for $count ( 0 .. $g_LSBindCount-1 ) {	# index 0 : garbage value
+		    print STDERR "+-------------------------------------+\n";
+		    print STDERR "| binding #$count\n";
+		    print STDERR "+-------------------------------------+\n";
+		    print STDERR "bind Light	: ";
+		    foreach $value (@{$g_aLSBindSet[$count]{$BIND}}) {
+			 print STDERR "$value ";
+		    }
+		    print STDERR "\n";
+		    print STDERR "unbind Light    : ";
+		    foreach $value (@{$g_aLSBindSet[$count]{$UNBIND}}) {
+			 print STDERR "$value ";
+		    }
+		    print STDERR "\n";
+		    print STDERR "attribute	: \n";
+		    foreach $key (keys ( %{$g_aLSBindSet[$count]{$ATTRIBUTE}} )) {
+			 print STDERR "\t$key\t=> ${$g_aLSBindSet[$count]{$ATTRIBUTE}}{$key}\n";
+		    }
+		    print STDERR  "\n\n";
+	       }
+	  }
+
+	  if ($g_delBindCount > 0) {
+	       for $count ( 0 .. $g_delBindCount-1) {
+		    print STDERR "+-------------------------------------+\n";
+		    print STDERR "| delete  #$count\n";
+		    print STDERR "+-------------------------------------+\n";
+		    print STDERR "bind Object     : ";
+		    foreach $value (@{$g_aDelBindSet[$count]{$BIND}}) {
+			 print STDERR "$value ";
+		    }
+		    print STDERR "\n";
+		    print STDERR "unbind Object   : ";
+		    foreach $value (@{$g_aDelBindSet[$count]{$UNBIND}}) {
+			 print STDERR "$value ";
+		    }
+		    print STDERR "\n\n";
+	       }
+	  }
+
+	  if ($g_PABindCount >= 1) {
+	       for $count ( 0 .. $g_PABindCount-1) {
+		    print STDERR "+-------------------------------------+\n";
+		    print STDERR "| Primitives Attribute  #$count\n";
+		    print STDERR "+-------------------------------------+\n";
+		    print STDERR "bind Object     : ";
+		    foreach $value (@{$g_aPABindSet[$count]{$BIND}}) {
+			 print STDERR "$value ";
+		    }
+		    print STDERR "\n";
+		    print STDERR "unbind Object   : ";
+		    foreach $value (@{$g_aPABindSet[$count]{$UNBIND}}) {
+			 print STDERR "$value ";
+		    }
+		    print STDERR "\n";
+		    print STDERR "attribute	: \n";
+		    foreach $key (keys ( %{$g_aPABindSet[$count]{$ATTRIBUTE}} )) {
+			 print STDERR "\t$key\t=> ${$g_aPABindSet[$count]{$ATTRIBUTE}}{$key}\n";
+		    }
+		    print STDERR  "\n\n";
+	       }
+	  }
+
+	  if ($g_EXBindCount >= 1) {
+	       for $count ( 0 .. $g_EXBindCount-1) {
+		    print STDERR "+-------------------------------------+\n";
+		    print STDERR "| Exclude mdl from light #$count\n";
+		    print STDERR "+-------------------------------------+\n";
+		    print STDERR "bind Light      : ";
+		    foreach $value (@{$g_aEXBindSet[$count]{$BIND}}) {
+			 print STDERR "$value ";
+		    }
+		    print STDERR "\n";
+		    print STDERR "unbind Light    : ";
+		    foreach $value (@{$g_aEXBindSet[$count]{$UNBIND}}) {
+			 print STDERR "$value ";
+		    }
+		    print STDERR "\n";
+		    print STDERR "exclude Model   : ";
+		    foreach $value (@{$g_aEXBindSet[$count]{$EXCLUDE}}) {
+			 print STDERR "$value ";
+		    }
+		    print STDERR  "\n\n";
+	       }
+	  }
+
+	  if ($g_ELBindCount > 0) {
+	       for $count ( 0 .. $g_ELBindCount-1) {
+		    print STDERR "+-------------------------------------+\n";
+		    print STDERR "| Exclude light from mdl #$count\n";
+		    print STDERR "+-------------------------------------+\n";
+		    print STDERR "bind Model      : ";
+		    foreach $value (@{$g_aELBindSet[$count]{$BIND}}) {
+			 print STDERR "$value ";
+		    }
+		    print STDERR "\n";
+		    print STDERR "unbind Model    : ";
+		    foreach $value (@{$g_aELBindSet[$count]{$UNBIND}}) {
+			 print STDERR "$value ";
+		    }
+		    print STDERR "\n";
+		    print STDERR "exclude Light   : ";
+		    foreach $value (@{$g_aELBindSet[$count]{$EXCLUDELIGHT}}) {
+			 print STDERR "$value ";
+		    }
+		    print STDERR  "\n\n";
+	       }
+	  }
+
+	  if ($g_ILBindCount >= 1) {
+	       for $count ( 0 .. $g_ILBindCount-1) {
+		    print STDERR "+-------------------------------------+\n";
+		    print STDERR "| Include light to mdl #$count\n";
+		    print STDERR "+-------------------------------------+\n";
+		    print STDERR "bind Model      : ";
+		    foreach $value (@{$g_aILBindSet[$count]{$BIND}}) {
+			 print STDERR "$value ";
+		    }
+		    print STDERR "\n";
+		    print STDERR "unbind Model    : ";
+		    foreach $value (@{$g_aILBindSet[$count]{$UNBIND}}) {
+			 print STDERR "$value ";
+		    }
+		    print STDERR "\n";
+		    print STDERR "include Light   : ";
+		    foreach $value (@{$g_aILBindSet[$count]{$INCLUDELIGHT}}) {
+			 print STDERR "$value ";
+		    }
+		    print STDERR  "\n\n";
+	       }
+	  }
+
+	  if ($g_noShdMapBindCount >= 1) {
+	       for $count ( 0 .. $g_noShdMapBindCount-1) {
+		    print STDERR "+-------------------------------------+\n";
+		    print STDERR "| do not make shadow map #$count\n";
+		    print STDERR "+-------------------------------------+\n";
+		    print STDERR "bind Light      : ";
+		    foreach $value (@{$g_aNoShdMapBindSet[$count]{$BIND}}) {
+			 print STDERR "$value ";
+		    }
+		    print STDERR "\n";
+		    print STDERR "unbind Light    : ";
+		    foreach $value (@{$g_aNoShdMapBindSet[$count]{$UNBIND}}) {
+			 print STDERR "$value ";
+		    }
+		    print STDERR "\n";
+		    print STDERR "\n";
+	       }
+	  }
+
+	  print STDERR "+-------------------------------------+\n";
+	  print STDERR "| Bind Global option \n";
+	  print STDERR "+-------------------------------------+\n";
+	  print STDERR "shdDir	   : $g_shdDir\n";
+	  print STDERR "envDir	   : $g_envDir\n";
+	  print STDERR "refDir	   : $g_refDir\n";
+	  print STDERR "outDir	   : $g_outDir\n";
+	  print STDERR "outName	   : $g_outName\n\n";
+     }
+}
+		    
+#-----------------------------------------------------------------------#
+#-----------------------------------------------------------------------#
+#-		          Let's travel to rib			       -#
+#-----------------------------------------------------------------------#
+#-----------------------------------------------------------------------#
+
+sub LetsTravelRib {
+     while ( <ribFile> ) {
+	  # skip global options...
+	  # .....
+	  if ($_ =~ /^\s*FrameBegin\s*/) {
+	       push @g_buffer,$_;
+	       FrameBegin();
+	  } else {
+	       print $_;
+	  }
+     }
+}
+
+# frame level --------------------
+sub FrameBegin {
+     my $line	    = "";
+     my $skip	    = 0;
+     my $display    = 0; # 0:buffer 1:stdout
+     
+     while ( <ribFile> ) {
+	  $line = $_;
+	  unless ($skip) {
+	       if ($line =~ /^\s*Display\s*"([^"]+).*/o) {
+		    $display = 1;
+		    # check type of this frame
+		    if ($1 =~ /\.(.*)\.shd.*\..+/) {
+			 # case shadow frame
+			 $g_curFrame = 0;
+			 $g_curLight = $1;
+     
+			 if (IsNoShdBound()) {
+			      $skip = 1;
+			 }
+     
+			 unless ($g_shdDir eq "" || $skip == 1) {
+			      $line =~ s/^(\s*Display\s*")[^\s]+(\/[^"]+)/$1$g_shdDir$2/
+			 }
+			 
+		    } elsif ($1 =~ /.+\.env.*\..+/) {
+			 # case environment frame
+			 if ($g_shdOnly) {
+			      $skip = 1;
+			 }
+
+			 $g_curFrame = 1;
+			 unless ($g_envDir eq "") {
+			      $line =~ s/^(\s*Display\s*")[^\s]+(\/[^"]+)/$1$g_envDir$2/
+			 }
+     
+		    } elsif ($1 =~ /.+\.ref.*\..+/) {
+			 # case reflection frame
+			 $g_curFrame = 2;
+			 unless ($g_refDir eq "") {
+			      $line =~ s/^(\s*Display\s*")[^\s]+(\/[^"]+)/$1$g_refDir$2/
+			 }
+     
+		    } else {
+			 # case main frame
+			 if ($g_shdOnly) {
+			      $skip = 1;
+			 }
+
+			 $g_curFrame = 3;
+			 unless ($g_outDir eq "") {
+			      $line =~ s/^(\s*Display\s*")[^\s]+(\/[^"]+)/$1$g_outDir$2/
+			 }
+			 unless ($g_outName eq "") {
+			      $line =~ s/^(\s*Display\s*"[^\s]+\/)[^"]+/$1$g_outName/
+			 }
+		    }
+     
+		    if ($skip == 0) {
+			 print @g_buffer;
+			 print $line;
+		    } else {
+			 if ($g_curFrame == 0) {
+			      print '#+' . '-' x 70 . '+' . $/;
+			      print '#|' . ' ' x 70 . '|' . $/;
+			      print "# Do not make shadow map : $g_curLight \n# This frame is skipped\n";
+			      print '#|' . ' ' x 70 . '|' . $/;
+			      print '#+' . '-' x 70 . '+' . $/;
+			 }
+			 if ($g_curFrame == 3) {
+			      print '#+' . '-' x 70 . '+' . $/;
+			      print '#|' . ' ' x 70 . '|' . $/;
+			      print "# Do not render main frame \n# This frame is skipped\n";
+			      print '#|' . ' ' x 70 . '|' . $/;
+			      print '#+' . '-' x 70 . '+' . $/;
+			 }
+		    } 
+	  
+		    @g_buffer = ();
+	  
+	       } elsif ($line =~ /^\s*WorldBegin\s*/) {
+		    print $line;
+		    WorldBegin();
+     
+	       } else {
+		    if ($display == 1) {
+			 print $line;
+		    } else {
+			 push @g_buffer,$line
+		    }
+	       }
+	  }
+
+	  if ($line =~ /^\s*FrameEnd\s*/) {
+	       return 0;
+	  }
+     }
+}
+
+# world level -----------------     
+sub WorldBegin {
+     my $line  = "";
+     while ( <ribFile> ) {
+	  $line = $_;
+	  if ($line =~ /^\s*AttributeBegin\s*/) {
+	       @g_buffer = ();
+	       $g_bufIndex = 0;
+	       push @g_buffer ,$line;
+	       AttributeBegin(0); # param : level
+	  } elsif ($line =~ /^\s*TransformBegin\s*/) {
+	       @g_buffer = ();
+	       $g_bufIndex = 0;
+	       push @g_buffer ,$line;
+	       TransformBegin(0); # parma : level
+	  } elsif ($line =~ /^\s*WorldEnd\s*/) {
+	       @g_buffer = ();
+	       print $line;
+	       return 0;
+	  } else {
+	       print $line;
+	  }
+	       
+     }
+}
+
+# attribute level --------------------0
+sub AttributeBegin {
+     my $temp = "";
+     while ( <ribFile> ) {
+	  $line = $_;
+	  # 
+	  if ($line =~ /^\s*TransformBegin\s*/) {
+	       $g_bufIndex += 1;
+	       push @g_buffer ,$line;
+	       TransformBegin($_[0]+1);
+	       $line = <ribFile>;
+     
+	  } elsif ($line =~ /^\s*AttributeBegin\s*/) {
+	       $g_bufIndex += 1;
+	       push @g_buffer ,$line;
+	       AttributeBegin($_[0]+1);
+	       $line = <ribFile>;
+        
+	  } elsif ($line =~ /^\s*Attribute\s*.*\["(.*)"\]\s*/) { 
+	       $g_PAIndex = $g_bufIndex+1; 
+	       $g_curModel= $1;
+	       @g_splitCurModel = ();
+	       foreach $temp (split (/\|/,$g_curModel)) {
+		    push @g_splitCurModel,$temp;
+	       }
+	       
+
+	  } elsif ($line =~ /^\s*Surface\s*/) {
+	       $g_SFIndex = $g_bufIndex+1;
+	  }
+	  
+	  $g_bufIndex += 1;
+	  push @g_buffer ,$line;
+	  if ($line =~ /^\s*AttributeEnd\s*/) {
+	       if ($_[0] == 0) {
+		    # edit
+		    EditBlock("delOK");
+		    
+		    print @g_buffer;
+		    return 0;
+
+	       } else {
+		    return 0;
+	       }
+	  }
+     }
+}
+
+# transform level -------------------------------
+sub TransformBegin {
+     my $line  = "";
+     my $temp  = "";
+     # 
+     while ( <ribFile> ) {
+	  $line = $_;
+	  if ($line =~ /^\s*TransformBegin\s*/) {
+	       $g_bufIndex += 1;
+	       push @g_buffer ,$line;
+	       TransformBegin($_[0]+1); # param level 
+	       $line = <ribFile>;
+    
+	  } elsif ($line =~ /^\s*AttributeBegin\s*/) {
+	       $g_bufIndex += 1;
+	       push @g_buffer ,$line;
+	       AttributeBegin($_[0]+1); # param level
+	       $line = <ribFile>;
+     
+	  } elsif ($line =~ /^\s*Attribute\s*.*\["(.*)"\]\s*/) {
+	       $g_PAIndex = $g_bufIndex+1; 
+	       $g_curModel = $1;
+	       @g_splitCurModel = ();
+	       foreach $temp (split (/\|/,$g_curModel)) {
+		    push @g_splitCurModel,$temp;
+	       }
+
+	  } elsif ($g_curFrame == 3 && $line =~ /^\s*LightSource\s*".*"\s*(\d+)\s*/o) {	   # only TransformBegin/End block
+	       $g_LSIndex = $g_bufIndex+1;
+	       $g_hLightHandle{$g_curModel} = $1;
+
+	  } elsif ($g_curFrame == 3 && $line =~ /^\s*Surface\s*/) {
+	       $g_SFIndex = $g_bufIndex+1;
+	  }
+     
+	  $g_bufIndex += 1;
+          push @g_buffer ,$line;
+	  if ($line =~ /^\s*TransformEnd\s*/) {
+	       if ($_[0] == 0) {
+		    # edit
+		    EditBlock("delNO");
+
+		    print @g_buffer;
+		    return 0;
+
+	       } else {
+		    return 0;
+	       }
+	  }
+     }
+}
+
+#-----------------------------------------------------------------------#
+#-----------------------------------------------------------------------#
+#-			       Edit Block			       -#
+#-----------------------------------------------------------------------#
+#-----------------------------------------------------------------------#
+
+sub EditBlock {
+    if ($g_PAIndex != -1) {
+	 if ($_[0] eq "delOK" && IsDelBound()) {       # if $_[0] eq delOK ... this topmost block is AttributeBegin/End block
+	       @g_buffer = ();
+	       print '#+' . '-' x 70 . '+' . $/;
+	       print '#|' . ' ' x 70 . '|' . $/;
+	       print "# object $g_curModel is deleted\n";
+	       print '#|' . ' ' x 70 . '|' . $/;
+	       print '#+' . '-' x 70 . '+' . $/;
+     
+	  } elsif ($_[0] eq "delOK" && IsEXBound()) {
+	       @g_buffer = ();
+	       print '#+' . '-' x 70 . '+' . $/;
+	       print '#|' . ' ' x 70 . '|' . $/;
+	       print "# object $g_curModel is excluded\n";
+	       print '#|' . ' ' x 70 . '|' . $/;
+	       print '#+' . '-' x 70 . '+' . $/;
+
+	  } elsif ($g_curFrame == 3) {
+	       if ($_[0] eq "delOK") {
+		    EditPrimitiveAttribute();
+		    EditIlluminate();
+	       } else {
+		    EditLightSource();
+	       }
+	 }
+	 
+    }
+
+    # initialize for next Block 
+     $g_curModel = "";
+     $g_PAIndex = -1;
+     $g_LSIndex = -1;
+     $g_SFIndex = -1;
+     @g_aPABindIndex = ();
+     @g_aLSBindIndex = (); 
+}
+
+sub EditPrimitiveAttribute {
+     if (IsPrimitiveBound()) {
+	  my $i		      = -1;	 # loop index 
+	  my $index	      = -1;
+	  my $attribute	      = "";
+	  my $append	      = 1;
+
+	  foreach $index (@g_aPABindIndex) {
+	       
+	       foreach $attribute (keys( %{$g_aPABindSet[$index]{$ATTRIBUTE}})) {
+
+		    for $i ( $g_PAIndex .. $g_SFIndex) {
+
+			 if ( $g_buffer[$i] =~ s/^(\s*)($attribute)(\s*\[?)[^\]]*(\]?\s*)$/$1$2$3${$g_aPABindSet[$index]{$ATTRIBUTE}}{$2}$4/ ) {
+			      $append = 0;
+			      # optimize... if matched string is found, exit loop
+			 }
+		    }
+		    if ($append) {
+			 if ($attribute eq "Matte") {
+			      $g_buffer[$g_PAIndex] .= "\t\tMatte ${$g_aPABindSet[$index]{$ATTRIBUTE}}{Matte}\n";
+
+			 } elsif ($attribute eq "ShadingRate") {
+			      $g_buffer[$g_PAIndex] .= "\t\tShadingRate ${$g_aPABindSet[$index]{$ATTRIBUTE}}{ShadingRate}\n";
+
+			 } else {
+			      $g_buffer[$g_PAIndex] .= "\t\t$attribute [ ${$g_aPABindSet[$index]{$ATTRIBUTE}}{$attribute} ]\n";
+			 }
+		    }
+		    $append = 1;
+	       }
+	  }
+
+	  $g_buffer[$g_PAIndex-1] .= "\n#+===================================================================+\n";
+	  foreach $index (@g_aPABindIndex) {
+	       $g_buffer[$g_PAIndex-1] .= "# bind Object	 : ";
+	       foreach $value (@{$g_aPABindSet[$index]{$BIND}}) {
+		    $g_buffer[$g_PAIndex-1] .= "$value ";
+	       }
+
+	       $g_buffer[$g_PAIndex-1] .= "\n";
+	       $g_buffer[$g_PAIndex-1] .= "# unbind Object	 : ";
+	       
+	       foreach $value (@{$g_aPABindSet[$index]{$UNBIND}}) {
+		   $g_buffer[$g_PAIndex-1] .= "$value   ";
+	       }
+
+	       $g_buffer[$g_PAIndex-1] .= "\n";
+	       $g_buffer[$g_PAIndex-1] .= "# attribute	 : \n";
+
+	       foreach $key (keys ( %{$g_aPABindSet[$index]{$ATTRIBUTE}} )) {
+		    $g_buffer[$g_PAIndex-1] .= "#\t$key\t=> ${$g_aPABindSet[$index]{$ATTRIBUTE}}{$key}\n";
+	       }
+	       
+	       $g_buffer[$g_PAIndex-1] .= "#+===================================================================+\n\n";
+	  }
+     }
+}
+
+sub EditLightSource {
+
+     my $changeShdDir = 0;
+     my $attribute = "";
+     unless ($g_shdDir eq "") {
+	  $changeShdDir = 1;
+     }
+     
+     if ($changeShdDir) {
+	  #one more bindset - change string shadow name if shddir option is exists
+	  for $i ( $g_LSIndex .. $g_bufIndex) {
+	       $g_buffer[$i] =~ s/("string shadowname"\s*\[\s*"\s*).+(\/.+\s*"\s*\])/$1$g_shdDir$2/;
+	  }
+     }
+     
+     if ($g_LSIndex != -1 && IsLightBound()) {
+	  my $regExp	 = "";
+	  my $index	 = -1;
+	  my $i		 = -1;
+	  my $append	 = 1;
+     
+	  # it's magic !!!
+	  foreach $index (@g_aLSBindIndex) {
+	       # optimize... regexp
+	       # $regExp = '(' . join( '|', keys( %{$g_aLSBindSet[$index]{$ATTRIBUTE}} )) . ')("\s*\[\s*"?\s*)[\w\s\.\:\\\/\d]*(\s*"?\s*\])';
+	       #FORA : for $i ( $g_LSIndex .. $g_bufIndex) { 
+		    # optimize... if matched string is found, exit loop
+		    #$g_buffer[$i] =~ s/$regExp/$1$2${$g_aLSBindSet[$index]{$ATTRIBUTE}}{$1}$3/g);
+		    #}
+	       foreach $attribute (keys( %{$g_aLSBindSet[$index]{$ATTRIBUTE}} )) {
+		    FORA : for $i ( $g_LSIndex .. $g_bufIndex) {
+			 if ($g_buffer[$i] =~ s/($attribute)("\s*\[\s*"?\s*)[\w\s\.\:\\\/\d]*(\s*"?\s*\])/$1$2${$g_aLSBindSet[$index]{$ATTRIBUTE}}{$1}$3/g) {
+			      $append = 0;
+			      last FORA;
+			 }
+		    }
+		    if ($append) {
+
+			if ($attribute eq "lightcolor") {
+			     $g_buffer[$g_LSIndex] .= " \"color lightcolor\" [ ${$g_aLSBindSet[$index]{$ATTRIBUTE}}{$attribute} ]"
+
+			} elsif ($attribute eq "intensity") {
+			     $g_buffer[$g_LSIndex] .= " \"float intensity\" [ ${$g_aLSBindSet[$index]{$ATTRIBUTE}}{$attribute} ]"
+
+			} elsif ($attribute eq "coneAngle") {
+			     $g_buffer[$g_LSIndex] .= " \"float coneAngle\" [ ${$g_aLSBindSet[$index]{$ATTRIBUTE}}{$attribute} ]"
+			     
+			} elsif ($attribute eq "spreadAngle") {
+			     $g_buffer[$g_LSIndex] .= " \"float spreadAngle\" [ ${$g_aLSBindSet[$index]{$ATTRIBUTE}}{$attribute} ]"
+
+			} elsif ($attribute eq "shadowname") {
+			     $g_buffer[$g_LSIndex] .= " \"string shadowname\" [ \"${$g_aLSBindSet[$index]{$ATTRIBUTE}}{$attribute}\" ]"
+
+			} elsif ($attribute eq "samples") {
+			     $g_buffer[$g_LSIndex] .= " \"float samples\" [ ${$g_aLSBindSet[$index]{$ATTRIBUTE}}{$attribute} ]"
+
+			} elsif ($attribute eq "blur") {
+			     $g_buffer[$g_LSIndex] .= " \"float blur\" [ ${$g_aLSBindSet[$index]{$ATTRIBUTE}}{$attribute} ]"
+
+			} elsif ($attribute eq "shadowDarkness") {
+			     $g_buffer[$g_LSIndex] .= " \"float shadowDarkness\" [ ${$g_aLSBindSet[$index]{$ATTRIBUTE}}{$attribute} ]"
+
+			} elsif ($attribute eq "nonspecular") {
+			     $g_buffer[$g_LSIndex] .= " \"float __nonspecular\" [ ${$g_aLSBindSet[$index]{$ATTRIBUTE}}{$attribute} ]"
+
+			} elsif ($attribute eq "nondiffuse") {
+			     $g_buffer[$g_LSIndex] .= " \"float __nondiffuse\" [ ${$g_aLSBindSet[$index]{$ATTRIBUTE}}{$attribute} ]"
+
+			}
+		    }
+
+		    $append = 1;
+	       }
+
+	  }
+	  $g_buffer[$g_LSIndex] .= "\n";
+
+	  $g_buffer[$g_LSIndex-1] .= "\n#+===================================================================+\n";
+	  foreach $index (@g_aLSBindIndex) {
+	       $g_buffer[$g_LSIndex-1] .= "# bind Light		 : ";
+	       foreach $value (@{$g_aLSBindSet[$index]{$BIND}}) {
+		    $g_buffer[$g_LSIndex-1] .= "$value ";
+	       }
+
+	       $g_buffer[$g_LSIndex-1] .= "\n";
+	       $g_buffer[$g_LSIndex-1] .= "# unbind Light		 : ";
+	       
+	       foreach $value (@{$g_aLSBindSet[$index]{$UNBIND}}) {
+		   $g_buffer[$g_LSIndex-1] .= "$value   ";
+	       }
+
+	       $g_buffer[$g_LSIndex-1] .= "\n";
+	       $g_buffer[$g_LSIndex-1] .= "# attribute		 : \n";
+
+	       foreach $key (keys ( %{$g_aLSBindSet[$index]{$ATTRIBUTE}} )) {
+		    $g_buffer[$g_LSIndex-1] .= "#\t$key\t=> ${$g_aLSBindSet[$index]{$ATTRIBUTE}}{$key}\n";
+	       }
+	       
+	       $g_buffer[$g_LSIndex-1] .= "#+===================================================================+\n\n";
+	  }
+     }
+}
+
+sub EditIlluminate {
+     my $count = -1;
+     my $edit  = 1;
+     my $mdl   = "";
+     my $light = "";
+     my $key   = "";
+     my $curMdl = "";
+
+     if ($g_ELBindCount > 0) {
+	  for $count ( 0 .. $g_ELBindCount-1) {
+	       $edit = 1;
+	       HERE: foreach $mdl (@{$g_aELBindSet[$count]{$UNBIND}}) { 
+		    foreach $curMdl (@g_splitCurModel) {
+			 if ($curMdl =~ /^$mdl$/) {
+			      $edit = 0;
+			      last HERE; 
+			 }
+		    }
+	       }
+	       if ($edit) {
+		    foreach $mdl (@{$g_aELBindSet[$count]{$BIND}}) {
+			 foreach $curMdl (@g_splitCurModel) {
+			      if ($curMdl =~ /^$mdl$/) {
+				   foreach $light (@{$g_aELBindSet[$count]{$EXCLUDELIGHT}}) {
+					foreach $key (keys(%g_hLightHandle)) {
+					     if ($key =~ /$light/) {
+						  $g_buffer[0] .= "#=============================================================#\n";
+						  $g_buffer[0] .= "# exclude $key from $g_curModel\n";
+						  $g_buffer[0] .= "Illuminate $g_hLightHandle{$key} 0\n";
+						  $g_buffer[0] .= "#=============================================================#\n";
+					     }
+					}
+				   }
+			      }
+			 }
+		    }
+	       }
+	  }
+     }
+
+     if ($g_ILBindCount > 0) {
+	  for $count ( 0 .. $g_ILBindCount-1) {
+	       $edit = 1;
+	       HERE: foreach $mdl (@{$g_aILBindSet[$count]{$UNBIND}}) { 
+		    foreach $curMdl (@g_splitCurModel) {
+			 if ($curMdl =~ /^$mdl$/) {
+			      $edit = 0;
+			      last HERE; 
+			 }
+		    }
+	       }
+	       if ($edit) {
+		    foreach $mdl (@{$g_aILBindSet[$count]{$BIND}}) {
+			 foreach $curMdl (@g_splitCurModel) {
+				   if ($curMdl =~ /^$mdl$/) {
+				   foreach $light (@{$g_aILBindSet[$count]{$INCLUDELIGHT}}) {
+					foreach $key (keys(%g_hLightHandle)) {
+					     if ($key =~ /$light/) {
+						  $g_buffer[0] .= "#=============================================================#\n";
+						  $g_buffer[0] .= "# include $key from $g_curModel\n";
+						  $g_buffer[0] .= "Illuminate $g_hLightHandle{$key} 1\n";
+						  $g_buffer[0] .= "#=============================================================#\n";
+					     }
+					}
+				   }
+			      }
+			 }
+		    }
+	       }
+	  }
+     }
+}
+
+sub IsPrimitiveBound {
+     my $count = -1;
+     my $curMdl = "";
+
+     if ($g_PABindCount >= 1) {
+	  HERE: for $count ( 0 .. $g_PABindCount-1 ) {
+
+	       foreach $mdl (@{$g_aPABindSet[$count]{$UNBIND}}) { 
+		    foreach $curMdl (@g_splitCurModel) {
+			 if ($curMdl =~ /^$mdl$/) {
+			      next HERE; 
+			 }
+		    }
+	       }
+	       foreach $mdl (@{$g_aPABindSet[$count]{$BIND}}) {
+		    foreach $curMdl (@g_splitCurModel) {
+			 if ($curMdl =~ /^$mdl$/) {
+			      push @g_aPABindIndex, $count;
+			      next HERE;
+			 }
+		    }
+	       }
+	  }
+	  if ($#g_aPABindIndex == -1) {
+	       return 0;
+	  } else {
+	       return 1;
+	  }
+     } else {
+	  return 0;
+     }
+}
+    
+sub IsLightBound {
+     my $count = -1;
+     my $curMdl = "";
+
+     if ($g_LSBindCount >= 1) {
+	  HERE: for $count ( 0 .. $g_LSBindCount-1 ) {
+
+	       foreach $mdl (@{$g_aLSBindSet[$count]{$UNBIND}}) { 
+		    foreach $curMdl (@g_splitCurModel) {
+			 if ($curMdl =~ /^$mdl$/) {
+			      next HERE; 
+			 }
+		    }
+	       }
+	       foreach $mdl (@{$g_aLSBindSet[$count]{$BIND}}) {
+		    foreach $curMdl (@g_splitCurModel) {
+			 if ($curMdl =~ /^$mdl$/) {
+			      push @g_aLSBindIndex, $count;
+			      next HERE;
+			 }
+		    }
+	       }
+	  }
+	  if ($#g_aLSBindIndex == -1) {
+	       return 0;
+	  } else {
+	       return 1;
+	  }
+     } else {
+	  return 0;
+     }
+}
+
+sub IsDelBound {
+     my $count = -1;
+     my $edit  = 1;
+     my $mdl   = "";
+     my $curMdl = "";
+
+     # -delete option
+     if ($g_delBindCount >= 1) {
+	  for $count ( 0 .. $g_delBindCount-1) {
+	       $edit = 1;
+	       HERE: foreach $mdl (@{$g_aDelBindSet[$count]{$UNBIND}}) { 
+		    foreach $curMdl (@g_splitCurModel) {
+			 if ($curMdl =~ /^$mdl$/) {
+			      $edit = 0;
+			      last HERE; 
+			 }
+		    }
+	       }
+	       if ($edit) {
+		    foreach $mdl (@{$g_aDelBindSet[$count]{$BIND}}) {
+			 foreach $curMdl (@g_splitCurModel) {
+			      if ($curMdl =~ /^$mdl$/) {
+				   return 1; 
+			      }
+			 }
+		    }
+	       }
+	  }
+     }
+     return 0;
+}
+
+sub IsEXBound {
+     my $count = -1;
+     my $edit  = 1;
+     my $light = "";
+     my $mdl   = "";
+     my $curMdl = "";
+
+     if ($g_curFrame == 0 && $g_EXBindCount >= 1) {	# if current frame is shadow frame
+	  for $count ( 0 .. $g_EXBindCount-1) {
+	       $edit = 1;
+	       HERE: foreach $light (@{$g_aEXBindSet[$count]{$UNBIND}}) { 
+		    if ($g_curLight =~ /$light/) {
+			 $edit = 0;
+			 last HERE; 
+		    }
+	       }
+	       if ($edit) {
+		    foreach $light (@{$g_aEXBindSet[$count]{$BIND}}) {
+			 if ($g_curLight =~ /$light/) {
+			      foreach $mdl (@{$g_aEXBindSet[$count]{$EXCLUDE}}) {
+				   foreach $curMdl (@g_splitCurModel) {
+					if ($curMdl =~ /^$mdl$/) {
+					     return 1; 
+					}
+				   }
+			      }
+			 }
+		    }
+	       }
+	  }
+     }
+
+     return 0;
+} 
+
+sub IsNoShdBound {
+     my $count = -1;
+     my $edit  = 1;
+     my $mdl   = "";
+     
+     # -noshadowmap option
+     if ($g_noShdMapBindCount >= 1) {
+	  for $count ( 0 .. $g_noShdMapBindCount-1) {
+	       $edit = 1;
+	       HERE: foreach $mdl (@{$g_aNoShdMapBindSet[$count]{$UNBIND}}) { 
+		    if ($g_curLight =~ /$mdl/) {
+			 $edit = 0;
+			 last HERE; 
+		    }
+	       }
+	       if ($edit) {
+		    foreach $mdl (@{$g_aNoShdMapBindSet[$count]{$BIND}}) {
+			 if ($g_curLight =~ /$mdl/) {
+			      return 1; 
+			 }
+		    }
+	       }
+	  }
+     }
+     return 0;
+}
+

@@ -1,0 +1,111 @@
+gmTCP-1.e.1	2006/7/31 (EST) - ghkim
+========
+
+TLS를 사용하도록 gmSecureASP의 예제와 gmTCP의 라이브러리를 통합한다.
+
+Visual Studio 7(Net 2003)에 맞도록 solution/project를 구성한다.
+Configuration을 정리하고 각 configuration에 맞게 적절한 상수를 정의한다.
+
+1. 통합과 관련한여...
+1.1. 인증서 관련하여...
+	인증서와 관련된 문제를 정확히 인식할 수 없어서 이를 보완했다.
+	인증서의 만료나 루트 인증서의 존재 여부 그리고
+	인증서의 저장장소와 관련된 문제 등등...
+
+	gmIocp-1.e.0.zip의 cvs버젼인 cvs--gmTCP-1.0.0.ZIP를 대체한다.
+	이후로 CVS는 사용하지 않는다.
+
+
+gmTCPLib/gmPseudoTCP.cpp
+----------------------
+여기서만 쓰이는 ByteToStringA함수에다 static을 추가했다.
+(gmSecureASP의 gmSessionKeyManagerLib에서도 같은 함수를 사용하므로
+충돌이 일어난다.)
+
+mf__InitializeSecurityContext함수에서 InitializeSecurityContext함수를 호출할 때,
+문제가 있는 경우 해당 함수의 리턴값을 리턴하도록 했다.
+이렇게 함으로써 응용 프로그램에서 HandshakeProtocol함수를 호출할 때,
+문제가 생겼을 때 정확한 리턴값을 알도록 했다.
+(응용 프로그램 TLSServer/TLCClient에서 인증서 문제(인증서 날짜가 만료되었거나
+루트 인증서가 없을 때)가 발생했을 때 이를 알 수 있도록 했다.)
+
+mf__AcceptSecurityContext함수에서 AcceptSecurityContext함수를 호출할 때도 마찬가지이다.
+
+
+gmTCPLib/gmTCPBase.cpp
+-------------------
+여기서만 쓰이는 GetCertificateContext함수에다 static을 추가했다.
+gmPseudoTCP의 ByteToStringA와 마찬가지이다.
+
+
+gmTCPLib/gmTCPServer.cpp
+---------------------
+TLS에 필요한 인증서를 개인이 아닌 컴퓨터에서 찾도록
+mf__GetCertificateContext를 수정했다.
+즉 CERR_SYSTEM_STORE_CURRENT_USER대신에 CERT_SYSTEM_STORE_LOCAL_MACHINE으로.
+
+
+
+1.2. TLS 예제와 관련하여...
+	gmSecureASP(gmSecureASP-1.1.3$)의 TLS예제를 포함한다.
+
+	이후로 웹에서 암호화 관련해서는 gmSecureASP-1.1.3$을 따르고,
+	TLS(/SSL)과 관련해서는 이 버젼(gmTCP-1.e.1)을 따른다.
+
+
+gmSessionKeyManagerLib/gmMisc.cpp
+----------------------------------------------
+거기서만 쓰이는 ByteToStringA와 GetCertificateContext함수에다 static을 추가했다.
+
+Session Key용 인증서(Session Key....cer)가 바뀐 경우, 레지스트리의 해당 키(HKLM/SOFTWARE/SecureASP)를 초기화해야 한다.
+
+TLSClient/TLSClientMain.cpp
+----------------------------------
+gmPseudoTCP::HandshakeProtocol을 호출해서 문제가 생겼을 때,
+그 코드값을 쓰게 했고, 그 경우에 무조건 종료하도록 수정했다.
+
+
+2. VS 7에 맞는 구성과 관련하여...
+2.1. Dependency문제
+응용 프로그램은 기본적으로 TCP라이브러리(gmTCPLib)에 직접적으로 의존한다.
+또한 몇 개의 공동으로 사용하는 라이브러리(gmCommonLib, gmSessionKeyManagerLib)에도 의존한다.
+이 중에서 TCP라이브러리에만 의존하도록 하고,
+나머지는 손으로 직접 연결하도록 했다.
+
+
+2.2. 매크로의 사용
+각 Configuration마다 직접적으로 경로나 이름을 사용하기보다,
+매크로를 사용한다.
+기본적으로 주어지는 다음 매크로를 사용하여
+	$(SolutionDir)
+	$(ConfigurationName)
+	$(ProjectName)
+다음 매크로를 정의해서
+	$(OutDir) = $(ConfigurationName)
+	$(IntDir) = $(ConfigurationName)
+적절하게 경로나 이름에 사용한다.
+	Additional Include Directories:= $(SolutionDir)/Include/
+	Output File:= $(OutDir)/$(ConfigurationName).EXE
+	Additional Library Directories:= $(SolutionDir)/Lib/
+
+다음의 경우에는 기본값(<inherit from project defaults>)을 사용하도록 했다.
+	C/C++
+		Precompiled Headers
+		Output Files
+		Browse Information
+다음과 같은 의미로 이 부분은 완전하지 않다. (incomplete)
+공용 라이브러리는 Release용과 Debug용만 사용한다. (UnicodeRelease용은 검증하지 않았다.)
+TCP라이브러리와 이를 직접적으로 의존하는(위의 2.1. 참고) 응용 프로그램은
+TLSServer/TLSClient만 검증하였다. 또한 [Client|Server]IOCPMessageIOCPTLS[Debug|Release]만 검증하였다.
+
+
+2.3. 다음과 같은 경고문제를 해결한다.
+Warning LNK4098
+	컴파일할 때, Run-Time Library를 사용하는 옵션(/MD, /MT, ..)이
+	서로 합치(consistent)하지 않아서 생긴다.
+	모두 /MD(Release용), /MDd(Debug용)을 사용하도록 한다.
+Warning LNK4075
+	컴파일할 때 사용할 옵션(/ZI)와 링크할 때 사용한 옵션(/INCREMENTAL:NO)가
+	서로 합치(consistent)하지 않기 때문에 발생한다.
+	Debug인 경우에 링크할 때 /INCREMENTAL옵션을 사용하지 않는다. (DEFAULT)
+	강제로 /INCREMENTAL을 지정하면 LNK6004경고가 뜬다.

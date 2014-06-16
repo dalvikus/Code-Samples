@@ -1,0 +1,116 @@
+////////////////////////////////////////////////////////////////
+////////////////////////   클라이언트   ////////////////////////
+////////////////////////////////////////////////////////////////
+ConnectGameSheet2.cpp
+	1. global변수인 g__TCPGameClient를 선언
+	2. void ConnectGameSheetClass2::Input(double time)에서
+	   g__TCPGameClient를 초기화
+
+packet.h
+	1. TCP용 contructor선언 (CPacket::CPacket(unsigned int, char *))
+	   실제로는 CProtocolData::CProtocolData에서 이용
+
+packet.cpp
+	1. TCP에 적합한 CPacket contructor생성
+	   실제로는 CProtocolData::CProtocolData에서 이용
+
+disposer.h
+	1. TCPDispose 멤버함수 선언
+
+disposer.cpp
+	1.int CDisposer::RegisterProtocolData(int protocol_id, void *data)에서
+	  TCP를 이용하는 메세지 처리 부분을 추가
+	  	=> 데이터를 보낼 때
+	2. TCP용 TCPDispose 멤버함수(int CDispose::TCPDispose(void))를 추가
+		=> 데이터를 가져올 때
+
+Ptotocol.h
+	1. CallFlatTCP 멤버함수 선언
+
+Protocol.cpp
+	1. TCP용 CallFlatTCP 멤버함수 정의
+
+protocol_data.h
+	1. m_TCPFlag와 CProtocol::CProtocol(unsigned int, char *)를 선언
+
+protocol_data.cpp
+	1. m_TCPFlag를 이용해서 CProtocolData의 constructor를 수정하고,
+	   TCP용 constructor를 정의
+
+RegisterNetFunction.cpp
+	1. 몇 개의 protocol(PROTOCOL_REQUEST_INIT_DATA, PROTOCOL_BEGIN)이
+	   TCP를 이용하도록 수정
+
+GameClientManager.cpp
+	1. ShutDown에서 TCP 클라이언트와의 연결을 끊는 부분을 추가
+
+
+노트 1. 다음 두 파일에서는 "gmShare.h"를 추가하기 전에 제일 앞에서
+"WinSock2.h" 헤더를 추가해야 한다. 둘 사이의 어디에선가
+"WinSock2.h"이전에 "WinSock.h"를 읽어들이게 하는 선언이 있다.
+TCP는 "WinSock2.h"를 이용하므로...
+	ConnectGameSheet2.cpp
+	GameClientManager.cpp
+
+노트 2. 모든 일의 진행은 disposer.cpp에서부터...
+////////////////////////////////////////////////////////////////
+
+
+
+
+////////////////////////////////////////////////////////////////
+////////////////////////      서버      ////////////////////////
+////////////////////////////////////////////////////////////////
+Player.h
+	1. m_TCPIndex를 선언
+
+Channel.cpp
+	1. RegisterProtocolData에 TCP 메세지를 보내는 부분을 추가
+		=> 데이터를 보낼 때
+
+Protocol.h
+	1. TCP용 CallFlatTCP함수 선언
+
+Protocol.cpp
+	1. TCP용 CallFlatTCP함수 정의
+
+Packet.cpp
+	1. TCP용 CPacket클래스의 constructor를 정의
+
+Packet.h
+	1. TCP용 CPacket클래스의 constructor를 선언
+
+ProtocolData.h
+	1. m_TCPFlag와 TCP용 클래스를 선언
+
+ProtocolData.cpp
+	1. TCP용 CProtocolData클래스의 constructor를 정의하고,
+	   destructor를 m_TCPFlag를 이용해서 수정
+
+RegisterNetFunction.cpp
+	1. 몇 개의 protocol(PROTOCOL_UNRELIABLE_BEGIN)이
+	   TCP를 이용하도록 수정
+
+Disposer.h
+	1. TCP용 DisposeConnectionlessInputTCP를 선언
+		=> 초기 데이터를 받을 때
+	2. SendClientRequestInitDataTCP를 선언
+		=> 초기 데이터를 보낼 때
+	3. TCPDispose를 선언
+		=> 데이터를 받을 때
+
+Disposer.cpp
+	1. TCP용 DisposeConnectionlessInputTCP를 정의
+	2. ProcessPreClient를 수정
+	3. SendClientRequestInitDataTCP를 정의
+	4. TCPDispose를 정의
+
+GameLoop.cpp
+	1. NetworkProcess에 TCPDispose를 추가
+
+ServerManager.cpp
+	1. StartServer에 TCP 서버를 생성하는 코드 추가
+	2. QuitServer에 TCP 서버를 없애는 코드 추가
+
+패킷을 주고 받고 이를 해석하는 부분은 Channel.cpp와 Disposer.cpp에 들어있다.
+////////////////////////////////////////////////////////////////

@@ -1,0 +1,18 @@
+#!/bin/bash
+
+if [ "$#" != 1 ]
+then
+	cat <<EOT
+Usage:
+	$0 MAIL.TXT
+EOT
+	exit 1
+fi
+
+SENDMAIL=/usr/local/DigiScape/slate/sendMail-1.00.py
+if [ -f $1 ]
+then
+	$SENDMAIL < $1
+else
+	echo "$0: $1 does not exist!"
+fi

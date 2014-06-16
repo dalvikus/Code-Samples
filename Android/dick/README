@@ -1,0 +1,116 @@
+06/05/2014
+    directory hierarchy set in DickA.getRootPath()
+    sdcard{0,1}
+
+    /storage/sdcard0/Download/
+        dick/
+            *.db
+            mp3/
+            ogg/
+
+02/13/2014
+    [javac] Note: Some input files use unchecked or unsafe operations.
+    [javac] Note: Recompile with -Xlint:unchecked for details.
+ant -Djava.compilerargs=-Xlint:unchecked release
+    warning: [unchecked] unchecked cast
+
+01/25/2014
+release
+1. make certificate (once)
+    keytool -genkey -v -keystore my-release-key.keystore -alias dalvikus -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Gwang-Ho KIM, OU=Android, O=DN2Soft, L=San Diego, ST=CA, C=US"
+2. sign and align (always)
+    jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 -keystore my-release-key.keystore -signedjar bin/DickA-release-signed.apk bin/DickA-release-unsigned.apk dalvikus
+    zipalign -f -v 4 bin/DickA-release-signed.apk bin/DickA-release.apk
+
+01/19/2014
+Saving Data > Saving Key-Value Sets
+android:installLocation
+
+
+adb shell top -m 10
+
+update sdk
+    android
+
+list targets
+    android list targets
+
+list devices
+    adb devices
+
+localhost(127.0.0.1) in emulator
+    http://10.0.2.2/
+
+create avd
+    android avd
+    emulator -avd "evolve-nosdcard"
+
+install
+    adb install bin/...
+
+uninstall
+	adb uninstall com.example.myfirstapp
+
+android create project --target <target-id> --name MyFirstApp \
+--path <path-to-workspace>/MyFirstApp --activity MainActivity \
+--package com.example.myfirstapp
+android create project --target 1 --name MyFirstApp \
+--path ws/MyFirstApp --activity MainActivity \
+--package com.example.myfirstapp
+
+Running Your Application (saved MyFirstApp1/)
+========================
+ant debug
+---------
+[dx] UNEXPECTED TOP-LEVEL EXCEPTION:
+
+build-tools: downgrade to 18.1.1 (from 19)
+
+WITHOUT in "AndroidManifest.xml"
+	<uses-sdk android:minSdkVersion="8" android:targetSdkVersion="17" />
+
+With "<uses-sdk...>", try "build-tools 19"(???)
+	<uses-sdk android:minSdkVersion="8" android:targetSdkVersion="17" />
+This means .apk could be installed on the target system whose API level >= 8.
+
+
+Building a Simple User Interface (saved MyFirstApp2)
+================================
+activity_main.xml -> main.xml
+not RelativeLayout, already LinearLayout
+
+To update(reinstall) .apk, first uninstall like
+	adb uninstall com.example.myfirstapp
+
+
+Starting Another Activity (saved MyFirstApp3)
+=========================
+1. No resource identifier found for attribute 'parentActivityName' in package 'android'
+	>= Android 4.1 (API level 16)
+
+In a test,
+to use a smaller system-image and to access local web page (10.0.2.2),
+I am using Android 2.3.3 (API level: 10).
+Comment these:
+        android:parentActivityName="com.example.myfirstapp.MainActivity" >
+        <meta-data
+            android:name="android.support.PARENT_ACTIVITY"
+            android:value="com.example.myfirstapp.MainActivity" />
+
+Moreove, do not use "onOptionsItemSelected". So, no "ActionBar" is available.
+
+2. In a new DisplayMessageActivity.java, be sure to set an appropriate import:
+	package com.example.myfirstapp;
+
+	import android.app.Activity;
+	import android.os.Bundle;
+	import android.view.MenuItem;
+	import android.widget.TextView;
+	import android.content.Intent;
+Also do not use "onCreate" in "Create the Second Activity" section,
+instead, use one in "Display the Message" section.
+
+
+How about using Andoid 2.3.3 above?
+===================================
+<uses-sdk android:minSdkVersion="8" android:targetSdkVersion="17" />

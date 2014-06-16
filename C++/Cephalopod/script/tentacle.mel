@@ -1,0 +1,217 @@
+global proc	CTReloadTentacleGradientControl()
+{
+	if (`gradientControl -query -exists "tentacleCrossSectionMajorRadius_scaleRamp"`) {
+		gradientControl -edit -visible false "tentacleCrossSectionMajorRadius_scaleRamp";
+		gradientControl -edit -visible true "tentacleCrossSectionMajorRadius_scaleRamp";
+	}
+	if (`gradientControl -query -exists "tentacleCrossSectionEccentricity_scaleRamp"`) {
+		gradientControl -edit -visible false "tentacleCrossSectionEccentricity_scaleRamp";
+		gradientControl -edit -visible true "tentacleCrossSectionEccentricity_scaleRamp";
+	}
+	if (`gradientControl -query -exists "tentacleCrossSectionRotation_localRamp"`) {
+		gradientControl -edit -visible false "tentacleCrossSectionRotation_localRamp";
+		gradientControl -edit -visible true "tentacleCrossSectionRotation_localRamp";
+	}
+
+	global string	$afterShave__AE_node_name;
+	if (`objExists $afterShave__AE_node_name`)
+		setAttr ($afterShave__AE_node_name + ".tentacleDoAction") 10;	// TentacleDo::Refresh
+}
+
+global proc CTRegisterScriptJob(string $master_key, string $node_name, string $control_name, string $command, string $value_attribute_name_with_node_name)
+{
+	int	$node_registered = 0;
+	if (`optionVar -exists $master_key`) {
+		string	$node_name_list[] = `optionVar -query $master_key`;
+		for ($x in $node_name_list) {
+			if ($x == $node_name) {
+				$node_registered = 1;
+				break;
+			}
+		}
+	}
+	if (!$node_registered) {
+		optionVar -stringValueAppend $master_key $node_name;
+		string	$control_key = $master_key + ": " + $node_name + ": " + "Controls";
+		optionVar -remove $control_key;
+		optionVar -stringValueAppend $control_key $control_name;
+//		int	$jobId = `scriptJob -parent $control_name -replacePrevious -event $master_key ($command + " 1")`;
+		int	$jobId;
+		if ($value_attribute_name_with_node_name == "")
+			$jobId = `scriptJob -event $master_key ($command + " 1")`;
+		else
+			$jobId = `scriptJob -attributeChange $value_attribute_name_with_node_name ($command + " 0")`;
+		string	$job_key = $master_key + ": " + $node_name + ": " + $control_name + ": " + "Job #";
+		optionVar -remove $job_key;
+		optionVar -intValue $job_key $jobId;
+	} else {
+		string	$control_key = $master_key + ": " + $node_name + ": " + "Controls";
+		string	$controls[] = `optionVar -query $control_key`;
+		int	$control_registered = 0;
+		for ($x in $controls) {
+			if ($x == $control_name) {
+				$control_registered = 1;
+				break;
+			}
+		}
+		if (!$control_registered) {
+			optionVar -stringValueAppend $control_key $control_name;
+//			int	$jobId = `scriptJob -parent $control_name -replacePrevious -event $master_key ($command + " 1")`;
+			int	$jobId;
+			if ($value_attribute_name_with_node_name == "")
+				$jobId = `scriptJob -event $master_key ($command + " 1")`;
+			else
+				$jobId = `scriptJob -attributeChange $value_attribute_name_with_node_name ($command + " 0")`;
+			string	$job_key = $master_key + ": " + $node_name + ": " + $control_name + ": " + "Job #";
+			optionVar -remove $job_key;
+			optionVar -intValue $job_key $jobId;
+		}
+	}
+}
+
+global proc	CTListEvents(string $master_key, int $clear)
+{
+	if (`optionVar -exists $master_key`) {
+		for ($node in `optionVar -query $master_key`) {
+			print ("node: |" + $node + "|\n");
+			string	$control_key = $master_key + ": " + $node + ": Controls";
+			if (!`optionVar -exists $control_key`)
+				continue;
+			for ($control in `optionVar -query $control_key`) {
+				string	$job_key = $master_key + ": " + $node + ": " + $control + ": Job #";
+				int	$jobId = `optionVar -query $job_key`;
+				print ("|" + $control + "|: " + $jobId + "\n");
+				if ($clear) {
+					optionVar -remove $job_key;
+					scriptJob -kill $jobId;
+				}
+			}
+			if ($clear)
+				optionVar -remove $control_key;
+		}
+	}
+	if ($clear)
+		optionVar -remove $master_key;
+}
+
+global proc	CTTentacleInitialize()
+{
+	CTTentacleFinalize();
+
+	int	$jobId = `scriptJob -event "SelectionChanged" "CTReloadTentacleGradientControl"`;
+	optionVar -intValue "CTReloadTentacleGradientControl" $jobId;
+}
+
+global proc	CTTentacleFinalize()
+{
+	CTListEvents("attributeChange", 1);
+	CTListEvents("SelectionChanged", 1);
+
+	if (`optionVar -exists "CTReloadTentacleGradientControl"`) {
+		scriptJob -kill `optionVar -query "CTReloadTentacleGradientControl"`;
+		optionVar -remove "CTReloadTentacleGradientControl";
+	}
+}
+
+global proc	CTDisconnectMesh()
+{
+//string	$sl[] = `ls -selection -objectsOnly -type tentacleShapeNode`;
+for ($tentacleShapeNode in `ls -selection -objectsOnly -type tentacleShapeNode`) {
+	if (`objExists ($tentacleShapeNode + ".outputMesh")` == false)
+		continue;
+
+	string	$transform_array[] = `listConnections -source off -destination on ($tentacleShapeNode + ".outputMesh")`;
+	string	$connectAttr_array[] = `listConnections -source off -destination on -connections true -plugs true ($tentacleShapeNode + ".outputMesh")`;
+	int	$n = size($connectAttr_array) / 2;
+	print ("$n = " + $n + "\n");
+	for ($i = 0; $i < $n; ++$i) {
+		print ("A:= |" + $connectAttr_array[2 * $i + 0] + "|" + "\n");
+		print ("B:= |" + $connectAttr_array[2 * $i + 1] + "|" + "\n");
+		disconnectAttr $connectAttr_array[2 * $i + 0] $connectAttr_array[2 * $i + 1];
+	}
+	if (size($transform_array)) {
+		for ($transform in $transform_array) {
+			print ("transform:= |" + $transform + "|" + "\n");
+			delete $transform;	// shape 노드가 transform 노드의 child 로 설정되었으므로(아래)
+						// shape 노드가 자동으로 삭제된다.
+		}
+		for ($group in `ls "tentacle_mesh*"`) {
+			print ("group:= |" + $group + "|" + "\n");
+			delete $group;
+		}
+	}
+}
+
+	global string	$g__CT_selection[];
+	$g__CT_selection = `ls -selection`;
+}
+global proc	CTConnectMesh()
+{
+for ($tentacleShapeNode in `ls -selection -objectsOnly -type tentacleShapeNode`) {
+	print ("tentacleShapeNode:= |" + $tentacleShapeNode + "|" + "\n");
+	if (`objExists ($tentacleShapeNode + ".outputMesh")` == false)
+		continue;
+	string	$transform_array[] = `listConnections -source off -destination on ($tentacleShapeNode + ".outputMesh")`;
+	if (size($transform_array)) {
+		for ($transform in $transform_array) {
+			print ("transform:= |" + $transform + "|" + "\n");
+			delete $transform;	// shape 노드가 transform 노드의 child 로 설정되었으므로(아래)
+						// shape 노드가 자동으로 삭제된다.
+		}
+	}
+	int	$n = `getAttr -size ($tentacleShapeNode + ".outputMesh")`;
+	print ("$n = " + $n + "\n");
+	if ($n % 3 != 0) {
+		displayError("# of .outputMesh: " + $n + ": should be divisor of 3!");
+		continue;
+	}
+	// plug-in 이 physical index 를 관리하므로, 연결할 때도 physical index 를 사용해야 한다!
+	int	$physical_index_array[] = `getAttr -multiIndices ($tentacleShapeNode + ".outputMesh")`;
+	print ("possible physical indices:");
+	if (size($physical_index_array)) {
+		for ($i in $physical_index_array) {
+			print (" " + $i);
+		}
+		print "\n";
+	} else
+		print (" None\n");
+	int	$strandId = 0;
+	string	$transform_tentacle;
+	string	$transform_tentacle_head;
+	string	$transform_tentacle_tail;
+	for ($i = 0; $i < $n; ++$i) {
+		string	$transform;
+		if ($i % 3 == 0) {
+			$transform_tentacle = `createNode transform -name ("transform_tentacle_" + $strandId)`;
+			$transform = $transform_tentacle;
+		} else if ($i % 3 == 1) {
+			$transform_tentacle_head = `createNode transform -name ($transform_tentacle + "_head")`;
+			$transform = $transform_tentacle_head;
+		} else {	// $i % 3 == 2
+			$transform_tentacle_tail = `createNode transform -name ($transform_tentacle + "_tail")`;
+			$transform = $transform_tentacle_tail;
+			group -name ("tentacle_mesh_" + $strandId) $transform_tentacle $transform_tentacle_head $transform_tentacle_tail;
+
+			++$strandId;
+		}
+//		setAttr -lock true ($transform + ".translateX");
+//		setAttr -lock true ($transform + ".translateY");
+//		setAttr -lock true ($transform + ".translateZ");
+//		setAttr -lock true ($transform + ".rotateX");
+//		setAttr -lock true ($transform + ".rotateY");
+//		setAttr -lock true ($transform + ".rotateZ");
+//		setAttr -lock true ($transform + ".scaleX");
+//		setAttr -lock true ($transform + ".scaleY");
+//		setAttr -lock true ($transform + ".scaleZ");
+//		setAttr -lock true ($transform + ".visibility");
+		if ($i % 3)
+			setAttr ($transform + ".visibility") off;
+		string	$shape = `createNode mesh -p $transform`;
+		sets -add initialShadingGroup $shape;	// 연결된 mesh 가 렌더링되도록...
+		eval("connectAttr " + $tentacleShapeNode + ".outputMesh[" + $physical_index_array[$i] + "] " + $shape + ".inMesh");
+	}
+}
+
+	global string	$g__CT_selection[];
+	select -replace $g__CT_selection;
+}

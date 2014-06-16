@@ -1,0 +1,271 @@
+^ {
+////////////////////////////////////////////////////////////////////////
+THREAD: Level 1		(MFC) Starting point
+////////////////////////////////////////////////////////////////////////
+extern "C" int
+WINAPI _tWinMain(
+	HINSTANCE	hInstance,
+	HINSTANCE	hPrevInstance,
+	LPTSTR		lpCmdLine,
+	int		nCmdShow
+)
+{
+	// call shared/exported WinMain
+	return AfxWinMain(hInstance, hPrevInstance, lpCmdLine, nCmdShow);
+}
+
+int
+AFXAPI AfxWinMain(
+	HINSTANCE	hInstance,
+	HINSTANCE	hPrevInstance,
+	LPTSTR		lpCmdLine,
+	int		nCmdShow
+)
+{
+	......
+	if (!pThread->InitInstance()) {
+		if (pThread->m_pMainWnd != NULL) {
+			TRACE0("Warning: Destroying non-NULL m_pMainWnd\n");
+			pThread->m_pMainWnd->DestroyWindow();
+		}
+		nReturnCode = pThread->ExitInstance();
+		goto InitFailure;
+	}
+	nReturnCode = pThread->Run();
+	......
+	return nReturnCode;
+}
+
+// Main running routine until application exits
+int
+CWinApp::Run(
+	VOID
+)
+{
+	......
+}
+
+////////////////////////////////////////////////////////////////////////
+THREAD: Level 1		(Application) Starting point
+////////////////////////////////////////////////////////////////////////
+BOOL
+CEpoch2App::InitInstance(
+	VOID
+)
+{
+	......
+	CreateServerInstance();
+
+	return TRUE;
+}
+
+VOID
+CEpoch2App::CreateServerInstance(
+	VOID
+)
+{
+	new CCmdBroker();
+	g_CmdBroker->Create();
+	g_CmdBroker->SetCommand("create");
+}
+
+bool
+CCmdBroker::Create(VOID
+)
+{
+	......
+	m_hThread = CreateThread(
+			0,
+			0,
+			(LPTHREAD_START_ROUTINE) CmdMainLoop,
+			lpParameter,
+			0,
+			&dwThreadID
+	);
+
+	return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////
+THREAD: Level 2		CmdMainLoop
+////////////////////////////////////////////////////////////////////////
+DWORD CmdMainLoop(LPVOID hinstance)
+int CCmdBroker::Execute(void)
+int CCmdBroker::Execute(char* cmdline)
+int CCmdEntry::Execute(int argc, char **argv)
+int cmd_Start(int argc, char** argv)
+int
+CServerManager::StartServer(
+	VOID
+)
+{
+	......
+	Create();
+
+	//Logout(g_LogMain, "run_server\n");
+
+	DWORD	threadid;
+	m_ServerMainThread = CreateThread(
+		0,
+		0,
+		(LPTHREAD_START_ROUTINE) run_server,
+		g_hInstance,
+		0,
+		&threadid
+	);
+
+	return OK;
+}
+
+
+////////////////////////////////////////////////////////////////////////
+THREAD: Level 3		run_server
+////////////////////////////////////////////////////////////////////////
+DWORD run_server(LPVOID hinstance)
+void CServerManager::Run(void)
+void CGameLoop::Run()
+void CGameLoop::NetworkProcess()
+int	CDisposer::TCPDispose(void)
+$ }
+
+
+////////////////////////////////////////////////////////////////////////
+	서버의 main loop 을 (예를 들어, TCPDispose()) 시작하기 전에,
+    모든 준비가 끝나야 한다. 여기에는 TCP용 Server가 사용가능해야
+    한다는 것을 포함한다.
+////////////////////////////////////////////////////////////////////////
+int
+CServerManager::Create(
+	VOID
+)
+{
+	......
+
+// {
+#ifdef gmTCP_SERVER
+/*
+ * 목적:
+ *	TCP용 네트워크 서버를 시작한다.
+ */
+	gmPARAM_TCP	myParamTCP;
+	myParamTCP.maxClients			= 64;	// SERVER
+	myParamTCP.TCPPort			= 2000;	// port #
+	myParamTCP.recvPubQueueSizeInExponent	= 21;	// 2^21 = 2M
+	myParamTCP.recvQueueSizeInExponent	= 13;	// 2^13 = 8K
+	myParamTCP.recvTimeOut			= 1000;	// 1 second
+	myParamTCP.sendQueueSizeInExponent	= 14;	// 2^13 = 8K
+	myParamTCP.sendTimeOut			= 1000;	// 1 second
+	int	gmStatus = 0xCDCDCDCD;	// 임의의 값으로...
+
+	new gmTCPServer(myParamTCP, &gmStatus);		// singleton!!!
+	if (!g__TCPServer || gmStatus != 0) {
+		g__TCPServer = NULL;
+		return ERR;
+	}
+	Logout(g_LogMain, "TCP Server initilized!\n");
+#endif	// gmTCP_SERVER
+// }
+
+	return OK;
+}
+////////////////////////////////////////////////////////////////////////
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+int
+WINAPI WinMain(
+	HINSTANCE	hInstance,
+	HINSTANCE	hPrevInstance,
+	LPSTR		lpCmdLine,
+	int		nCmdShow
+)
+{
+	......
+
+	gGameClientManager = new GameClientManagerClass;
+	gGameClientManager->Run();
+	delete gGameClientManager;
+
+	return 0;
+}
+
+////////////////////////////////////////////////////////////////////////
+GameClientManagerClass::GameClientManagerClass(
+	VOID
+)
+{
+	......
+	new EpochSoundManagerClass();		// 5개의 쓰레드를 생성
+	......
+	new CDisposer(PORT_CLIENT,CLIENT_UDP_BUFFER,buf,NULL);
+	......
+}
+
+CDisposer::CDisposer(
+	int	port,
+	int	buffer_size,
+	char*	default_target,
+	char*	community_addr
+)
+{
+}
+////////////////////////////////////////////////////////////////////////
+
+
+////////////////////////////////////////////////////////////////////////
+VOID
+GameClientManagerClass::Run(
+	VOID
+)
+{
+	......
+	Input(gEpochSystem->ElapsedAverageTime);
+//	check=gEpochSystem->GetDoubleTime()-check;
+//	Con_Printf("inputtimecheck %f\n",check);
+//	check=gEpochSystem->GetDoubleTime();
+	Frame(gEpochSystem->ElapsedAverageTime);
+	......
+}
+////////////////////////////////////////////////////////////////////////
+
+
+////////////////////////////////////////////////////////////////////////
+void GameClientManagerClass::Run()
+void GameClientManagerClass::Input(double elapsedtime)
+void DocFrameManagerClass2::Input(double time)
+void SystemDocFrameClass2::Input(double time)
+void  ConnectGameSheetClass2::Input(double time)
+////////////////////////////////////////////////////////////////////////
+
+
+////////////////////////////////////////////////////////////////////////
+void GameClientManagerClass::Run()
+void GameClientManagerClass::Frame(double elapsedtime)
+void DocFrameManagerClass2::Process(double time)
+void SystemDocFrameClass2::Process(double elapsedtime)
+void  SystemDocFrameClass2::NetworkProcess(float et)
+void  SystemDocFrameClass2::ReadAndProcessPackets()
+int	CDisposer::Dispose() 
+int	CDisposer::TCPDispose(void)
+////////////////////////////////////////////////////////////////////////
+
+
+
+클라이언트에서 TCP연결이 이루어지지 않았는 데,
+계속해서 TCPDispose를 통해서 TCP를 쳐다보고 있다. (?)
+

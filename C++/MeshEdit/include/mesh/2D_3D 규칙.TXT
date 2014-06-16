@@ -1,0 +1,130 @@
+이 문서에서는 2D 와 3D 사이의 규칙을 정한다.
+3D 라이브러리가 없는 상태에서 2D 가 어떻게 이를 테스트할 지를 정한다.
+
+
+규칙
+====
+2D 에서는 다음 두 함수만을 사용하여 3D 와 통신한다:
+
+        getValue: 3D 에서 값을 얻을 때
+        setValue: 3D 에 값을 넘겨줄 때
+
+함수의 prototype 은 다음과 같다.
+
+        int getValue(TAB_XXX, TAB_XXX__YYY, void* dataPtr);
+        int setValue(TAB_XXX, TAB_XXX__YYY, const void* dataPtr);
+
+리턴값은 0일 때 성공, 그렇지 않을 때(음수) 실패이다.
+
+TAB_XXX 는 Tab 을 나누는 큰 분류(category)이다: 예를 들어,
+        TAB_MEASURE: 계측
+        TAB_SIMULATION: 성형
+
+TAB_XXX__YYY 는 주어진 TAB_XXX 에 속하는 특정 항목이다: 예를 들어,
+        TAB_MEASURE__HEIGHT: 키
+        TAB_MEASURE__WAIST: 허리 둘레
+	TAB_SIMULATION__TEMPLATE_SHOW: 성형모양 보기
+	TAB_SIMULATION__TEMPLATE_CC: 성형 결과 cc 값 얻기
+
+각 TAB_XXX, TAB_XXX__YYY 마다 사용하는 데이터의 형식을 다를 수 있다;
+간단하게는 기본형(bool, float 등)에서부터 구조화된 형(struct)일 수도 있다.
+다음과 같이 해당 형의 변수를 미리 선언하고 그 변수에 대한 포인터를 넘겨준다:
+	bool	showGrid = true;	// True: "모눈 종이"를 표시한다.
+	if (setValue(TAB_ISOMETRIC, TAB_ISOMETRIC__GRID, &showGrid) < 0) {
+		// 실패
+	} else {
+		// 성공
+	}
+
+주어진 (TAB_XXX, TAB_XXX__YYY) 의 자세한 목록과
+각 조합에서 사용하는 데이터 구조는 협의하에 결정한다.
+그 전까지는 규칙에 따라 정해서 사용한다.
+
+
+함수의 구현
+===========
+3D 라이브러리가 없는 환경에서 2D 에서는 위의 두 함수를 다음과 같이 구현한다;
+#if/#else/#endif 를 써서 3D 라이브러리가 있는 경우와 없는 경우를 구분하였다.
+3D 라이브러리가 없는 경우는 마치 3D 라이브러리에 있는 함수를 호출한 것처럼
+콘솔이나 아니면 메시지창에 메시지만 표시하면 된다.
+
+enum TAB_XXX
+{
+	TAB_VIEW	= 0,
+	TAB_MEASURE	= 1,
+	TAB_ISOMETRIC	= 2,
+	TAB_SIMULATION	= 3,
+	//...... 계속 추가
+};
+enum TAB_XXX__YYY
+{
+	// TAB_VIEW
+	TAB_VIEW__TOP	= 0,
+	TAB_VIEW__BOTTOM,
+	//...... 계속 추가
+
+	// TAB_MEASURE
+	TAB_MEASURE__HEIGHT,
+	TAB_MEASURE__WAIST,
+	//...... 계속 추가
+
+	//..... 계속 추가
+};
+
+int	getValue(TAB_XXX xxx, TAB_XXX__YYY yyy, void* dataPtr)
+{
+#if 0	// 3D 라이브러리가 있는 경우
+	// 실제로 3D 라이브러리에 있는 함수를 호출한다.
+	return 3dlib.getValue(xxx, yyy, dataPtr);
+#else	// 3D 라이브러리가 없는 경우
+	switch (xxx) {
+	case TAB_VIEW;
+		switch (yyy) {
+		TAB_VIEW__TOP:
+			// 단지 메시지만 표시한다.
+			(void) fprintf(stdout,
+				"getValue: (TAB_VIEW, TAB_VIEW__TOP)\n"
+			);
+			break;
+		//...... 계속 추가
+		}
+		break;
+	case TAB_MEASURE:
+		break;
+	//...... 계속 추가
+	}
+#endif
+}
+
+int	setValue(TAB_XXX xxx, TAB_XXX__YYY yyy, const void* dataPtr)
+{
+#if 0	// 3D 라이브러리가 있는 경우
+	// 실제로 3D 라이브러리에 있는 함수를 호출한다.
+	return 3dlib.setValue(xxx, yyy, dataPtr);
+#else	// 3D 라이브러리가 없는 경우
+	switch (xxx) {
+	case TAB_VIEW;
+		switch (yyy) {
+		TAB_VIEW__TOP:
+			// 단지 메시지만 표시한다.
+			(void) fprintf(stdout,
+				"setValue: (TAB_VIEW, TAB_VIEW__TOP): %s\n"
+				,
+				*((bool*) dataPtr) ? "True" : "False"
+			);
+			break;
+		//...... 계속 추가
+		}
+		break;
+	case TAB_MEASURE:
+		break;
+	//...... 계속 추가
+	}
+#endif
+}
+
+
+문서명: 2D/3D 규칙
+문서버젼: 0.1
+작성일자: 2009년 6월 4일
+작성자: 김광호

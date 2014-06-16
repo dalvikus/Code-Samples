@@ -1,0 +1,141 @@
+INT
+CServerManager::StartServer(HINSTANCE hInstance)
+{
+	......
+
+	Create();	// ghkim: INT CServerManager::Create(VOID)
+
+	......
+	CServerMiddleManager::StartServer(hInstance);
+	return OK;
+}
+
+INT
+CServerManager::Create(VOID)
+{
+	......
+
+	CServerMiddleManager::Create(2000);
+	return OK;
+}
+
+INT
+CServerMiddleManager::Create(UINT nTcpPort)
+{
+	// TCP
+	......
+	return NET_OK;
+}
+
+////////
+
+INT
+CServerMiddleManager::StartServer(...)
+{
+	m_ServerMainThread = CreateThread(..., (LPTHREAD_THREAD_ROUTINE) run_server, ...);
+	return NET_OK;
+}
+
+DWORD	run_server(LPVOID)
+{
+	g__ServerMiddleManager->Run();	// ghkim: CServerManager::Run(VOID)
+	return NET_OK;
+}
+
+VOID
+CServerManager::Run(VOID)
+{
+	......
+
+	for (;;) {
+		if (m_Action == SERVER_ACTION_QUIT)
+			break;
+
+		.....
+	}
+
+	......
+
+	return;
+}
+
+
+1. 
+class CServerManager:
+	public CServerMiddleManager,
+	public Singleton <CServerManager>
+{
+	......
+};
+
+CServerManager::CServerManager():
+	CServerMiddleManager()
+
+2.
+class CServerMiddleManager
+{
+	......
+protected:
+	HANDLE	m_ServerMainThread;
+
+	......
+};
+
+
+////////
+
+
+int
+cmd_stop(int argc, char* argv[])
+{
+	return g_ServerManager->QuitServer();	// ghkim: CServerMiddleManager::QuitServer()
+}
+
+INT
+CServerMiddleManager::QuitServer(VOID)
+{
+	......
+
+	m_Action = SERVER_ACTION_QUIT;
+	WaitForSingleObject(m_ServerMainThread, INFINITE);
+
+	return NET_OK;
+}
+
+INT
+cmd_DestroyBroker(INT argc, LPCHAR argv[])
+{
+	......
+
+	delete g_ServerManager;
+}
+
+CServerManager::~CServerManager()
+{
+	if (m_State != SERVER_IDLE)
+		Destroy();
+}
+
+INT
+CServerManager::Destroy(VOID)
+{
+	if (CServerMiddleManager::Destroy() == NET_ERR)
+		return NET_ERR;
+
+	......
+}
+
+
+INT
+CServerMiddleManager::Destroy(VOID)
+{
+	if (m_State == SERVER_RUNNING || m_State == SERVER_STOPPED) {
+		QuitServer();
+		return NET_ERR;
+	}
+
+	......
+
+	return NET_OK;
+}
+

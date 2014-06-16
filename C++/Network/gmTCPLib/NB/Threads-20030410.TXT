@@ -1,0 +1,22 @@
+(524)*
+		CEpoch2App::InitInstance(...)
+			CreateServerInstance(...)
+(340)*				g_CmdBroker->Create(1)
+		DWORD CmdMainLoop(LPVOID hinstance)
+		CServerManager::StartServer(...)
+			CGateManager::OpenGate(...)
+				CUdpLayer::OpenSocket(...)
+					CIpLayer::SetLocalAddress(...)
+(4E4)*						gethostname(1)
+(4F8)				m_GateInputThread(1)
+(4C4)				m_GateOutputThread(1)
+			CServerManager::Create(...)
+(500)+				g_GameDBManager.Create(1)
+(4E8)+				g_LoginDBManager.Create(1)
+(3E0,4BC,4FC)+			g_LoginDBManager.ExecuteTask(3)
+				CServerMiddleManager::Create(...)
+()					g__TCPServer(1)
+			CServerMiddleManager::StartServer(...)
+()				m_ServerMainThread(1)
+
+2 -> 12 -> 8 -> 12

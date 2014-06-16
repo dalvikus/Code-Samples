@@ -1,0 +1,114 @@
+global string  $g_UIDoAppendPf;
+global string  $g_UIDoReplaceStr;
+global string  $g_UIPostfix;
+global string  $g_UIOldStr;
+global string  $g_UINewStr;
+     
+// $sObj is long object name
+proc string appendPostfix(string $sObj)
+{
+     global string $g_UIPostfix;
+     string $sChildOfs[];
+     string $sNewName;
+     string $sPostfix;
+     string $spBuffer[]; //tokenize object's hierarchical name
+     int    $nNumBuffer;
+     $sChildOfs = `listRelatives -f -type transform -ad $sObj`;
+     $sPostfix = `textField -q -tx g_UIPostfix`;
+
+     for ($obj in $sChildOfs) {
+	  $nNumBuffer = `tokenize $obj "|" $spBuffer`;
+	  $sNewName = `substitute  "_" $spBuffer[$nNumBuffer-1] ($sPostfix + "_")`;
+	  rename $obj $sNewName;
+     }
+     $nNumBuffer = `tokenize $sObj "|" $spBuffer`;
+     $sNewName = `substitute "_" $spBuffer[$nNumBuffer-1] ($sPostfix + "_")`;
+     rename $sObj $sNewName;
+     $spBuffer = `ls -l $sNewName`;
+     return $spBuffer[0];
+}
+
+// $sObj is long object name
+proc string replaceStr(string $sObj)
+{
+     global string $g_UIOldStr;
+     global string $g_UINewStr;
+     string $sChildOfs[];
+     string $sOldStr;
+     string $sNewStr;
+     string $sNewName;
+     string $spBuffer[];
+     int    $nNumBuffer;
+     $sChildOfs = `listRelatives -f -type transform -ad $sObj`;
+     $sOldStr = `textField -q -tx g_UIOldStr`;
+     $sNewStr = `textField -q -tx g_UINewStr`;
+     for ($obj in $sChildOfs) {
+	  $nNumBuffer = `tokenize $obj "|" $spBuffer`;
+	  $sNewName = `substitute  $sOldStr $spBuffer[$nNumBuffer-1] $sNewStr`;
+	  rename $obj $sNewName;
+     }
+     $nNumBuffer = `tokenize $sObj "|" $spBuffer`;
+     $sNewName = `substitute $sOldStr $spBuffer[$nNumBuffer-1] $sNewStr`;
+     rename $sObj $sNewName;
+     $spBuffer = `ls -l $sNewName`;
+     return $spBuffer[0];
+}
+
+proc createUI()
+{
+     global string  $g_UIDoAppendPf;
+     global string  $g_UIDoReplaceStr;
+     global string  $g_UIPostfix;
+     global string  $g_UIOldStr;
+     global string  $g_UINewStr;
+
+     string $mainWnd;
+     string $mainWnd = `window -title "rename object" -widthHeight 300 100`;
+     columnLayout;
+	  rowLayout -numberOfColumns 2;
+	       checkBox -label "append postfix" g_UIDoAppendPf;
+	       textField g_UIPostfix;
+
+	  setParent ..;
+	  rowLayout -numberOfColumns 3;
+	       checkBox -label "replace string" g_UIDoReplaceStr;
+	       textField g_UIOldStr;
+	       textField g_UINewStr;
+
+	  setParent ..;
+	  button -label "Run!" -c run;
+
+     showWindow $mainWnd;
+}
+
+global proc run() 
+{
+     global string $g_UIDoAppendPf;
+     global string $g_UIDoReplaceStr;
+
+     int $bDoAppendPf;
+     int $bDoReplaceStr;
+     string $sSelObjs[];
+
+     $sSelObjs = `ls -sl -l`;
+     $bDoAppendPf = `checkBox -q -v g_UIDoAppendPf`;
+     $bDoReplaceStr = `checkBox -q -v g_UIDoReplaceStr`;
+     
+     for ($sObj in $sSelObjs) {
+	  if ($bDoAppendPf) {
+	       $sObj = appendPostfix($sObj);
+	  }
+	  if ($bDoReplaceStr) {
+	       $sObj = replaceStr($sObj);
+	  }
+     }
+}
+
+global proc ObjRename() 
+{
+     createUI();
+}
+
+
+
+

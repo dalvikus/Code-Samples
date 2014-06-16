@@ -1,0 +1,58 @@
+Microsoft Visual Studio Solution File, Format Version 8.00
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Upload", "Upload\Upload.vcproj", "{9DBA265B-AEDF-4AB0-BBA8-3B80D9B21312}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Search", "Search\Search.vcproj", "{9743AA1B-6B64-4E6D-8F9E-2AA2A4EB41D6}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CAPI", "CAPI\CAPI.vcproj", "{F338C71D-F37E-47C2-B639-ABBA7A9A8BCB}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CreateProcessWithLogonW", "CreateProcessWithLogonW\CreateProcessWithLogonW.vcproj", "{A4636EBF-5479-46CB-8768-8A99C0388E6B}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Account", "Account\Account.vcproj", "{47255F40-2316-48D6-BFE2-CE1325089870}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfiguration) = preSolution
+		Debug = Debug
+		Release = Release
+	EndGlobalSection
+	GlobalSection(ProjectDependencies) = postSolution
+	EndGlobalSection
+	GlobalSection(ProjectConfiguration) = postSolution
+		{9DBA265B-AEDF-4AB0-BBA8-3B80D9B21312}.Debug.ActiveCfg = Debug|Win32
+		{9DBA265B-AEDF-4AB0-BBA8-3B80D9B21312}.Debug.Build.0 = Debug|Win32
+		{9DBA265B-AEDF-4AB0-BBA8-3B80D9B21312}.Release.ActiveCfg = Release|Win32
+		{9DBA265B-AEDF-4AB0-BBA8-3B80D9B21312}.Release.Build.0 = Release|Win32
+		{9743AA1B-6B64-4E6D-8F9E-2AA2A4EB41D6}.Debug.ActiveCfg = Debug|Win32
+		{9743AA1B-6B64-4E6D-8F9E-2AA2A4EB41D6}.Debug.Build.0 = Debug|Win32
+		{9743AA1B-6B64-4E6D-8F9E-2AA2A4EB41D6}.Release.ActiveCfg = Release|Win32
+		{9743AA1B-6B64-4E6D-8F9E-2AA2A4EB41D6}.Release.Build.0 = Release|Win32
+		{F338C71D-F37E-47C2-B639-ABBA7A9A8BCB}.Debug.ActiveCfg = Debug|Win32
+		{F338C71D-F37E-47C2-B639-ABBA7A9A8BCB}.Debug.Build.0 = Debug|Win32
+		{F338C71D-F37E-47C2-B639-ABBA7A9A8BCB}.Release.ActiveCfg = Release|Win32
+		{F338C71D-F37E-47C2-B639-ABBA7A9A8BCB}.Release.Build.0 = Release|Win32
+		{A4636EBF-5479-46CB-8768-8A99C0388E6B}.Debug.ActiveCfg = Debug|Win32
+		{A4636EBF-5479-46CB-8768-8A99C0388E6B}.Debug.Build.0 = Debug|Win32
+		{A4636EBF-5479-46CB-8768-8A99C0388E6B}.Release.ActiveCfg = Release|Win32
+		{A4636EBF-5479-46CB-8768-8A99C0388E6B}.Release.Build.0 = Release|Win32
+		{47255F40-2316-48D6-BFE2-CE1325089870}.Debug.ActiveCfg = Debug|Win32
+		{47255F40-2316-48D6-BFE2-CE1325089870}.Debug.Build.0 = Debug|Win32
+		{47255F40-2316-48D6-BFE2-CE1325089870}.Release.ActiveCfg = Release|Win32
+		{47255F40-2316-48D6-BFE2-CE1325089870}.Release.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionItems) = postSolution
+		History.TXT = History.TXT
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+	EndGlobalSection
+	GlobalSection(ExtensibilityAddIns) = postSolution
+	EndGlobalSection
+EndGlobal

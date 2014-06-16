@@ -1,0 +1,119 @@
+Cephalopod-0.1.1 (090909EST)
+	1. 생성된 촉수가 씬파일 저장 후에도 유지
+	2. 촉수 선택시 "Ramp"가 속성조절창과 동기화가 안되는 버그 수정
+	3. 기술문서 완성(공개버젼 1.0; 비공개버젼 0.2)
+	4. 이전 플러그인(afterShave)과 관련된 모든 이름 수정:
+		afterShave/		plugin/
+		afterShaveBrushTool/	brushTool/
+		afterShaveNode/		baseShape/
+		include/afterShave/	include/brushTool/	(분리)
+					include/baseShape/	(분리)
+Cephalopod-0.1.2 (091409EST)
+	1. 가시화할 때, 물체가 scale 변환을 하는 경우, 절단면을 제대로 표시하지 못하는 버그 수정
+	2. script/baseShape_connect.mel 에서 미쳐 바꾸지 못한 이름 변경:
+		afterShave_createHair	->	baseShape_connect
+		afterShaveNode		->	baseShapeCreator
+
+Cephalopod-0.1.3 (no tag in cvs repository; 비공개버젼)
+	1. 이름 변경
+		tentacle	->	tentacleShape
+		plugin		->	plug-ins
+		cephalopod.mll	->	tentacle.mll
+	2. Maya Translate, Rotate, Scale tools disabled
+
+Cephalopod-0.2.0 (101909KST)
+	다음 정보를 출력하는 응용프로그램 예제 제공: applications/appMain.cpp
+		1) 임의의 시각에서 주어진 점이 몸체와 충돌하는 위치
+		2) 임의의 시각에서 촉수 정보;
+			i) Raw 데이터로서 kTentacle.h 의 kTentacle 구조
+			ii) 가공된 데이터로서 촉수의 가닥선을 구성하는 샘플점들의 위치와
+			촉수의 표면을 결정하는 샘플점들의 위치
+		3) 임의의 시각에서 촉수뿌리의 운동정보
+
+Cephalopod-0.2.1 (110109KST)
+	마야 필드(Field)를 사용하는 예; applications/appMain.cpp
+	버그수정: Maya2008(200800)과 Maya2008 SP1(200806)을 구별하여 #if/#endif 를 사용
+
+Cephalopod-0.2.2 (111509KST)
+	김명규박사의 시뮬레이터(SBDTMaya) 응용 프로그램에 적합하도록 MayaBody2 클래스 구현;
+	기존의 MayaBody 클래스와 시뮬레이터의 ShSimBody 클래스를 모두 상속받는 클래스
+		추가된 파일: include/baseShape/MayaBody2.h, baseShape/MayaBody2.cpp
+		수정된 파일: applications/appMain.cpp(예제), applications/NOTE.TXT(설명서)
+
+Cephalopod-0.2.3 (120509KST)
+	현재 Tentacle 정보를 인덱스를 통해 접근하는 배열를 사용하여 읽기와 쓰기를 수행한다: __tentacleArrayArray
+	여기서 Tentacle 정보에는 촉수 자체의 정보(__tentacleArray) 뿐만아니라
+	촉수를 생성할 때 사용했던, Attribute Editor 에 있는 설정(__tentacleParameter)도 포함된다;
+	추후에 시뮬레이션 파라미터가 추가된다면 이도 포함되도록 할 수 있는 구조이다.
+		촉수 자체를 변경하는 일은 다음으로 미룬다.
+
+Cephalopod-0.2.4 (012410KST)
+	렌더링을 위해 촉수에 메쉬를 연결;
+	촉수의 갯수를 결정한 후에 connect_mesh 함수를 호출할 것(tentacle.mel)
+	만약 촉수의 갯수를 변경할 경우 먼저 disconnect_mesh 를 호출할 것(tentacle.mel)
+	TO DO LIST:
+		1. 촉수의 생성/소멸시 자동으로 mesh 를 연결할 것
+		2. 촉수의 갯수가 변경되더라도 자동으로 mesh 를 연결할 것
+
+
+Cephalopod-0.3.0 (021310KST)
+	김명규박사가 보낸 시뮬레이터 소스(SBDSetMaya20100210.zip/SBDSetMaya20100210-0211byKGH.zip)에서
+	플러그인과 관련된 두 프로젝트(SHDlib: 시뮬레이터 라이브러리,
+	SBDTMaya: 시뮬레이터와 플러그인이 제공하는 라이브러리를 사용하는 예)를
+	Cephalopod 솔루션에 추가한다.
+		1. SBDlib 프로젝트에서는 SBDlib 를 사용하는 예제인 ShapeMatching2D 를 제외한다.
+		2. SBDTMaya 프로젝트를 실행하기 위해서는 플러그인(tentacle.mll)과
+		플러근인을 사용하여 만들어진 씬 파일(field2.mb),
+		시뮬레이터 매개변수 파일인(field2.mb.kps)가 필요하다.
+		또한 SBDTMaya 실행결과인 field2-0000000-0000001-* (7개) 파일을 비교를 위해 따로 보관한다.
+		debug/ 란 폴더가 추가된 이유이다.
+
+	주1) 플러근인에서 더 이상 Cephalopod/include/SHD/*.h (털 시뮬레이터 헤더파일),
+	Cephalopod/lib/SHDlib.lib (털 시뮬레이터 라이브러리)는 사용되지 않고,
+	SBD/SBDlib/ 를 사용한다.
+
+	주2) SBD 솔루션의 원본은 태그가 Cephalopod-0_3_0 이 아닌 SBDSetMaya20100210 이다.
+
+	TO DO LIST:
+		1) 이 플러그인을 로드한 후 씬을 열어 아무것도 하지 않았는 데도
+		MFileIO::newFile(false) 에서 에러가 발생한다.
+
+
+Cephalopod-0.3.1 (030710EST)
+	SBDlib를 사용하는 "시뮬레이션 플러그인 라이브러리" 완성; kShSimulationMayaTentacle클래스
+	예제: tentacleShape/tentacleShape.cpp(플러그인), applications/appMainTentacle.cpp(응용프로그램)
+	(사용자) 설명서: simulation/"시뮬레이션 플러그인 라이브러리 사용자 설명서.doc"
+
+	주) 개발자용 설명서(simulation/"시뮬레이션 플러그인 라이브러리 개발자 설명서.doc")는 작성 중
+
+Cephalopod-0.3.2 (031410EST)
+	1. 촉수 표면의 메쉬화
+	2. 마야메쉬를 그대로 따랐으므로 기본 플러그인(ribExport.mll)을 사용하면 렌더맨용 RIB 생성 가능
+Cephalopod-0.3.2-1 (032210PST)
+	1. 버그 수정: tentacleShape/tentacleShape.cpp
+		1) 촉수의 길이를 잘못 설정
+		2) 메쉬 구성시 노말 방향과 UV 좌표를 잘못 설정
+	2. 문서 추가
+		1) tentacleShape/
+			"사용문서.TXT"	->	"촉수 스타일링 사용자 설명서.doc"
+			"기술문서.TXT"	->	"촉수 스타일일 개발자 설명서.doc"
+		2) simulation/
+			"시뮬레이션 플러그인 라이브러리 사용자 설명서.doc" 수정
+			"시뮬레이션 플러그인 라이브러리 개발자 설명서.doc" 추가
+		3) 합본 "용역결과최종보고서.doc" 추가
+
+Cephalopod-0.3.3 (032810EST)
+	MANUAL_CUT 을 사용하여 촉수의 절단 구현
+
+Cephalopod-0.3.3-1 (042810EST)
+	1. Simulation Parameter 에 대해 애니메이션 키를 설정할 수 있도록 수정;
+	Attribute Editor 에서 해당 값에 대해 키를 설정하는 UI 설정은 아직 지원하지 않고
+	대신에 Graph Editor 를 사용 (w/ Hypergraph)
+	단, "Race Type"은 제외
+	2. 여러 개의 tentacleShape 노드에 대해 Attribute Editor 등을 적용할 수 있도록 수정(되돌림)
+	3. Simulation Parameter 에서 문자열 변경: "Hair" -> "Tentacle",
+	i.e., IncludeHairBodyCollision -> IncludeTentacleBodyCollision
+	(실제로는 Tentacle 의 중심가닥선과의 충돌을 의미함)
+
+Cephalopod-0.3.4
+	마야에서 메쉬에 "Skin > Smooth Bind"된 경우를 처리한다.

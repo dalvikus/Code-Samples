@@ -1,0 +1,5 @@
+SELECT REPLACE(UUID(), '-', '');
+
+INSERT ...;
+
+SELECT ...;

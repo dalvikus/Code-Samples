@@ -1,0 +1,107 @@
+<project name="dick" basedir="." default="main">
+<!-- perperty -->
+    <!-- directory -->
+    <property name="debug"              value="true"/>
+    <property name="src-dir"            value="src"/>
+    <property name="build-dir"          value="build"/>
+    <property name="lib-dir"            value="lib"/>
+    <property name="jar-lib-dir"        value="/disk/jar"/>
+    <property name="depend-cache-dir"   value=".depend"/>
+    <property name="classes-dir"        value="${build-dir}/classes"/>
+    <property name="jar-dir"            value="${build-dir}/jar"/>
+    <!-- variable -->
+    <property name="main-class"         value="com.dn2soft.dick.Dick"/>
+    <property name="jsoup-jar"          value="${jar-lib-dir}/jsoup.jar"/>
+    <property name="derby-jar"          value="/disk/jdk1.7.0_60/db/lib/derby.jar"/>
+    <property name="java.compilerargs"  value=""/>
+
+
+<!-- compile -->
+    <depend
+        srcdir="${src-dir}"
+        destdir="${classes-dir}"
+        cache="${depend-cache-dir}"
+    >
+    </depend>
+    <target name="compile">
+        <mkdir dir="${classes-dir}"/>
+        <javac debug="${debug}"
+            srcdir="${src-dir}"
+            destdir="${classes-dir}"
+            includeAntRuntime="no"
+        >
+            <compilerarg line="${java.compilerargs}"/>
+            <classpath>
+                <pathelement location="${jsoup-jar}"/>
+            </classpath>
+        </javac>
+    </target>
+
+<!-- jar -->
+    <target name="lib" depends="compile">
+        <mkdir dir="${jar-dir}"/>
+        <jar
+            destfile="${jar-dir}/${ant.project.name}-lib.jar"
+            basedir="${classes-dir}"
+            excludes="**/Dick*.class"
+        >
+        </jar>
+    </target>
+<!-- jar -->
+    <target name="jar" depends="lib">
+        <mkdir dir="${jar-dir}"/>
+        <jar
+            destfile="${jar-dir}/${ant.project.name}.jar"
+            basedir="${classes-dir}"
+            includes="**/Dick*.class"
+        >
+            <manifest>
+                <attribute name="Main-Class" value="${main-class}"/>
+                <attribute name="Class-Path" value="${ant.project.name}-lib.jar ${jsoup-jar} ${derby-jar}"/>
+            </manifest>
+        </jar>
+    </target>
+
+<!-- run -->
+    <target name="run" depends="jar">
+        <java
+            classname="${main-class}"
+            fork="true"
+        >
+            <arg value="-wW"/>
+            <classpath>
+                <pathelement location="${jar-dir}/${ant.project.name}.jar"/>
+            </classpath>
+        </java>
+    </target>
+
+    <target name="clean">
+        <delete dir="${build-dir}"/>
+        <delete dir="${depend-cache-dir}"/>
+        <delete file="${jar-lib-dir}/${ant.project.name}.jar"/>
+        <delete file="${jar-lib-dir}/${ant.project.name}-lib.jar"/>
+    </target>
+    <target name="clean-build" depends="clean,jar"/>
+    <target name="main" depends="clean,run"/>
+
+    <!-- all in one -->
+    <target name="send" depends="jar">
+        <delete file="${jar-lib-dir}/${ant.project.name}.jar"/>
+        <jar
+            destfile="${jar-lib-dir}/${ant.project.name}.jar"
+        >
+            <zipfileset src="${lib-dir}/${jsoup-jar}" excludes="META-INF/maven/**"/>
+            <zipfileset src="${derby-jar}"/>
+            <zipfileset src="${jar-dir}/${ant.project.name}.jar"/>
+            <manifest>
+                <attribute name="Main-Class" value="${main-class}"/>
+            </manifest>
+        </jar>
+    </target>
+    <target name="dist" depends="jar">
+        <delete file="${jar-lib-dir}/${ant.project.name}.jar"/>
+        <delete file="${jar-lib-dir}/${ant.project.name}-lib.jar"/>
+        <copy file="${jar-dir}/${ant.project.name}-lib.jar" todir="${jar-lib-dir}"/>
+        <copy file="${jar-dir}/${ant.project.name}.jar" todir="${jar-lib-dir}"/>
+    </target>
+</project>

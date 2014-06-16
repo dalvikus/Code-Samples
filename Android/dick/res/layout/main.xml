@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:paddingLeft="8dp"
+    android:paddingRight="8dp"
+    android:paddingTop="8dp"
+    android:paddingBottom="8dp"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+>
+    <Button android:id="@+id/lookup"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentRight="true"
+
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+
+        android:text="@string/lookup"
+
+        android:onClick="lookup"
+    />
+    <EditText android:id="@+id/word"
+        android:layout_alignBaseline="@id/lookup"
+        android:layout_toLeftOf="@id/lookup"
+        android:layout_alignParentLeft="true"
+
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+
+        android:hint="@string/word_hint"
+    />
+    <TextView android:id="@+id/display"
+        android:paddingLeft="8dp"
+        android:paddingRight="8dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp"
+
+        android:layout_below="@id/lookup"
+        android:layout_alignParentBottom="true"
+
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+
+        style="@style/DisplayFont"
+    />
+<!--
+        android:text="...DisplayFont"
+-->
+</RelativeLayout>

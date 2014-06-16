@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="DisplayFont" parent="@android:style/TextAppearance.Medium">
+        <item name="android:layout_width">fill_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textColor">@color/word</item>
+        <item name="android:background">@color/background</item>
+    </style>
+<!--
+        <item name="android:typeface">monospace</item>
+-->
+
+    <color name="background">#2e3436</color>
+    <color name="text">#babdb6</color>
+    <color name="text_DEBUG">#000000</color>
+    <color name="word">#34e2e2</color>
+    <color name="ipa">#729fcf</color>
+    <color name="pos">#fce94f</color>
+    <color name="gw">#ad7fa8</color>
+    <color name="def">#8ae234</color>
+    <color name="example_dot">#34e2e2</color>
+    <color name="example">#06989a</color>
+    <color name="info">#c4a000</color>
+    <color name="link">#3465a4</color>
+    <color name="warn">#ffff00</color>
+    <color name="error">#ff0000</color>
+</resources>

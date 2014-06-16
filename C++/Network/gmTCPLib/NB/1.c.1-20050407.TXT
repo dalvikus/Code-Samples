@@ -1,0 +1,4 @@
+2005/04/07 - 1.c.1
+----------------
+
+1. gmPseudoTCP::mf__EncryptMessage, gmPseudoTCP::mf__DecryptMessage를 사용한다.

@@ -1,0 +1,16 @@
+my	$SHADER_EXTRA_PATH = '//FileServer/ShaderExtraPath/';
+
+my	@AoHShaderInfoByArtPlane = (
+	{
+		'type'		=> $SHADER_TYPE__SURFACE,
+		'set'		=> [ qw(plane) ],
+		'content'	=> qq|
+Displacement "Combine2"
+	"string map" [ "d.tex" ]
+Surface "-$SHADER_EXTRA_PATH/Delux2"
+	"string diffuseMap" [ "c.tex" ]
+|
+	}
+);
+
+\@AoHShaderInfoByArtPlane;

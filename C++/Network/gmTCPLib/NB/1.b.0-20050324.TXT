@@ -1,0 +1,87 @@
+2005/03/24 - 1.b.0
+----------------
+
+	공용큐는 사용하지 않는 것으로 했다.
+	따라서 앞으로는 이 부분은 고치지 않을 것이다.
+	만약 공용큐를 사용한다면 공용큐를 사용하지 않는 경우와 비교하면서
+	고쳐야 할 것이다. 그 기준은 1.a.0부터이다.
+
+	PeekMessage는 더 이상 사용하지 않는다.
+	이를 사용하는 마지막 예는 1.a.1을 참고하라.
+
+	Simulation예도 없앤다. 이를 사용하는 마지막 예도 1.a.1을 참고하라.
+
+
+0. (버그) gmPseudoTCP::m__bIOCPSendInProgress값도 매 연결마다 초기화되어야 한다.
+
+1. 예들을 정리하면서 __gmMESSAGE_IOCP__를 최종목표로 삼는다.
+
+2. gmPseudoTCP마다 고유한 ID(UID)를 가진다.
+클라이언트의 경우에는 이 값이 항상 0이지만
+서버의 경우에는 0이 아닌 순차적인 값을 갖는다.
+메시지가 들어왔을 때, 이 값을 PostQueuedCompletionStatus을 호출할 때,
+LPOVERLAPPED에 넘겨준다.
+
+	(1) 서버, 클라이언트를 구별하는 데 사용된다.
+	(2) 서버의 경우에 이미 연결이 끊긴 곳에서 온 정보가 GetQueuedCompletionStatus를 호출할 때,
+	넘어올 수도 있기 때문이다. 모든 메시지가 순차적으로 오고, 연결이 끊기 정보는 비록 OOB라 하더라도
+	제일 나중에 발생하므로 이럴 수는 없다.
+
+특별한 이유가 없다!!!
+UID때문에 PostQueuedCompletionStatus를 호출할 때, 대신 dwNumberOfBytesTransferred를 사용하려고 했다.
+그러기 위해서는 OOB와 구분해야 하고, 따라서 dwNumberOfBytesTransferred의 최상위 비트를 예약했다.
+하지만 OOB가 아닌 메시지의 갯수가 0x80000000을 넘을 수(이럴 수가 있겠는가?) 없어야 하기 때문에
+gmPseudoTCP::mf__HowManayMessages를 고치려했다. 그래서 m__dwMsgUnit라는 걸 도입했고,
+원하는 단위의 메시지가 왔을 때, 그 갯수를 dwNumberOfBytesTransferred에 넣으려했다.
+시작은 OOB를 처리할 자리를 확보하기 위해서였지만,
+이처럼 메시지를 몇 개 단위로 처리하는 것도 의의가 있을 것 같았다.
+물론 m__dwMsgUnit = 0이면 지금처럼 0이 아닌 메시지가 오면 알리도록 했다.
+또 여기서 문제가 생긴다. 원하는 만큼의 메시지가 오지 않았다면
+GetQueuedCompletionStatus에서 알 수가 없다는 것이다.
+물론 FlushAll에서 이를 처리하도록 할 수 있다.
+
+자꾸 깊이 들어가는 것 같아, 우선은 __ToBeContinue로 묶어두었는 데...
+오늘 하루 더 투자해볼까. 의의는 있을 것 같은 데...
+그래 하자!
+
+본래의 의미대로 OOB는 바로 처리는 것으로 하자.
+그러면 앞의 UID개념도 의의가 있다.
+결국 뱀이 자기 입으로 자기 꼬리를 무는 격이군. (끌끌...)
+
+
+다했다!
+
+	m__dwMsgUnit을 적용하기로 했다!!!
+
+	[경우 1] m__dwMsgUnit이 0일 때는 지금처럼 "받은" 큐에 메시지가 있는 즉시 알린다.
+	[경우 2] m__dwMsgUnit이 0이 아닐 때는 매 m__dwMsgUnit개의 메시지가 있을 때에야 알린다.ㅏ
+	단, 다음 경우에는 즉시 알린다.
+		(1) 무조건 알리라고 할 때(bBlind = TRUE): gmPseudoTCP::mf__flush에서 사용한다.
+		(2) "받은" 큐가 일시적으로 정지된 상태일 때
+
+	따라서, 많은 경우에는 gmPseudoTCP::mf__flush를 호출해야 한다.
+	단, m__dwMsgUnit = 1인 경우에는 예외적으로 gmPseudoTCP::mf__flush를 호출할 필요가 없다.
+	하지만 1개 이상의 메시지가 있더라도 각 메시지마다 호출하게 되므로,
+	어떤 경우에는 바람직하지 않을 수 있다. 하지만 gmMessageTLC의 경우에는
+	몇 개의 메시지가 있을 지 알고 있으므로 m__dwMsgUnit = 1로 하여 사용한다.
+
+	m__dwMsgUnit은 의미가 있다. 하지만 여전히 m__dwUID는 의미가 없다.
+	연결이 끊어졌는 데, 이전 연결의 결과를 가져올 수가 없기 때문이다.
+	(연결이 끊어지면 큐를 정리하므로.)
+
+	나중에는 다른 용도로 사용해야지...
+	아참! 의미는 있다. 1.b.1-20050325.TXT에서 정리하겠지만,
+	PostQueuedCompletionStatus에서 넘겨주는 값은
+	m__dwUID가 아니라 m__dwUID를 가리키는 포인터이여야 한다.
+	파라미트 이름이 말해주듯 LPOVERLAPPED이어야 한다.
+	물론 이 경우에 LPOVERLAPPED = PDWORD이다.
+	나중에 어떤 값또는 구조체를 정의하고 그 주소를 PostQueuedCompletionStatus에 넘겨주어야 한다.
+	그 구조체에서 OOB정보를 넘겨줄까?
+
+		typedef struct _XXX_UNKOWN {
+			DWORD	dwUID;
+			DWORD	dwOOB;
+		} XXX_UNKWON, *PXXX_UNKNOWN;
+
+	아직까지 넘겨주어야 하는 값은 많지 않다.
+	현재에는 OOB정보만 있어, dwMessage를 나누어서 사용한다.

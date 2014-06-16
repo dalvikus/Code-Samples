@@ -1,0 +1,147 @@
+#!/usr/local/tcltk-8.3.4/bin/tclsh83.exe
+
+set VERSION 1.1.1-1
+
+########
+set i_CONTENT 0
+array set rfc822 {}
+set rfc822(TYPE) {}
+set rfc822(FROM) {}
+set rfc822(TO) {}
+set rfc822(SUBJECT) {}
+set rfc822(CONTENT) {}
+
+while {[gets stdin x] != -1} {
+	if {$i_CONTENT == 1} {
+		append rfc822(CONTENT) "$x\n"
+	} else {
+		if [regexp -nocase {^(TYPE|FROM|TO|SUBJECT):\s*(.*)} $x x_VOID x_KEY x_VAL] {
+			set rfc822([string toupper $x_KEY]) $x_VAL
+		} else {
+			set rfc822(CONTENT) $x\n
+			set i_CONTENT 1
+		}
+	}
+}
+set i_NULL 0
+foreach x_KEY [list TYPE FROM TO SUBJECT] {
+	if {$rfc822($x_KEY) == ""} {
+		puts "$x_KEY: NULL"
+		set i_NULL 1
+	} else {
+		puts "$x_KEY: $rfc822($x_KEY)"
+	}
+}
+if {$i_NULL == 1} {
+	exit
+}
+puts "[string repeat - 72]\n$rfc822(CONTENT)[string repeat - 72]"
+
+exit
+proc SEND_message {TYPE MAIL_SERVER FROM TO SUBJECT body} {
+	package require smtp
+	package require mime
+
+	set token [mime::initialize -canonical $TYPE -encoding 8bit -string $body]
+	mime::setheader $token Subject $SUBJECT
+	smtp::sendmessage $token \
+		-originator $FROM \
+		-recipients $TO -servers $MAIL_SERVER
+	mime::finalize $token
+}
+
+proc run {} {
+	set m_message \
+{<HTML>
+<HEAD>
+<META HTTP-EQUIV="CONTENT-TYPE" CONTENT="TEXT/HTML; CHARSET=ISO-8859-1">
+<TITLE></TITLE>
+<STYLE TYPE="TEXT/CSS">
+	BODY {
+		background-color: #FFFFFF;
+	}
+
+	BODY {
+		font-family: Arial;
+		font-size: 14pt;
+	}
+
+	CODE, PRE {
+		font-family: "Courier New";
+		font-size: 14pt;
+	}
+</STYLE>
+</HEAD>
+<BODY>
+<PRE STYLE="font-family: Arial; font-size: 16pt">
+	########################################################
+		DIGISCAPE AUTO MAILING SYSTEM --- pub
+	########################################################
+</PRE>
+<PRE>
+------------------------------------------------------------------------
+	SHOW:		$m_SHOW
+	SEQ:		$m_SEQ
+	SHOT:		$m_SHOT
+
+	Creator:			$::g__USER
+	File Locatioin:		<A HREF="file:$m_directory">$m_directory</A>
+	File(s) published:	[join $bare_LIST ", "]
+	Note:
+		......
+------------------------------------------------------------------------
+</PRE>
+To copy these files into <CODE><FONT COLOR="#0066CC">D:/maya/projects</FONT></CODE> directory
+<PRE>
+	cp -i $m_directory/$files <FONT COLOR="#0066CC">D:/maya/projects</FONT>
+</PRE>
+</BODY>
+</HTML>
+}
+	if [catch {set m_message [subst $m_message]} msg] {
+		puts $msg
+	}
+	set m_message \
+{<HTML>
+<HEAD>
+<META HTTP-EQUIV="CONTENT-TYPE" CONTENT="TEXT/HTML; CHARSET=ISO-8859-1">
+<TITLE></TITLE>
+<STYLE TYPE="TEXT/CSS">
+	BODY {
+		background-color: #FFFFFF;
+	}
+
+	BODY {
+		font-family: Arial;
+		font-size: 14pt;
+	}
+
+	CODE, PRE {
+		font-family: "Courier New";
+		font-size: 14pt;
+	}
+</STYLE>
+</HEAD>
+<BODY>
+<PRE STYLE="font-family: Arial; font-size: 16pt">
+	########################################################
+		DIGISCAPE AUTO MAILING SYSTEM --- pub
+	########################################################
+</PRE>
+<PRE>
+------------------------------------------------------------------------
+------------------------------------------------------------------------
+</BODY>
+</HTML>
+}
+	if [catch {SEND_message \
+		TEXT/HTML \
+		mail.digiscapefx.com \
+		ghkim@digiscapefx.com \
+		ghkim@digiscapefx.com \
+		greeting \
+		$m_message} msg] {
+		puts $msg
+	}
+}
+run

@@ -1,0 +1,46 @@
+2005/03/22 - 1.a.1
+----------------
+
+	공용큐는 사용하지 않는 것으로 했다.
+	따라서 앞으로는 이 부분은 고치지 않을 것이다.
+	만약 공용큐를 사용한다면 공용큐를 사용하지 않는 경우와 비교하면서
+	고쳐야 할 것이다. 그 기준은 1.a.0부터이다.
+
+1. 1.a.0에서 도입했던 메시지 갯수에 대한 정보가 "정확히" 전달되지 않아서,
+개념을 수정했다. IOCP에 전달하는 메시지의 갯수를 큐에 있는 총 갯수를 뜻하지 않고,
+현재 시점에서의 새로운 메시지의 갯수로 바꾸었다.
+
+2. 메시지를 가져올 때(gmPseudoTCP::mf__peek, gmPseudoTCP::mf__Shift),
+연결이 설정되어(ESTABLISHED) 있나 확인해야 한다.
+
+3. TCPBUF구조체를 다음과 같이 바꾸었다.
+	전:
+		typedef struct {
+			USHORT	hType;
+			USHORT	cbData;
+			PBYTE		pbData;
+		} TCPBUF, *LPTCPBUF;
+
+	후:
+		typedef struct {
+			USHORT	hType;
+			USHORT	cbData;
+		} MSGTCPHEADER, *PMSGTCPHEADER;
+
+		typedef struct {
+			MSGTCPHEADER	Header;
+			PBYTE		pbData;
+		} TCPBUF, *LPTCPBUF;
+
+	註: 앞으로는 TCP대신에 MSGTCP라는 용어를 사용할 것이다.
+	이 라이브러리는 TCP처럼 스트림데이터를 처리하는 것이 아니라,
+	UDP처럼 메시지를 처리하기 때문이다.
+
+4. gmPseudoTCP::mf__peek, gmPseudoTCP::mf__Shift의 리턴값 중에서
+몇 가지를 새로 정의했다.
+gmPseudoTCP::mf__IOCPRecv의 리턴값을 숫자 대신에 Enumerator를 사용했다.
+
+5. 서버에서 메시지TCP를 처리하는 예는 해당 예를 보면 된다.
+연결을 강제로 끊고, 다시 설정하는 과정을 반복하면서 오류를 찾았다.
+특히 2.의 gmPseudoTCP::mf__peek, gmPseudoTCP::mf__Shift에서
+이미 끊어진 연결이 있는 경우가 이에 해당한다.

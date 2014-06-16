@@ -1,0 +1,50 @@
+#!/bin/bash
+
+if [ "$#" -lt "6" ]
+then
+	echo $0 MayaScene CommandFile BaseFileName StartFrame EndFrame Step [camName] [arguments]
+	echo "eg. arguments = '-cmd rg dspyRez \\\"1024 768\\\"'"
+	exit
+fi
+
+SCENE=$1
+if [ ! -f $1 ]
+then
+	echo "Scene file($1) does not exist"
+	exit 1
+fi
+
+CMD=$2
+
+#if [ ! -f $2 ]
+#then
+#	echo "Command file($2) does not exist"
+#	exit 1
+#fi
+BASENAME=$3
+F_START=$4
+F_END=$5
+F_STEP=$6
+PWD=`pwd`
+
+CAMERA_NAME=""
+if [ "$7" != "" ]
+then
+	CAMERA_NAME=$7
+fi
+
+shift 7
+echo "\$@ = \"$@\""
+#mtor_maya4 -scene $SCENE -cmd rg dspyName $BASENAME -cmd rg dspyServer it -cmd rg dspyServerMode rgba -cmd rg camName $CAMERA_NAME -cmd "workspace SetDir torRIBs $PWD/rib" -cmd "for {set i $F_START} {\$i < $F_END} {set i [expr \$i + $F_STEP]} {genRib \$i}"
+####mtor_maya4 -scene $SCENE -cmd rg dspyName $BASENAME -cmd rg dspyServer it -cmd rg dspyServerMode rgba -cmd rg camName $CAMERA_NAME $@ -cmd "workspace SetDir torRIBs $PWD/rib" -cmd "for {set i $F_START} {\$i < $F_END} {set i [expr \$i + $F_STEP]} {genRib \$i}"
+mtor_maya4 -scene $SCENE -cmd rg dspyName $BASENAME -cmd rg dspyServer it -cmd rg dspyServerMode rgba -cmd rg camName $CAMERA_NAME $@ -cmd "for {set i $F_START} {\$i < $F_END} {set i [expr \$i + $F_STEP]} {genRib \$i}"
+
+for ((i = $F_START; i < $F_END; ++i))
+do
+	x=$BASENAME.`printf "%04d" $i`-.rib
+	y=$BASENAME.`printf "%04d" $i`.rib
+	mv rib/$y rib/$x
+	r2r rib/$x $CMD > rib/$y
+	prman -progress rib/$y
+#	r2r rib/$x $CMD | prman
+done

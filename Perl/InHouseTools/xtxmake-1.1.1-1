@@ -1,0 +1,20 @@
+#!/bin/bash
+
+if [ "$#" -lt 2 ]
+then
+	echo -e "\nUsage: $0 TIF_pathname TEX_path [arguments]"
+	echo -e "\nEx:\tConvert v*.tif into v*.tex in ./tmp_path/"
+	echo -e "\t\t$0 v\*.tif ./tmp_path/"
+	echo -e "\tNote \\"
+	echo -ne "\n"
+	exit
+fi
+TIFs=$1
+DEST_DIR=$2
+shift 2
+for x in $TIFs
+do
+	y=`echo $x | sed -e s/tif/tex/`
+#	txmake $3 $4 $5 $6 $7 $8 $9 "$x" $2/"$y"
+	txmake $* "$x" $DEST_DIR/"$y"
+done

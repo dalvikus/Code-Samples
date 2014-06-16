@@ -1,0 +1,178 @@
+#!/usr/bin/perl -w
+
+$__DEBUG__ = 0x00;
+
+	unless ( $#ARGV >= 0 ) {
+		print STDERR <<USAGE;
+Usage:
+	$0 RibFile [-e[xpunge] Object ...] [-r[ecover] Object] [-m[atte] Object]
+USAGE
+		exit 1;
+	}
+
+	@EM_LIST = ();
+	ProcessCommandArgument();
+if ( $__DEBUG__ & 0x02 ) {
+	foreach ( @EM_LIST ) {
+		print STDERR <<EM_LIST;
+[ @{ [ join( ', ', @{ $_ } ) ] } ]
+EM_LIST
+	}
+}
+
+	unless ( $ARGV[0] ne '-' ) {
+		$g_STDIN = 1;
+	} else {
+		$g_STDIN = 0;
+		open( RIB, '< ' . $ARGV[ 0 ] ) || die( 'Cannot open ' . $ARGV[ 0 ] . $/ );
+	}
+	if ( ModifyAttribute( RIB ) != 0 ) {
+		print STDERR 'ModifyAttribute Error...' . $/;
+		exit 1;
+	}
+	close( RIB ) unless ( $ARGV[ 0 ] ne '-' );
+	exit 0;
+
+sub ProcessCommandArgument
+{
+	my	$i;
+	my	$em;
+	my	$x;	# object name
+	for ( $i = 1; $i <= $#ARGV; ++$i ) {
+		unless ( $ARGV[ $i ] =~ /^-([emr])/ ) {
+			print STDERR <<WARN;
+Warn: unknown option: $ARGV[ $i ]: ignored!
+WARN
+			next;
+		}
+		$em = $1;
+		# get an object name
+		if ( $i == $#ARGV ) {
+			print STDERR <<WARN;
+Warn: no object name for '$ARGV[ $i ]' option: ignored!
+WARN
+		} else {
+			$x = $ARGV[ ++$i ];
+			$x =~ s/([?+*])/\.$1/g;
+			push( @EM_LIST, [ $em ne 'm' ? $em ne 'r' ? 0 : 2 : 1, $x ] );
+		}
+	}
+}
+
+sub ModifyAttribute
+{
+#
+	unless ( $g_STDIN ) {
+		open( OLD_STDIN, '<& STDIN' );
+		open( STDIN, '<& ' . $_[ 0 ] );
+	}
+#
+
+	my	$ATTRIBUTE_BEGIN = '^(\s*)AttributeBegin\s*$';
+	my	$ATTRIBUTE_IDENTIFIER = '^\s*Attribute\s+"identifier"\s+".+?"\s+\["(.+?)"\]\s*$'; 
+	my	$ATTRIBUTE_END = '^(\s*)AttributeEnd\s*$';
+
+	my	$attribute_content = '';
+	my	$attribute_identifier = '';
+	my	$attribute_level = '';
+	my	$in_attribute = 0;	# 0: no, 1: yes
+
+	while ( <STDIN> ) {
+		if ( /$ATTRIBUTE_BEGIN/ ) {
+			if ( $in_attribute ) {
+				# assert( $attribute_level < $1 )
+				# level down
+				$attribute_content .= $_;
+			} else {
+				$in_attribute = 1;
+				$attribute_level = $1;
+				$attribute_content = $_;
+			}
+		} elsif ( /$ATTRIBUTE_IDENTIFIER/ ) {
+			# assert( $attribute_identifier == '' );
+			if ( $in_attribute ) {
+				$attribute_content .= $_;
+				$attribute_identifier = $1;
+			} else {	# light (TransformBegin .. TransformEnd)
+				print( STDOUT $_ );
+			}
+		} elsif ( /$ATTRIBUTE_END/ ) {
+			# assert( $in_attribute == 1 )
+			$attribute_content .= $_;
+			unless ( $attribute_level ne $1 ) {
+				if ( $attribute_identifier ne '' ) {
+					#
+					# do something!
+					#
+					do_something(
+						$attribute_identifier,
+						\$attribute_content
+					);
+				} else {
+					# just release
+					print( STDOUT $attribute_content );
+				}
+				# reset variables
+				$attribute_content = '';
+				$attribute_identifier = '';
+				$attribute_level = '';
+				$in_attribute = 0;	# 0: no, 1: yes
+			} else {
+				# assert( $attribute_level < $1 )
+				# level up
+			}
+		} else {
+			if ( $in_attribute ) {
+				$attribute_content .= $_;
+			} else {
+				print( STDOUT $_ );
+			}
+		}
+	}
+
+#
+	open( STDIN, '<& OLD_STDIN' ) unless ( $g_STDIN );
+#
+	return 0;
+}
+
+sub do_something
+{
+	my	$ix = isMatched( $_[ 0 ] );
+	unless ( defined( $ix ) ) {
+		print( STDOUT ${ $_[ 1 ] } );
+	} elsif ( $EM_LIST[ $ix ][ 0 ] == 1 ) {	# Matte
+#
+#	AttributeBegin
+#		Attribute "identifier" ....
+#		Matte 1
+#
+		${ $_[ 1 ] } =~ s/(\n(\s*)Attribute "identifier" .*?\n)/$1$2Matte 1\n/s;
+		print( STDOUT ${ $_[ 1 ] } );
+	} elsif ( $EM_LIST[ $ix ][ 0 ] == 0 ) {	# expunge
+	} elsif ( $EM_LIST[ $ix ][ 0 ] == 2 ) {	# recover
+		print( STDOUT ${ $_[ 1 ] } );
+	}
+
+	return;
+}
+
+sub isMatched
+{
+	my	@list = split( '\|', $_[ 0 ] );
+	shift @list unless ( $list[ 0 ] ne '' );
+
+	my	$i;
+	my	$gi;
+	for ( $gi = $#EM_LIST; $gi >= 0; --$gi ) {
+		for ( $i = $#list; $i >= 0; --$i ) {
+			# 06/25/2002
+			$list[ $i ] =~ s/_.*//g;
+			$list[ $i ] =~ /^$EM_LIST[ $gi ][ 1 ]$/
+				&&
+			return $gi;
+		}
+	}
+
+	return undef;
+}

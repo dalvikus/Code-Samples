@@ -1,0 +1,501 @@
+global proc shelf_cephalopod () {
+    global string $gBuffStr;
+    global string $gBuffStr0;
+    global string $gBuffStr1;
+
+
+    shelfButton
+        -enableCommandRepeat 1
+        -enable 0
+        -width 34
+        -height 34
+        -manage 1
+        -visible 1
+        -preventOverride 0
+        -annotation "separator" 
+        -align "center" 
+        -labelOffset 0
+        -font "tinyBoldLabelFont" 
+        -style "iconOnly" 
+        -marginWidth 1
+        -marginHeight 1
+        -sourceType "mel" 
+        -actionIsSubstitute 0
+    ;
+    shelfButton
+        -enableCommandRepeat 1
+        -enable 0
+        -width 34
+        -height 34
+        -manage 1
+        -visible 1
+        -preventOverride 0
+        -annotation "separator" 
+        -align "center" 
+        -labelOffset 0
+        -font "tinyBoldLabelFont" 
+        -style "iconOnly" 
+        -marginWidth 1
+        -marginHeight 1
+        -sourceType "mel" 
+        -actionIsSubstitute 0
+    ;
+    shelfButton
+        -enableCommandRepeat 1
+        -enable 0
+        -width 34
+        -height 34
+        -manage 1
+        -visible 1
+        -preventOverride 0
+        -annotation "separator" 
+        -align "center" 
+        -labelOffset 0
+        -font "tinyBoldLabelFont" 
+        -style "iconOnly" 
+        -marginWidth 1
+        -marginHeight 1
+        -sourceType "mel" 
+        -actionIsSubstitute 0
+    ;
+    shelfButton
+        -enableCommandRepeat 1
+        -enable 1
+        -width 34
+        -height 34
+        -manage 1
+        -visible 1
+        -preventOverride 0
+        -align "center" 
+        -label "set path" 
+        -labelOffset 0
+        -font "tinyBoldLabelFont" 
+        -image "commandButton.xpm" 
+        -image1 "commandButton.xpm" 
+        -style "iconOnly" 
+        -marginWidth 1
+        -marginHeight 1
+        -command "global string\t$cephalopod__script_path = \"D:/home/icentrik/My Documents/Visual Studio 2005/Projects/Cephalopod/script/\";\r\nglobal string\t$cephalopod__mll_path = \"D:/home/icentrik/My Documents/Visual Studio 2005/Projects/Cephalopod/debug/\";\r\nglobal string\t$cephalopod__icon_path = \"D:/home/icentrik/My Documents/Visual Studio 2005/Projects/Cephalopod/script/\";\r\n\r\n//global int\t$g__numBrushTypes = 7;\t// 4 + 1(TWIST) + 1(SHAPE) + 1(CREATE)\r\nglobal int\t$g__numBrushTypes = 4;\t// Translate, Rotate; Create, Move\r\n\r\nglobal int\t$g__cephalopod = true;\r\nglobal\tstring\t$cephalopod__shelf_name = \"cephalopod\";\r\nglobal string\t$g__CT_selection[];\r\n" 
+        -sourceType "mel" 
+        -actionIsSubstitute 0
+    ;
+    shelfButton
+        -enableCommandRepeat 1
+        -enable 1
+        -width 34
+        -height 34
+        -manage 1
+        -visible 1
+        -preventOverride 0
+        -align "center" 
+        -label "source all scripts" 
+        -labelOffset 0
+        -font "tinyBoldLabelFont" 
+        -image "commandButton.xpm" 
+        -image1 "commandButton.xpm" 
+        -style "iconOnly" 
+        -marginWidth 1
+        -marginHeight 1
+        -command "string\t$scripts[] = {\r\n\t\"connect\"\r\n};\r\nglobal string\t$cephalopod__script_path;\r\nfor ($script in $scripts) {\r\n\teval(\"source \" + \"\\\"\" + $cephalopod__script_path + \"/\" + \"baseShape_\" + $script + \".mel\" + \"\\\"\");\r\n}\r\neval(\"source \" + \"\\\"\" + $cephalopod__script_path + \"/\" + \"AEaddRampControl.mel\" + \"\\\"\");\r\neval(\"source \" + \"\\\"\" + $cephalopod__script_path + \"/\" + \"tentacle_attributeEditor.mel\" + \"\\\"\");\r\neval(\"source \" + \"\\\"\" + $cephalopod__script_path + \"/\" + \"simulation_attributeEditor.mel\" + \"\\\"\");\r\neval(\"source \" + \"\\\"\" + $cephalopod__script_path + \"/\" + \"tentacle.mel\" + \"\\\"\");\r\n" 
+        -sourceType "mel" 
+        -actionIsSubstitute 0
+    ;
+    shelfButton
+        -enableCommandRepeat 1
+        -enable 0
+        -width 34
+        -height 34
+        -manage 1
+        -visible 1
+        -preventOverride 0
+        -annotation "separator" 
+        -align "center" 
+        -labelOffset 0
+        -font "tinyBoldLabelFont" 
+        -style "iconOnly" 
+        -marginWidth 1
+        -marginHeight 1
+        -sourceType "mel" 
+        -actionIsSubstitute 0
+    ;
+    shelfButton
+        -enableCommandRepeat 1
+        -enable 1
+        -width 34
+        -height 34
+        -manage 1
+        -visible 1
+        -preventOverride 0
+        -align "center" 
+        -label "load node" 
+        -labelOffset 0
+        -font "tinyBoldLabelFont" 
+        -image "commandButton.xpm" 
+        -image1 "commandButton.xpm" 
+        -style "iconOnly" 
+        -marginWidth 1
+        -marginHeight 1
+        -command "loadPlugin ($cephalopod__mll_path + \"/\" + \"tentacle.mll\");\r\n\r\nstring\t$contextName = `brushContextCommand CTBrushContext`;\r\nsetParent $cephalopod__shelf_name;\r\nstring\t$xxx = `toolButton\r\n\t-collection toolCluster\r\n\t-tool CTBrushContext\r\n\t-image1 ($cephalopod__icon_path + \"/\" + \"brushTool.xpm\")\r\nCTBrushContextCommand`;\r\n//print (\"$xxx = |\" + $xxx + \"|\\n\");\r\n\r\nCTTentacleInitialize();\r\n" 
+        -sourceType "mel" 
+        -actionIsSubstitute 0
+    ;
+    shelfButton
+        -enableCommandRepeat 1
+        -enable 1
+        -width 34
+        -height 34
+        -manage 1
+        -visible 1
+        -preventOverride 0
+        -align "center" 
+        -label "unload node" 
+        -labelOffset 0
+        -font "tinyBoldLabelFont" 
+        -image "commandButton.xpm" 
+        -image1 "commandButton.xpm" 
+        -style "iconOnly" 
+        -marginWidth 1
+        -marginHeight 1
+        -command "string\t$ctx = `currentCtx`;\r\nstring\t$class = `contextInfo -class $ctx`;\r\nif (substring($class, 1, 9) == \"BrushTool\") {\r\n\tctxAbort $ctx;\r\n\tsetToolTo selectSuperContext;\r\n}\r\n\r\nflushUndo;\r\n\r\nbrushContextCommand -edit -delete CTBrushContext;\r\ndeleteUI ($gShelfTopLevel + \"|\" + $cephalopod__shelf_name + \"|CTBrushContextCommand\");\r\ndeleteUI -toolContext CTBrushContext;\r\n\r\nfile -force -newFile;\r\nunloadPlugin \"tentacle\";\r\n\r\nCTTentacleFinalize();\r\n" 
+        -sourceType "mel" 
+        -actionIsSubstitute 0
+    ;
+    shelfButton
+        -enableCommandRepeat 1
+        -enable 0
+        -width 34
+        -height 34
+        -manage 1
+        -visible 1
+        -preventOverride 0
+        -annotation "separator" 
+        -align "center" 
+        -labelOffset 0
+        -font "tinyBoldLabelFont" 
+        -style "iconOnly" 
+        -marginWidth 1
+        -marginHeight 1
+        -sourceType "mel" 
+        -actionIsSubstitute 0
+    ;
+    shelfButton
+        -enableCommandRepeat 1
+        -enable 1
+        -width 34
+        -height 34
+        -manage 1
+        -visible 1
+        -preventOverride 0
+        -align "center" 
+        -label "test cube" 
+        -labelOffset 0
+        -font "tinyBoldLabelFont" 
+        -image "polyCube.xpm" 
+        -image1 "polyCube.xpm" 
+        -style "iconOnly" 
+        -marginWidth 1
+        -marginHeight 1
+        -command "polyCube -n pCube1;\r\nmove -r 2 3 5;\r\n\r\ncreateNode baseShapeCreator -n c1;\r\nconnectAttr pCube1.worldMesh c1.inputMesh;\r\ncreateNode tentacleShapeNode -n m1;\r\nconnectAttr c1.outputSurface m1.inputSurface;\r\nconnectAttr time1.outTime m1.time;\r\n\r\nselect -clear;\r\nselect -replace m1;\r\n//setAttr m1.worldMeshConnected false;\r\nif ($g__cephalopod == false)\r\n\tchangeSelectMode -component;\r\nselect -replace m1.e[0:1];\r\n" 
+        -sourceType "mel" 
+        -actionIsSubstitute 0
+    ;
+    shelfButton
+        -enableCommandRepeat 1
+        -enable 1
+        -width 34
+        -height 34
+        -manage 1
+        -visible 1
+        -preventOverride 0
+        -align "center" 
+        -label "Polygon Pyramid" 
+        -labelOffset 0
+        -font "tinyBoldLabelFont" 
+        -image "polyPyramid.xpm" 
+        -image1 "polyPyramid.xpm" 
+        -style "iconOnly" 
+        -marginWidth 1
+        -marginHeight 1
+        -command "CreatePolygonPyramid" 
+        -sourceType "mel" 
+        -actionIsSubstitute 0
+    ;
+    shelfButton
+        -enableCommandRepeat 1
+        -enable 1
+        -width 34
+        -height 34
+        -manage 1
+        -visible 1
+        -preventOverride 0
+        -align "center" 
+        -label "connect..." 
+        -labelOffset 0
+        -font "tinyBoldLabelFont" 
+        -imageOverlayLabel "CNH" 
+        -image "commandButton.xpm" 
+        -image1 "commandButton.xpm" 
+        -style "iconOnly" 
+        -marginWidth 1
+        -marginHeight 1
+        -command "CTBaseShapeConnect;\r\n" 
+        -sourceType "mel" 
+        -actionIsSubstitute 0
+    ;
+    shelfButton
+        -enableCommandRepeat 1
+        -enable 0
+        -width 34
+        -height 34
+        -manage 1
+        -visible 1
+        -preventOverride 0
+        -annotation "separator" 
+        -align "center" 
+        -labelOffset 0
+        -font "tinyBoldLabelFont" 
+        -style "iconOnly" 
+        -marginWidth 1
+        -marginHeight 1
+        -sourceType "mel" 
+        -actionIsSubstitute 0
+    ;
+    shelfButton
+        -enableCommandRepeat 1
+        -enable 1
+        -width 34
+        -height 34
+        -manage 1
+        -visible 1
+        -preventOverride 0
+        -align "center" 
+        -label "create" 
+        -labelOffset 0
+        -font "tinyBoldLabelFont" 
+        -image "commandButton.xpm" 
+        -image1 "commandButton.xpm" 
+        -style "iconOnly" 
+        -marginWidth 1
+        -marginHeight 1
+        -command "brushContextCommand -edit -type 2 CTBrushContext;\r\n" 
+        -sourceType "mel" 
+        -actionIsSubstitute 0
+    ;
+    shelfButton
+        -enableCommandRepeat 1
+        -enable 1
+        -width 34
+        -height 34
+        -manage 1
+        -visible 1
+        -preventOverride 0
+        -align "center" 
+        -label "move (selected)" 
+        -labelOffset 0
+        -font "tinyBoldLabelFont" 
+        -image "commandButton.xpm" 
+        -image1 "commandButton.xpm" 
+        -style "iconOnly" 
+        -marginWidth 1
+        -marginHeight 1
+        -command "brushContextCommand -edit -type 3 CTBrushContext;\r\n" 
+        -sourceType "mel" 
+        -actionIsSubstitute 0
+    ;
+    shelfButton
+        -enableCommandRepeat 1
+        -enable 0
+        -width 34
+        -height 34
+        -manage 1
+        -visible 1
+        -preventOverride 0
+        -annotation "separator" 
+        -align "center" 
+        -labelOffset 0
+        -font "tinyBoldLabelFont" 
+        -style "iconOnly" 
+        -marginWidth 1
+        -marginHeight 1
+        -sourceType "mel" 
+        -actionIsSubstitute 0
+    ;
+    shelfButton
+        -enableCommandRepeat 1
+        -enable 1
+        -width 34
+        -height 34
+        -manage 1
+        -visible 1
+        -preventOverride 0
+        -align "center" 
+        -label "translate" 
+        -labelOffset 0
+        -font "tinyBoldLabelFont" 
+        -image "commandButton.xpm" 
+        -image1 "commandButton.xpm" 
+        -style "iconOnly" 
+        -marginWidth 1
+        -marginHeight 1
+        -command "brushContextCommand -edit -type 0 CTBrushContext;\r\n" 
+        -sourceType "mel" 
+        -actionIsSubstitute 0
+    ;
+    shelfButton
+        -enableCommandRepeat 1
+        -enable 1
+        -width 34
+        -height 34
+        -manage 1
+        -visible 1
+        -preventOverride 0
+        -align "center" 
+        -label "rotate" 
+        -labelOffset 0
+        -font "tinyBoldLabelFont" 
+        -image "commandButton.xpm" 
+        -image1 "commandButton.xpm" 
+        -style "iconOnly" 
+        -marginWidth 1
+        -marginHeight 1
+        -command "brushContextCommand -edit -type 1 CTBrushContext;\r\n" 
+        -sourceType "mel" 
+        -actionIsSubstitute 0
+    ;
+    shelfButton
+        -enableCommandRepeat 1
+        -enable 0
+        -width 34
+        -height 34
+        -manage 1
+        -visible 1
+        -preventOverride 0
+        -annotation "separator" 
+        -align "center" 
+        -labelOffset 0
+        -font "tinyBoldLabelFont" 
+        -style "iconOnly" 
+        -marginWidth 1
+        -marginHeight 1
+        -sourceType "mel" 
+        -actionIsSubstitute 0
+    ;
+    shelfButton
+        -enableCommandRepeat 1
+        -enable 1
+        -width 34
+        -height 34
+        -manage 1
+        -visible 1
+        -preventOverride 0
+        -align "center" 
+        -label "delete (selected)" 
+        -labelOffset 0
+        -font "tinyBoldLabelFont" 
+        -image "commandButton.xpm" 
+        -image1 "commandButton.xpm" 
+        -style "iconOnly" 
+        -marginWidth 1
+        -marginHeight 1
+        -command "CTDisconnectMesh();\r\nsetAttr ($plugin__AE_node_name + \".tentacleDoAction\") -1;\r\n//CTConnectMesh();\r\n" 
+        -sourceType "mel" 
+        -actionIsSubstitute 0
+    ;
+    shelfButton
+        -enableCommandRepeat 1
+        -enable 0
+        -width 34
+        -height 34
+        -manage 1
+        -visible 1
+        -preventOverride 0
+        -annotation "separator" 
+        -align "center" 
+        -labelOffset 0
+        -font "tinyBoldLabelFont" 
+        -style "iconOnly" 
+        -marginWidth 1
+        -marginHeight 1
+        -sourceType "mel" 
+        -actionIsSubstitute 0
+    ;
+    shelfButton
+        -enableCommandRepeat 1
+        -enable 0
+        -width 34
+        -height 34
+        -manage 1
+        -visible 1
+        -preventOverride 0
+        -annotation "separator" 
+        -align "center" 
+        -labelOffset 0
+        -font "tinyBoldLabelFont" 
+        -style "iconOnly" 
+        -marginWidth 1
+        -marginHeight 1
+        -sourceType "mel" 
+        -actionIsSubstitute 0
+    ;
+    shelfButton
+        -enableCommandRepeat 1
+        -enable 1
+        -width 34
+        -height 34
+        -manage 1
+        -visible 1
+        -preventOverride 0
+        -align "center" 
+        -label "connect mesh" 
+        -labelOffset 0
+        -font "tinyBoldLabelFont" 
+        -image "commandButton.xpm" 
+        -image1 "commandButton.xpm" 
+        -style "iconOnly" 
+        -marginWidth 1
+        -marginHeight 1
+        -command "CTDisconnectMesh();\r\nCTConnectMesh();\r\n" 
+        -sourceType "mel" 
+        -actionIsSubstitute 0
+    ;
+    shelfButton
+        -enableCommandRepeat 1
+        -enable 1
+        -width 34
+        -height 34
+        -manage 1
+        -visible 1
+        -preventOverride 0
+        -align "center" 
+        -label "disconnect mesh" 
+        -labelOffset 0
+        -font "tinyBoldLabelFont" 
+        -image "commandButton.xpm" 
+        -image1 "commandButton.xpm" 
+        -style "iconOnly" 
+        -marginWidth 1
+        -marginHeight 1
+        -command "CTDisconnectMesh();\r\n" 
+        -sourceType "mel" 
+        -actionIsSubstitute 0
+    ;
+    shelfButton
+        -enableCommandRepeat 1
+        -enable 0
+        -width 34
+        -height 34
+        -manage 1
+        -visible 1
+        -preventOverride 0
+        -annotation "separator" 
+        -align "center" 
+        -labelOffset 0
+        -font "tinyBoldLabelFont" 
+        -style "iconOnly" 
+        -marginWidth 1
+        -marginHeight 1
+        -sourceType "mel" 
+        -actionIsSubstitute 0
+    ;
+
+} 

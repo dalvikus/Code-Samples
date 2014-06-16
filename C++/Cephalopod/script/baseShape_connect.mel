@@ -1,0 +1,161 @@
+////////////////////////////////////////////////////////////////////////////////
+// 선택된 DAG 오브젝트 중에서 Shape 노드를 찾는다;
+// Nurbs 의 경우, 주어진 Transform 노드에 대해 여러 개의 Shape 노드가 있을 수 있다:
+//
+//	nurbsSphere	1
+//	nurbsCube	6
+//	nurbsCylinder	3
+//	nurbsCone	2
+//	nurbsPlane	1
+//	nurbsTorus	1
+//
+// 우선 Polygon 으로 한정한다;
+// Nurbs 의 경우...
+//	1) nurbsToPoly 를 사용해서 Polygon 으로 바꾸어야 한다.
+//	2) 여러 개의 Shape 노드를 가졌을 때를 처리해야 한다.
+proc string	CTFindDagShape()
+{
+	string	$sl[] = `ls -long -selection -objectsOnly -dagObjects -type mesh`;
+//	for ($x in $sl) {
+//		print ("\"" + $x + "\": " + `nodeType $x` + "\n");
+//	}
+	if (size($sl) == 0) {
+		error "Select polygon(as of 3/4/09 polygon ONLY)";
+		return "";
+	} else if (size($sl) > 1) {
+		warning ("Apply to first polygon(\"" + $sl[0] + "\") ONLY");
+	}
+
+	return $sl[0];
+}
+
+proc int addAnimationKeysForSimulationParameters(string $tentacleShapeNodeName)
+{
+	string	$simulationParameters[] = {
+		// Race
+//		"RaceType",
+		"IncludeStiffness",
+		"YoungModulus",
+		"fAverageRadius",
+		"fEllipticity",
+		"fVolumeDensity",
+		"fHelixK0STep",
+		"fHelixK1Curvature",
+		"inHelixK0STep",
+		"inHelixK1Curvature",
+		"fLengthFactor",
+
+		// External Forces
+		"IncludeGravityAndInertia",
+		"GravityParameter",
+		"IncludeAirFriction",
+		"AirFrictionParameter",
+
+		// Wind
+		"WindMode",
+		"WindRatio",
+		"WindDirection2D",
+		"WindDirection3D0",
+		"WindDirection3D1",
+
+		// Dissipation
+		"DissipationMode",
+		"DissipationLambdaParameter",
+		"DissipationGammaParameter",
+
+		// Collision
+		"IncludeTentacleBodyOptimalCollision",
+		"IncludeTentacleBodyCollision",
+		"TBCParameter0",
+		"TBCParameter1",
+		"IncludeTentacleTentacleCollision",
+		"TTCParameter"
+	};
+	int	$animationStartTime = `playbackOptions -query -animationStartTime`;
+	int	$animationEndTime = `playbackOptions -query -animationEndTime`;
+	string	$attributes = "";
+	for ($i = 0; $i < size($simulationParameters); ++$i) {
+		$attributes = $attributes + (" -attribute \"" + $simulationParameters[$i] + "\"");
+	}
+//	print ("|" + $attributes + "|" + "\n");
+	string	$eval_s = ("setKeyframe -time " + $animationStartTime + " -time " + $animationEndTime + " " + $attributes + " " + $tentacleShapeNodeName);
+//	print ("|" + $eval_s + "|" + "\n");
+	eval($eval_s);
+
+	return 0;
+}
+global proc int	CTBaseShapeConnect()
+{
+	if (!`pluginInfo -query -loaded tentacle`) {
+		error "plugin(|tentacle|): Not loaded";
+		return -1;
+	}
+	string	$dagShape = CTFindDagShape();
+	if ($dagShape == "")
+		return -1;
+
+	string	$baseShapeCreatorNodeName = `createNode baseShapeCreator`;
+//	print ("\"" + $baseShapeCreatorNodeName + "\"" + "\n");
+	connectAttr ($dagShape + ".worldMesh") ($baseShapeCreatorNodeName + ".inputMesh");
+////	string	$tentacleShapeNodeName = `createNode -name m1 tentacleShapeNode`;
+	string	$tentacleShapeNodeName = `createNode tentacleShapeNode`;
+//	print ("\"" + $tentacleShapeNodeName + "\"" + "\n");
+	connectAttr ($baseShapeCreatorNodeName + ".outputSurface") ($tentacleShapeNodeName + ".inputSurface");
+	connectAttr time1.outTime ($tentacleShapeNodeName + ".time");
+
+	select -clear;
+	select -replace $dagShape;
+//	setAttr ($tentacleShapeNodeName + ".worldMeshConnected") false;	// false:= no initial contition
+//									// true:= initial condition
+	global int	$g__cephalopod;
+	if ($g__cephalopod == false)
+		changeSelectMode -component;
+//	select -replace ($tentacleShapeNodeName + ".e[0:1]");
+
+//	if (`isUIComponentVisible("Attribute Editor")`)
+//		toggleUIComponentVisibility "Attribute Editor";
+
+	addAnimationKeysForSimulationParameters($tentacleShapeNodeName);
+
+	return 0;
+}
+////////////////////////////////////////////////////////////////////////////////
+
+/*
+proc string	findAfterShaveShapeNode()
+{
+	string	$selectArray[] = `ls -selection`;
+//	print (size($selectArray) + "\n");
+	if (size($selectArray)) {
+//		print ($selectArray[0] + "\n");
+		string	$node = `match "[^.]*" $selectArray[0]`;
+		$selectArray = `ls -dagObjects $node`;
+		if (`nodeType $selectArray[1]` == "afterShaveShapeNode") {
+			return $selectArray[1];
+		}
+	}
+	return "";
+}
+global proc setShiftFrame()
+{
+	string	$afterShaveShapeNode = `findAfterShaveShapeNode`;
+	if ($afterShaveShapeNode == "") {
+		error "afterShaveShapeNode not selected";
+		return;
+	}
+
+	int	$currentTime = `currentTime -query`;
+	currentTime 1;
+	eval("setAttr " + $afterShaveShapeNode + ".shiftFrame " + ($currentTime - 1));
+}
+global proc resetShiftFrame()
+{
+	string	$afterShaveShapeNode = `findAfterShaveShapeNode`;
+	if ($afterShaveShapeNode == "") {
+		error "afterShaveShapeNode not selected";
+		return;
+	}
+
+	eval("setAttr " + $afterShaveShapeNode + ".shiftFrame 0");
+}
+ */

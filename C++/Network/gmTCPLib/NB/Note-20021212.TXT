@@ -1,0 +1,84 @@
+Edit
+	FindInFiles			Ctrl+Alt+F
+Build
+	BuildClean			Ctrl+Alt+C
+
+
+////////////////////////////////////////////////////////////////////////////////
+////////                                                                ////////
+	─	데이터가 채워질 곳
+	━	데이터가 채워진 곳
+	□	tail이 가르키는 곳(데이터가 채워지기 시작하는 곳)
+	■	head가 가르키는 곳(데이터를 가져가기 시작하는 곳)
+
+	buf	starting address of queue
+	n	size of queue
+
+	1) tail > head (M = tail, m = head)
+
+		────────
+		──■━━━━━
+		━━━━━━━━
+		━━━━━━━━
+		━━━━□───
+
+
+		i) push (main -> queue or TCP -> queue: WSARecv)
+			[0]:
+				.len: n - tail		n - M
+				.buf: buf + tail	buf + M
+			[1]:
+				.len: head		m
+				.buf: buf		buf
+
+		ii) pop (queue -> TCP: WSASend or queue -> main)
+			[0]:
+				.len: tail - head	M - m
+				.buf: buf + head	buf + m
+
+
+
+	2) tail < head (M = head, m = tail)
+
+		━━━━━━━━
+		━━□─────
+		────────
+		────────
+		────■━━━
+
+
+		i) push (main -> queue or TCP -> queue: WSARecv)
+			[0]:
+				.len: head - tail	M - m
+				.buf: buf + tail	buf + m
+
+		ii) pop (queue -> TCP: WSASend or queue -> main)
+			[0]:
+				.len: n - head		n - M
+				.buf: buf + head	buf + M
+			[1]:
+				.len: tail		m
+				.buf: buf		buf
+
+
+	그래서 두 변수 WSABuf1[1], WSABuf2[2]를 선언한 후에
+
+		WSABUF	WSABuf2[2] = {
+			{n - M, buf + M},
+			{m, buf}
+		};
+		WSABUF	WSABuf1[1] = {
+			{M - m, buf + m}
+		};
+
+	위와 같이 초기화 한 후에
+
+	1) tail > head (M = tail, m = head)
+		push:	WSABuf2		// WSARecv(s, WSABuf2, 2, ...)
+		pop:	WSABuf1		// WSASend(s, WSABuf1, 1, ...)
+
+	2) tail < head (M = head, m = tail)
+		push:	WSABuf1		// WSARecv(s, WSABuf1, 1, ...)
+		pop:	WSABuf2		// WSASend(s, WSABuf2, 2, ...)
+////////                                                                ////////
+////////////////////////////////////////////////////////////////////////////////

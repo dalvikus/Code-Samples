@@ -1,0 +1,236 @@
+#!/usr/bin/perl -w
+
+# 1.02 (05/31/2002)
+#	1. Extract main image with argument
+#
+#		"-:RIB_pathname:IMG_pathname"
+#	   1) To save main image in file named "xxx.rib":
+#	   	"-:xxx:"
+#	   2) To print main image to console
+#	   	"-:-:"
+#
+
+$__DEBUG__ = 0x00;
+
+	unless ( $#ARGV != -1 ) {
+		print STDERR <<EOT;
+$0 ribFile [light:RIB_pathname:SHD_pathname]
+EOT
+		exit 1;
+	}
+
+	%DISPLAY_TYPE = (
+		'it'		=> 'default',
+		'tiff'		=> 'tif',
+		'mayaiff'	=> 'iff',
+	);
+
+	%LIGHT_LIST = ();
+	ProcessCommandArgument();
+if ( $__DEBUG__ & 0x08 ) {
+	foreach ( @LIGHT_LIST ) {
+		print STDERR '[ \'' . $_ -> [ 0 ] . '\', \'' . $_ -> [ 1 ] . '\', \'' . $_ -> [ 2 ] . '\' ]' . $/;
+	}
+}
+
+	unless ( $ARGV[ 0 ] ne '-' ) {
+		$g_STDIN = 1;
+	} else {
+		$g_STDIN = 0;
+		open( RIB, '< ' . $ARGV[ 0 ] ) || die( 'Cannot open ' . $ARGV[ 0 ] . $/ );
+	}
+	if ( SplitRibFile( RIB ) != 0 ) {
+		print STDERR 'SplitRibFile Error...' . $/;
+		exit 1;
+	}
+	close( RIB ) unless ( $g_STDIN );
+
+sub ProcessCommandArgument
+{
+	my	$LIGHT;
+	my	$RIB_pathname;
+	my	$SHD_pathname;
+	for ( my $i = 1; $i <= $#ARGV; ++$i ) {
+		next unless ( $ARGV[ $i ] =~ /^([^:]+):([^:]*?):([^:]*?)$/ );
+		$LIGHT = $1;
+		$RIB_pathname = $2;
+		$SHD_pathname = $3;
+		$LIGHT =~ s/([?+*])/\.$1/g;
+		# if $RIB_pathname = '', then use default
+		# if $SHD_pathname = '', then use default
+		push( @LIGHT_LIST, [ $LIGHT, $RIB_pathname, $SHD_pathname ] );
+	}
+}
+
+sub SplitRibFile
+{
+#
+	my	$ioref;
+	unless ( $g_STDIN ) {
+		open( $ioref, '<& STDIN' );
+		open( STDIN, '<& ' . $_[ 0 ] );
+	}
+#
+
+#
+#	Display name type mode ...parameterlist...
+#
+#	MakeTexture picturename texturename swrap twrap filter swidth twidth ...parameterlist...
+#	MakeLatLongEnvironment picturename texturename filter swidth twidth ...parameterlist...
+#	MakeCubeFaceEnvironment px nx py ny pz nz texturename fov filter swidth twidth ...parameterlist...
+#	MakeShadow picturename texturename ...parameterlist...
+#
+	my	$FRAME_BEGIN = '^\s*FrameBegin\s*(\d+)\s*$';
+	my	$FRAME_END = '^\s*FrameEnd\s*$';
+
+	my	$DISPLAY = '^\s*Display\s*"([^+]+?)"\s*"(.+?)"\s*"(.+?)"\s*(.*)\s*$';
+	my	$display_name = '';
+	my	$display_type = '';
+	my	$display_mode = '';
+
+	my	$head = '';
+	my	$in_head = 1;		# 0: no, 1: yes
+	my	$frame_content = '';
+	my	$in_frame = 0;		# 0: no, 1: yes
+	my	$interim = '';		# between frames (FrameEnd .. FrameBegin)
+
+	my	$basename = '';
+	my	$x = undef;
+#	my	$extension = '';
+	while ( <STDIN> ) {
+		if ( /$FRAME_BEGIN/ ) {
+			# assert( $in_frame == 0 )
+			$frame_content = $_;
+			$in_frame = 1;
+			if ( $in_head == 1 ) {
+				# end of $head
+				$in_head = 0;
+			} elsif ( $interim ) {
+if ( $__DEBUG__ & 0x01 ) {
+	print STDERR <<INTERIM;
+@{ [ '-' x 72 ] }
+$interim@{ [ '-' x 72 ] }
+INTERIM
+}
+				$interim = '';
+			}
+		} elsif ( /$FRAME_END/ ) {
+			# assert( $in_frame == 1 )
+			# assert( $display_name != '' )
+			$frame_content .= $_;
+
+			# print $frame_content or save it!
+			unless ( $display_name =~ /\/(([^\/]+)\.([^\.]+))$/ ) {
+				print STDERR 'unless ( $display_name =~ /\/(([^\/]+)\.([^\.]+))$/ ) { ...... }' . $/;
+				return 1;
+			}
+#	preview.keyShape.shd.0001.tex
+#	preview.0001
+if ( $__DEBUG__ & 0x08 ) {
+	print STDERR <<EOT
+@{ [ '#' x 72 ] }
+name = '$display_name'
+xxxx = '$1'
+yyyy = '$2'
+zzzz = '$3'
+type = '$display_type'
+mode = '$display_mode'
+@{ [ '#' x 72 ] }
+EOT
+}
+			unless ( $display_type ne 'shadow' ) {
+				isMatched( $2, \$head, \$frame_content );
+			} elsif ( exists( $DISPLAY_TYPE{ $display_type } ) ) {
+				# '-.-'
+				isMatched( '-.-', \$head, \$frame_content );
+			}
+
+			# reset variables
+			$display_name = '';
+			$display_type = '';
+			$display_mode = '';
+			$frame_content = '';
+			$in_frame = 0;
+		} else {
+			if ( $in_head == 1 ) {
+				$head .= $_;
+			} else {
+				if ( $in_frame == 1 ) {
+					if ( /$DISPLAY/ ) {
+						# assert( $display_name == '' )
+						$display_name = $1;
+						$display_type = $2;
+						$display_mode = $3;
+if ( $__DEBUG__ & 0x01 ) {
+	print STDERR <<DISPLAY;
+@{ [ '+' x 72 ] }
+${_}name = '$display_name'
+type = '$display_type'
+mode = '$display_mode'
+@{ [ '+' x 72 ] }
+DISPLAY
+}
+					}
+					$frame_content .= $_;
+				} else {
+					$interim .= $_;
+				}
+			}
+		}
+	}
+	# assert( $in_head == 0 )
+if ( $__DEBUG__ & 0x01 ) {
+	print STDERR <<HEAD;
+@{ [ '=' x 72 ] }
+$head@{ [ '=' x 72 ] }
+HEAD
+}
+
+#
+	open( STDIN, '<& $ioref' ) unless ( $g_STDIN );
+#
+	return 0;
+}
+
+sub isMatched
+{
+#	preview.keyShape.shd.0001.tex
+#	preview.0001	-.-
+	my	$x_basename = $_[ 0 ];
+	my	@list = split( '\.', $_[ 0 ] );
+if ( $__DEBUG__ & 0x08 ) {
+	print STDERR $list[ 0 ] . $/;
+	print STDERR $list[ 1 ] . $/;
+	print STDERR $list[ 2 ] . $/;
+	print STDERR $list[ 3 ] . $/;
+}
+	my	$HEAD_ref = $_[ 1 ];
+	my	$BODY_ref = $_[ 2 ];
+
+	my	$RIB_pathname = '';
+	my	$SHD_pathname = '';
+	my	$ioref;
+	for ( $i = $#LIGHT_LIST; $i >= 0; --$i ) {
+		next unless ( $list[ 1 ] =~ /^$LIGHT_LIST[ $i ][ 0 ]$/ );
+		$RIB_pathname = $LIGHT_LIST[ $i ][ 1 ];
+		$SHD_pathname = $LIGHT_LIST[ $i ][ 2 ];
+#		$RIB_pathname = $list[ 0 ] . '.' . $list[ 1 ] unless ( $RIB_pathname ne '' );
+		$RIB_pathname = $x_basename unless ( $RIB_pathname ne '' );
+		unless ( $RIB_pathname ne '-' ) {
+			open( $ioref, '>& STDOUT' );
+			open( OUT, '>& STDOUT' );
+		} else {
+			open( OUT, '> ' . $RIB_pathname ) || die( 'open( OUT, ...... )' );
+		}
+		print( OUT $$HEAD_ref );
+		if ( $LIGHT_LIST[ $i ][ 2 ] ne '' ) {
+			$$BODY_ref =~ s/\n(Display.*?\n)/\n#${1}Display "$SHD_pathname" "shadow" "z"\n/;
+		}
+		print( OUT $$BODY_ref );
+		unless ( $RIB_pathname ne '-' ) {
+			open( STDOUT, '>& $ioref' );
+		} else {
+			close( OUT );
+		}
+	}
+}

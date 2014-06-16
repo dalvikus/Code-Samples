@@ -1,0 +1,204 @@
+gmTrans:
+	bool			m__isOverlapped;
+	WSABUF			m__WSABuf[2];
+	DWORD			m__dwFlags;
+#ifdef __gmIOCP__
+	OVERLAPPEDPLUS		m__overlapped;
+#else
+	WSAOVERLAPPED		m__overlapped;
+
+
+gmPseudoTCP:
+	gmTCPBase		*m__lpTCPBase;
+#ifdef gmTCP_SERVER
+	gmTCPServer		*m__lpTCPServer;
+#endif
+#ifdef __gmIOCP__
+	bool			m__isIOCPSendInProgress;
+	bool			m__isInitializedCriticalSectionForIOCPSend;
+	CRITICAL_SECTION	m__criticalSectionForIOCPSend;
+#endif
+	bool			m__isConnected;
+	unsigned int		m__index;
+	DWORD			m__ID;
+	struct sockaddr_in	m__addr;
+	SOCKET			m__sock;
+	gmTrans			*m__lpRecv;
+	gmTrans			*m__lpSend;
+
+
+gmTCPBase:
+	gmPARAM_TCP	m__paramTCP;
+	HANDLE		m__hThread;
+	HANDLE		m__hThreadEvent;
+	HANDLE		m__hNotifyEvent;
+	bool		m__isInitializedCriticalSection;
+	CRITICAL_SECTION	m__criticalSection;
+	bool			m__isCS4ThreadStatus;
+	CRITICAL_SECTION	m__CS4ThreadStatus;
+	DWORD		m__dwThreadStatus;
+	DWORD		m__dwStatus;
+	int		m__baseStatus;
+	SOCKET		m__mainSock;
+#ifdef __gmIOCP__
+	HANDLE		m__hIOCP;
+	HANDLE		m__hIOCPWorker;
+#endif
+
+
+gmTCPServer:
+	fd_set		m__RSet;
+	unsigned int	m__numberOfClientsConnected;
+	gmPseudoTCP	*m__pseudoTCPServer;
+	gmQueue		*m__lpPublicQueue;
+	bool			m__isInitializedCriticalSectionForPublicQueue;
+	CRITICAL_SECTION	m__criticalSectionForPublicQueue;
+#ifdef __gmIOCP__
+	OVERLAPPEDPLUS	m__overlappedPlus;
+	unsigned int	m__completionKey;
+#endif	// __gmIOCP__
+
+
+gmTCPClient:
+	fd_set		m__RSet;
+	gmPseudoTCP	*m__pseudoTCPClient;
+
+
+
+
+// {
+////////////////////////////////////////////////////////////////////////////////
+// M: MAIN thread
+// M': MAIN thread, but initialized in WORKER thread
+// W: WORKER thread
+// W': WORKER thread, but initialized in MAIN thread
+// MCWS: MAIN thread for client, WORKER thread for server
+// -: not considered yet
+// +: both threads
+// *: solution
+////////////////////////////////////////////////////////////////////////////////
+gmTrans:
+M'	bool			m__isOverlapped;
+	////////////////////////////////////////////////////////////////
+M'	WSABUF			m__WSABuf[2];
+M'	DWORD			m__dwFlags;
+#ifdef __gmIOCP__
+-	OVERLAPPEDPLUS		m__overlapped;
+#else	// __gmIOCP__
+M'	WSAOVERLAPPED		m__overlapped;
+#endif	// !__gmIOCP__
+	////////////////////////////////////////////////////////////////
+
+
+gmPseudoTCP:
+M	gmTCPBase		*m__lpTCPBase;
+#ifdef gmTCP_SERVER
+M	gmTCPServer		*m__lpTCPServer;
+#endif
+MCWS	struct sockaddr_in	m__addr;
+#ifdef __gmIOCP__
+-	bool			m__isIOCPSendInProgress;
+-	bool			m__isInitializedCriticalSectionForIOCPSend;
+-	CRITICAL_SECTION	m__criticalSectionForIOCPSend;
+#endif
+M	unsigned int		m__index;
++	bool			m__isConnected;
+M	DWORD			m__ID;
++	SOCKET			m__sock;
++	gmTrans			*m__lpRecv;
++	gmTrans			*m__lpSend;
+
+
+gmTCPBase:
+M	gmPARAM_TCP	m__paramTCP;
+M	HANDLE		m__hThread;
+M	HANDLE		m__hThreadEvent;
+M	HANDLE		m__hNotifyEvent;
+*	bool			m__isInitializedCriticalSection;
+*	CRITICAL_SECTION	m__criticalSection;
+*	bool			m__isCS4ThreadStatus;
+*	CRITICAL_SECTION	m__CS4ThreadStatus;
++	DWORD			m__dwThreadStatus;
+M	int		m__baseStatus;
+M	SOCKET		m__mainSock;
+#ifdef __gmIOCP__
+-	HANDLE		m__hIOCP;
+-	HANDLE		m__hIOCPWorker;
+#endif
+
+
+gmTCPServer:
+W'	fd_set		m__RSet;
++	unsigned int	m__numberOfClientsConnected;
+M	gmPseudoTCP	*m__pseudoTCPServer;
++	gmQueue		*m__lpPublicQueue;
+*	bool			m__isInitializedCriticalSectionForPublicQueue;
+*	CRITICAL_SECTION	m__criticalSectionForPublicQueue;
+#ifdef __gmIOCP__
+-	OVERLAPPEDPLUS	m__overlappedPlus;
+-	unsigned int	m__completionKey;
+#endif	// __gmIOCP__
+
+
+gmTCPClient:
+W'	fd_set		m__RSet;
+M	gmPseudoTCP	*m__pseudoTCPClient;
+////////////////////////////////////////////////////////////////////////////////
+// }
+
+	////////////////////////////////////////////////////////////////
++	bool		gmPseudoTCP::m__isConnected;
+->	gmPseudoTCPSTATUS	gmPseudoTCP::m__gmPseudoTCPStatus;
+	enum gmPSEUDOTCPSTATUS {
+		gmPseudoTCPStatusNotConnected,
+		gmPseudoTCPStatusAccepted,
+		gmPseudoTCPStatusEstablished,
+		gmPseudoTCPStatusCloseWait
+	};
++	SOCKET		gmPseudoTCP::m__sock;
++	gmTrans*	gmPseudoTCP::m__lpRecv;
++	gmTrans*	gmPseudoTCP::m__lpSend;
++	unsigned int	gmTCPServer::m__numberOfClientsConnected;
+*	CRITICAL_SECTION	m__CS4Status;
+	bool			m__isCS4Status;
+	////////////////////////////////////////////////////////////////
+
+	////////////////////////////////////////////////////////////////
++	DWORD		gmTCPBase::m__dwThreadStatus;
+*	CRITICAL_SECTION	m__CS4ThreadStatus;
+	bool			m__isCS4ThreadStatus;
+	////////////////////////////////////////////////////////////////
+
+	////////////////////////////////////////////////////////////////
++	gmQueue*	gmTCPServer::m__lpPublicQueue;	// SERVER
++	gmTrans*	gmTCPPseudoTCP::m__lpRecv;	// CLIENT
+*	CRITICAL_SECTION	m__CS4Queue;
+	bool			m__isCS4Queue;
+	////////////////////////////////////////////////////////////////
+
+
+	////////////////////////////////////////////////////////////////
+mf__lockStatus();
+{
+	gmPseudoTCP::mf__recv();
+	gmPseudoTCP::mf__send();
+	gmTCPServer::mf__closeRecv();
+}
+mf__unlockStatus();
+	////////////////////////////////////////////////////////////////
+
+	////////////////////////////////////////////////////////////////
+gmTCPServer::mf__close();
+gmTCPServer::mf__closeSend();
+gmTCPServer::mf__flushAll();
+gmTCPServer::mf__disconnect();
+gmTCPServer::mf__acceptSocket();
+gmTCPServer::mf__readSocket();
+{
+	mf__lockStatus();
+
+	......
+
+	mf__unlockStatus();
+}
+	////////////////////////////////////////////////////////////////

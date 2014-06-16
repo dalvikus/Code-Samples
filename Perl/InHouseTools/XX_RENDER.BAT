@@ -1,0 +1,58 @@
+@ECHO OFF
+
+SET N_RETRY=3
+SET i_RETRY=0
+
+
+SET UNIX_PERL=y:\bin\perl
+SET PERL_RIBEDIT=y:\usr\local\bin\ribEdit
+
+SET RIBFILE=%~1
+IF "%RIBFILE%" EQU "" (
+	ECHO Usage: %0 RIB [RIB_EDIT__ARGV...]
+	EXIT 1
+)
+ECHO RIBFILE = "%RIBFILE%"
+IF NOT EXIST "%RIBFILE%" (
+	ECHO %RIBFILE% does not exist!
+	EXIT 1
+)
+
+SET EDIT_ARGV=%~2
+ECHO ARGV for RIBEDIT = "%EDIT_ARGV%"
+SET TMP=%RIBFILE%.TMP.LOG
+:LOOP
+IF "%EDIT_ARGV%" NEQ "" (
+	%UNIX_PERL% %PERL_RIBEDIT% %RIBFILE% %EDIT_ARGV% | prman
+) ELSE (
+	prman -Progress %RIBFILE% 2>&1 | FIND /I "T03005" > NUL 2>&1
+	IF %ERRORLEVEL% == 1 GOTO END
+	SET /A i_RETRY=%i_RETRY% + 1
+	IF %i_RETRY% == %N_RETRY% GOTO ERROR
+	GOTO LOOP
+
+	prman -Progress %RIBFILE% > %TMP%
+	IF %ERRORLEVEL% NEQ 0 (
+		ECHO prman: failed
+		SET RC=1
+		GOTO END
+	)
+	FIND /I "T03005" > NUL 2>&1
+	IF %ERRORLEVEL% == 1 (
+		ECHO prman: NOT "T03005"
+		GOTO END
+	)
+	IF %i_RETRY% == %N_RETRY% (
+		ECHO MAX RETRY!
+		GOTO ERROR
+	)
+	SET /A i_RETRY=%i_RETRY% + 1
+	ECHO RETRY...
+	GOTO LOOP
+)
+:ERROR
+SET RC=2
+
+:END
+DEL %TMP%
+EXIT %RC%

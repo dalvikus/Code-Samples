@@ -1,0 +1,386 @@
+--------------------------------------------------------------------------------
+diff \
+	'C:\RohanProject\GeoLib\NetMiddle\Src\Channel-.cpp' \
+	'C:\RohanProject\GeoLib\NetMiddle\Src\Channel.cpp' \
+	>> ~/diff.S
+--------------------------------------------------------------------------------
+160,164c160,165
+< 		unsigned int	index = m_TCPIndex;
+< 		TCPBUF	TCPBuf;
+< 		TCPBuf.hType	= (unsigned short) protocol_id;
+< 		TCPBuf.hBytes	= hBytes;
+< 		TCPBuf.lpBuf	= protocol_data->GetData();
+---
+> 		UINT	index = m_TCPIndex;
+> 		TCPPBUF	myTCPPBuf;
+> 		myTCPPBuf.gmhTCP	= &g__TCPServer->m__pseudoTCPServer[index];
+> 		myTCPPBuf.TCPBuf.hType	= (unsigned short) protocol_id;
+> 		myTCPPBuf.TCPBuf.hBytes	= hBytes;
+> 		myTCPPBuf.TCPBuf.lpBuf	= protocol_data->GetData();
+167,170c168,190
+< 		// 그냥 보내자.
+< 		switch (g__TCPServer->mf__flushThis(index, TCPBuf, 1)) {
+< 		case 0:		// 큐에 있는 내용를 "곧 바로" 보냈다.
+< 				// 그렇다고 상대편에서 이 데이터를 받았다는 말은 아니다.
+---
+> //		// 그냥 보내자.
+> 		////////////////////////////////////////
+> 		INT	iReturnVal = g__TCPServer->mf__PostMessage(myTCPPBuf);
+> 		if (iReturnVal != TCPQUEUE__OK) {
+> 			g__TCPServer->mf__fprintf(g__TCPServer->m__CONERR,
+> 				"gmTCPBase::mf__PostMessage(): != TCPQUEUE_OK (%d)\n"
+> 				,
+> 				iReturnVal
+> 			);
+> 		}
+> #if 0
+> 		switch (g__TCPServer->mf__PostMessage(myTCPPBuf)) {
+> 		case TCPQUEUE__OK:
+> 			// 큐에 잘 넣었다.
+> 			// 필요하다면 어느 정도 찬 큐를 비우기도 했다.
+> 			break;
+> 		case TCPQUEUE__NOT_ESTABLISHED:
+> 			// 서버와 해당하는 클라이언트와의 연결이 이미 끊어졌다.
+> 			break;
+> 		case TCPQUEUE__SEND_IMMEDIATELY_OK:
+> 		case TCPQUEUE__SEND_OK:
+> 			// 어느 정도 큐가 차서 이 큐를 비우는 데에는 성공했으나
+> 			// 나머지 큐에 여유 공간이 없어서, 큐에 넣을 수 없었다.
+172c192,203
+< 		case 1:		// 데이터를 보내는 중이다. 아직 큐에 데이터가 있다.
+---
+> 		case TCPQUEUE__WSASEND_IN_PROGRESS_NOT_ENOUGH:
+> 			// 어느 정도 큐가 차서 이 큐를 비울려고 했으나
+> 			// 이미 진행중인 WSASend 가 있어서, 큐에 넣을 수 없었다.
+> //			break;
+> 		case TCPQUEUE__WSAECONNRESET:
+> 			g__TCPServer->mf__fprintf(g__TCPServer->m__CONERR,
+> 				"gmTCPServer::mf__PostMessage: WSAECONNRESET\n"
+> 			);
+> 			break;
+> 		case TCPQUEUE__ERROR:
+> 			// WSASend의 실패
+> 			__SUICIDE__;
+174,180c205,206
+< 		default:
+< 			// "예외 처리"
+< //			int	i = *((int *) 0);	// 너무 심하나--;
+< 			// 다음 기회를...
+< 			Printf( "send queue overflow: packet(message) lost!\n");
+< 			g_ProtocolDataPool->Add(protocol_data);
+< 			return NET_ERR;
+---
+> 		default:	// 이럴 수가 있나?
+> 			__SUICIDE__;
+182a209,210
+> #endif	// 0
+> 		////////////////////////////////////////
+
+--------------------------------------------------------------------------------
+diff \
+	'C:\RohanProject\GeoLib\NetMiddle\Src\ServerMiddleManager-.cpp' \
+	'C:\RohanProject\GeoLib\NetMiddle\Src\ServerMiddleManager.cpp' \
+	>> ~/diff.S
+--------------------------------------------------------------------------------
+81c81
+< 	myParamTCP.maxClients			= 64 - 1;	// 1 for listening socket
+---
+> 	myParamTCP.maxClients			= 64;
+83,87c83,85
+< 	myParamTCP.recvPubQueueSizeInExponent	= 21;	// 2^21 = 2M
+< 	myParamTCP.recvQueueSizeInExponent	= 13;	// 2^13 = 8K
+< 	myParamTCP.recvTimeOut			= 1000;	// 1 second
+< 	myParamTCP.sendQueueSizeInExponent	= 14;	// 2^13 = 8K
+< 	myParamTCP.sendTimeOut			= 1000;	// 1 second
+---
+> 	myParamTCP.PubQueueSizeInExponent	= 24;	// 2^24 = 16M
+> 	myParamTCP.RecvQueueSizeInExponent	= 13;	// 2^13 = 8K
+> 	myParamTCP.SendQueueSizeInExponent	= 13;	// 2^13 = 8K
+89,95c87,90
+< 
+< //	gmTCPServer	*TCPServer = new gmTCPServer(myParamTCP, &gmStatus);
+< //	if (!TCPServer || gmStatus != 0) {
+< //		TCPServer = NULL;
+< //		return 1;
+< //	}
+< 	g__TCPServer = new gmTCPServer(myParamTCP, &gmStatus);		
+---
+> 	g__TCPServer = new gmTCPServer(
+> 		myParamTCP,
+> 		&gmStatus
+> 	);
+97,98c92
+< 		assert(false);
+< 		return NET_ERR;
+---
+> 		__SUICIDE__;
+
+--------------------------------------------------------------------------------
+diff \
+	'C:\RohanProject\NewRohanServer\Main\GameLoop-.cpp' \
+	'C:\RohanProject\NewRohanServer\Main\GameLoop.cpp' \
+	>> ~/diff.S
+--------------------------------------------------------------------------------
+68c68
+< 		int	iReturnVal = g__TCPServer->mf__flushAll();
+---
+> 		int	iReturnVal = g__TCPServer->mf__flushAll(g__TCPServer->m__pseudoTCPServer);
+
+--------------------------------------------------------------------------------
+diff \
+	'C:\RohanProject\NewRohanServer\network\Disposer-.cpp' \
+	'C:\RohanProject\NewRohanServer\network\Disposer.cpp' \
+	>> ~/diff.S
+--------------------------------------------------------------------------------
+96c96
+< 	uIntAddr = g__TCPServer->mf__getUAddress(index);
+---
+> 	uIntAddr = g__TCPServer->mf__getUAddress(&g__TCPServer->m__pseudoTCPServer[index]);
+122c122
+< 	g__TCPServer->mf__setStatusEstablished( index);
+---
+> 	g__TCPServer->mf__setStatusEstablished(&g__TCPServer->m__pseudoTCPServer[index]);
+
+--------------------------------------------------------------------------------
+diff \
+	'C:\RohanProject\NewRohanServer\network\DisposerMiddle-.cpp' \
+	'C:\RohanProject\NewRohanServer\network\DisposerMiddle.cpp' \
+	>> ~/diff.S
+--------------------------------------------------------------------------------
+254c254,257
+< int	CDisposerMiddle::TCPDispose(int initprotocol)
+---
+> INT
+> CDisposerMiddle::TCPDispose(
+> 	INT	initprotocol
+> )
+264c267
+< 	char	buf[MAX_TCPMSGSIZE];
+---
+> 	CHAR	buf[MAX_TCPMSGSIZE];
+268,270c271,274
+< 	unsigned int	*lpIndex	= &myTCPPBuf.index;
+< 	unsigned short	*lpuhType	= &myTCPPBuf.TCPBuf.hType;
+< 	unsigned short	*lpuhBytes	= &myTCPPBuf.TCPBuf.hBytes;
+---
+> //	PUINT	lpIndex	= &myTCPPBuf.index;
+> 	gmPseudoTCP**	lpgmPseudoTCP	= (gmPseudoTCP**) &myTCPPBuf.gmhTCP;
+> 	PUSHORT	lpuhType	= &myTCPPBuf.TCPBuf.hType;
+> 	PUSHORT	lpuhBytes	= &myTCPPBuf.TCPBuf.hBytes;
+274c278
+< 		if (g__TCPServer->mf__fetch(&myTCPPBuf) < 0)
+---
+> 		if (g__TCPServer->mf__GetMessage(&myTCPPBuf) < 0)
+278c282
+< 		g__TCPServer->mf__printf(TEXT("TCP message from [%d]: type ID = %d, # of bytes = %d\n"), *lpIndex, *lpuhType, *lpuhBytes);
+---
+> 		g__TCPServer->mf__printf(TEXT("TCP message from [%d]: type ID = %d, # of bytes = %d\n"), (*lpgmPseudoTCP)->m__index, *lpuhType, *lpuhBytes);
+283c287
+< 			DisposeConnectionlessInputTCP(*lpIndex, (unsigned int)buf);
+---
+> 			DisposeConnectionlessInputTCP((*lpgmPseudoTCP)->m__index, (unsigned int)buf);
+289c293
+< 		eid.SetId(g__TCPServer->mf__TCPGetCharID(*lpIndex));
+---
+> 		eid.SetId(g__TCPServer->mf__TCPGetCharID((gmHTCP*) *lpgmPseudoTCP));
+295c299
+< 			g__TCPServer->mf__close(*lpIndex);
+---
+> 			g__TCPServer->mf__disconnect((gmHTCP*) *lpgmPseudoTCP);
+302,303c306,307
+< 			int	iReturnVal;
+< 			unsigned int	*lpuiSubType = (unsigned int *) buf;
+---
+> 			INT	iReturnVal;
+> 			PUINT	lpuiSubType = (PUINT) buf;
+306c310
+< 				g__TCPServer->mf__printf(TEXT(">>>> %d 번째 클라이언트와의 연결을 끊는다. <<<<\n"), *lpIndex);
+---
+> 				g__TCPServer->mf__printf(TEXT(">>>> %d 번째 클라이언트와의 연결을 끊는다. <<<<\n"), (*lpgmPseudoTCP)->m__index);
+312c316
+< 				iReturnVal = g__TCPServer->mf__closeSend(*lpIndex);
+---
+> 				iReturnVal = g__TCPServer->mf__closeSend((gmHTCP*) *lpgmPseudoTCP);
+323c327
+< 		int	protocol_id = (int) *lpuhType;
+---
+> 		INT	protocol_id = (INT) *lpuhType;
+342c346,352
+< void CDisposerMiddle::SendClientRequestInitDataTCPByPacket(int protocol,CPacket *packet,int size,unsigned int tcpindex)
+---
+> VOID
+> CDisposerMiddle::SendClientRequestInitDataTCPByPacket(
+> 	INT		protocol,
+> 	CPacket*	packet,
+> 	INT		size,
+> 	UINT		tcpindex
+> )
+345,348c355,359
+< 	TCPBUF	myTCPBuf;
+< 	myTCPBuf.hType = protocol;
+< 	myTCPBuf.hBytes = (unsigned short) size;
+< 	myTCPBuf.lpBuf = packet->GetData();
+---
+> 	TCPPBUF	myTCPPBuf;
+> 	myTCPPBuf.gmhTCP = (gmHTCP) &g__TCPServer->m__pseudoTCPServer[tcpindex];
+> 	myTCPPBuf.TCPBuf.hType = protocol;
+> 	myTCPPBuf.TCPBuf.hBytes = (USHORT) size;
+> 	myTCPPBuf.TCPBuf.lpBuf = packet->GetData();
+352,363c363,406
+< 	switch (g__TCPServer->mf__flushThis(tcpindex, myTCPBuf)) {
+< 	case 0:		// 큐에 있는 내용를 "곧 바로" 보냈다.
+< 			// 그렇다고 상대편에서 이 데이터를 받았다는 말은 아니다.
+< //		break;
+< 	case 1:		// 데이터를 보내는 중이다. 아직 큐에 데이터가 있다.
+< 		break;
+< 	default:
+< 		// "예외 처리"
+< //		int	i = *((int *) 0);	// 너무 심하나--;
+< 		// 다음 기회를...
+< 		g__TCPServer->mf__printf(TEXT("flush failed: packet(message) lost!\n"));
+< 		//delete packet;
+---
+> 
+> 	////////////////////////////////////////
+> 	INT	iReturnVal = g__TCPServer->mf__PostMessage(myTCPPBuf);
+> 	if (iReturnVal != TCPQUEUE__OK) {
+> 		g__TCPServer->mf__fprintf(g__TCPServer->m__CONERR,
+> 			"gmTCPBase::mf__PostMessage(): != TCPQUEUE_OK (%d)\n"
+> 			,
+> 			iReturnVal
+> 		);
+> 	}
+> #if 0
+> 	switch (g__TCPServer->mf__PostMessage(myTCPPBuf)) {
+> 	case TCPQUEUE__NOT_ESTABLISHED:
+> 		// 서버와 해당하는 클라이언트와의 연결이 이미 끊어졌다.
+> 		break;
+> 	case TCPQUEUE__OK:
+> 		// 큐에 잘 넣었다.
+> 		// 필요하다면 어느 정도 찬 큐를 비우기도 했다.
+> #if 0
+> 		fprintf(stderr, "[%u >] hType = %u, hBytes = %u\n", *lpIndex, myTCPPBuf.TCPBuf.hType, myTCPPBuf.TCPBuf.hBytes);
+> #endif
+> 		break;
+> 	case TCPQUEUE__SEND_IMMEDIATELY_OK:
+> 	case TCPQUEUE__SEND_OK:
+> 		// 어느 정도 큐가 차서 이 큐를 비우는 데에는 성공했으나
+> 		// 나머지 큐에 여유 공간이 없어서, 큐에 넣을 수 없었다.
+> 	case TCPQUEUE__WSASEND_IN_PROGRESS_NOT_ENOUGH:
+> 		// 어느 정도 큐가 차서 이 큐를 비울려고 했으나
+> 		// 이미 진행중인 WSASend 가 있어서, 큐에 넣을 수 없었다.
+> #if 0
+> 		fprintf(stderr, "[%u >] hType = %u, hBytes = %u: lost!\n", *lpIndex, myTCPPBuf.TCPBuf.hType, myTCPPBuf.TCPBuf.hBytes);
+> #endif
+> 		break;
+> 	case TCPQUEUE__WSAECONNRESET:
+> 		g__TCPServer->mf__fprintf(g__TCPServer->m__CONERR,
+> 			"gmTCPServer::mf__PostMessage: WSAECONNRESET\n"
+> 		);
+> 		break;
+> 	case TCPQUEUE__ERROR:
+> 		// WSASend의 실패
+> 		__SUICIDE__;
+> 		break;
+> 	default:	// 이럴 수가 있나?
+> 		__SUICIDE__;
+365a409,411
+> #endif	// 0
+> 	////////////////////////////////////////
+> 
+374,375c420,424
+< 
+< void CDisposerMiddle::SendRequestInitFail(int protocol,int tcpindex)
+---
+> VOID
+> CDisposerMiddle::SendRequestInitFail(
+> 	INT	protocol,
+> 	INT	tcpindex
+> )
+377,381c426,431
+< 	TCPBUF	myTCPBuf;
+< 	myTCPBuf.hType = protocol;
+< 	myTCPBuf.hBytes = 4;
+< 	int		i = -1;
+< 	myTCPBuf.lpBuf = (char *) &i;
+---
+> 	TCPPBUF	myTCPPBuf;
+> 	myTCPPBuf.gmhTCP = (gmHTCP) &g__TCPServer->m__pseudoTCPServer[tcpindex];
+> 	myTCPPBuf.TCPBuf.hType = protocol;
+> 	myTCPPBuf.TCPBuf.hBytes = 4;
+> 	INT	i = -1;
+> 	myTCPPBuf.TCPBuf.lpBuf = (PCHAR) &i;
+384,396c434,471
+< 	// 큐에 있는 내용을 보낸다.
+< 	switch (g__TCPServer->mf__flushThis(tcpindex, myTCPBuf)) 
+< 	{
+< 		case 0:		// 큐에 있는 내용를 "곧 바로" 보냈다.
+<     		// 그렇다고 상대편에서 이 데이터를 받았다는 말은 아니다.
+<     		//				break;
+< 		case 1:		// 데이터를 보내는 중이다. 아직 큐에 데이터가 있다.
+< 				break;
+<     	default:
+< 							// "예외 처리"
+< 			//				int	i = *((int *) 0);	// 너무 심하나--;
+< 							// 다음 기회를...
+< 		Logout(g_LogMain,"flush failed: packet(message) lost!\n");
+---
+> //	// 큐에 있는 내용을 보낸다.
+> 	////////////////////////////////////////
+> 	INT	iReturnVal = g__TCPServer->mf__PostMessage(myTCPPBuf);
+> 	if (iReturnVal != TCPQUEUE__OK) {
+> 		g__TCPServer->mf__fprintf(g__TCPServer->m__CONERR,
+> 			"gmTCPBase::mf__PostMessage(): != TCPQUEUE_OK (%d)\n"
+> 			,
+> 			iReturnVal
+> 		);
+> 	}
+> #if 0
+> 	switch (g__TCPServer->mf__PostMessage(myTCPPBuf)) {
+> 	case TCPQUEUE__OK:
+> 		// 큐에 잘 넣었다.
+> 		// 필요하다면 어느 정도 찬 큐를 비우기도 했다.
+> 		break;
+> 	case TCPQUEUE__NOT_ESTABLISHED:
+> 		// 서버와 해당하는 클라이언트와의 연결이 이미 끊어졌다.
+> 		break;
+> 	case TCPQUEUE__SEND_IMMEDIATELY_OK:
+> 	case TCPQUEUE__SEND_OK:
+> 		// 어느 정도 큐가 차서 이 큐를 비우는 데에는 성공했으나
+> 		// 나머지 큐에 여유 공간이 없어서, 큐에 넣을 수 없었다.
+> 	case TCPQUEUE__WSASEND_IN_PROGRESS_NOT_ENOUGH:
+> 		// 어느 정도 큐가 차서 이 큐를 비울려고 했으나
+> 		// 이미 진행중인 WSASend 가 있어서, 큐에 넣을 수 없었다.
+> 		break;
+> 	case TCPQUEUE__WSAECONNRESET:
+> 		g__TCPServer->mf__fprintf(g__TCPServer->m__CONERR,
+> 			"gmTCPServer::mf__PostMessage: WSAECONNRESET\n"
+> 		);
+> 		break;
+> 	case TCPQUEUE__ERROR:
+> 		// WSASend의 실패
+> 		__SUICIDE__;
+> 		break;
+> 	default:	// 이럴 수가 있나?
+> 		__SUICIDE__;
+398a474,475
+> #endif	// 0
+> 	////////////////////////////////////////
+400c477,482
+< void CDisposerMiddle::SetTCPId(unsigned int  tcpindex,unsigned int id)
+---
+> 
+> VOID
+> CDisposerMiddle::SetTCPId(
+> 	UINT	tcpindex,
+> 	UINT	id
+> )
+402c484
+<     g__TCPServer->mf__setID(tcpindex,id);
+---
+> 	g__TCPServer->mf__setID(&g__TCPServer->m__pseudoTCPServer[tcpindex], id);
+404c486
+< #endif
+\ No newline at end of file
+---
+> #endif

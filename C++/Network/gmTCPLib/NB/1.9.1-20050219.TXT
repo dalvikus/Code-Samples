@@ -1,0 +1,115 @@
+2005/02/19 - 1.9.1
+----------------
+
+네크워크 라이브러리를 이용하는 절차는 다음과 같다.
+(서버의 경우에는 gmIocpS, 클라이언트의 경우에는 gmIocpC를 참고하라.)
+
+[단계 1] 소켓초기화
+{
+	WSADATA	wsaData;
+	if (WSAStartup(MAKEWORD(2, 2), &wsaData)) {
+		RomeoMustDie();
+	}
+}
+
+[단계 2] 네크워크 연결
+	gmTCPServer		*glpTCPServer = new gmTCPServer(...);	// 서버
+//	gmTCPClient		*glpTCPClient = new gmTCPClient(...);	// 클라이언트
+
+[단계 3] 다음 구조체를 이용해서 메시지를 보내거나 받는다.
+	CHAR	buf[MAX_TCPMSGSIZE];
+	TCPBUF	myTCPBuf;
+	myTCPBuf.lpBuf	= buf;
+	////////
+	USHORT&	hType	= myTCPBuf.hType;
+	USHORT&	hBytes	= myTCPBuf.hBytes;
+[단계 3 - 1] 메시지 받음(gmPseudoTCP::mf__GetMessage, gmPseudoTCP::mf__PeekMessage)
+	// gmPseudoTCP::mf__GetMessage를 이용하는 경우
+	// 각 함수의 리턴값(TCPBUF__XXX)은 gmTCPDef.h를 보라.
+	gmPseudoTCP	*gmhTCP;
+	g__lpTCPClient->mf__iterReset();			// 연결된 TCP를 찾기위해 초기화한다.
+	while ((gmhTCP = g__lpTCPClient->mf__nextTCP())) {	// 연결되는 TCP를 찾는다.
+		if (gmhTCP->mf__bDisconnect()) {	// 연결이 끊어졌다.
+			// 받는쪽은 이미 닫혔다.
+			if (gmhTCP->mf__closeSend() != 0) {
+				RomeoMustDie();
+			}
+			continue;	// 다음 연결을 알아보자.
+		}
+
+		myTCPBuf.hBytes = MAX_TCPMSGSIZE;	// [IN/OUT]이므로, 항상 새로 설정해야 한다!!!
+		switch (gmhTCP->mf__GetMessage(&myTCPBuf)) {
+		case TCPBUF__OK:
+			// 데이터를 이용하자.
+			break;
+		case TCPBUF__NO_HEADER:
+		case TCPBUF__PARTIAL_DATA:
+			// 다음에 가져올 수 밖에...
+			break;
+		case TCPBUF__NOT_ENOUGH:
+			// TCPBUF.hBytes값을 제대로 설정했나?
+		default:
+			// 이럴 수가???
+			RomeoMustDie();
+			break;
+		}
+		// 큐가 가득차서 중단된 상태라면(TCPBUF__OK일 때),
+		// 적어도 하나의 메시지는 처리하여 큐를 비웠으므로
+		// 다음 데이터를 받아들일 수 있다.
+		// 한꺼번에 읽어 처리해서 한 번에 큐를 비우며 좋을텐데...
+		if (gmhTCP->mf__bPaused()) {
+			// 큐를 비웠으므로 다시 받을 수 있도록 하자.
+
+			// gmPseudoTCP::mf__IOCPRecvContinue의 리턴값은
+			// gmPseudoTCP::mf__IOCPRecv의 리턴값과 같다.
+			// 음수인 경우에는 문제가 있다.
+			if (gmhTCP->mf__IOCPRecvContinue() < 0) {
+				(void) gmhTCP->mf__disconnect();
+			}
+		}
+	}
+[단계 3 - 2] 메시지 보냄(gmPseudoTCP::mf__PostMessage, gmPseudoTCP::mf__SendMessage, gmPseudoTCP::mf__SendMessageEx)
+	// gmPseudoTCP::mf__PostMessage를 이용하는 경우
+	// 각 함수의 리턴값(TCPPOSTMSG__XXX, TCPSENDMSG__XXX, TCPSENDMSGEX__XXX)에 대한 설명은 gmTCPDef.h를 보라.
+	switch (gmPostMessage(gmhTCP, &myTCPBuf)) {
+	case TCPPOSTMSG__NOT_ESTABLISHED:
+		// 서버와 해당하는 클라이언트와의 연결이 이미 끊어졌다. (정상적으로)
+		break;
+	case TCPPOSTMSG__OK:
+		// 큐에 잘 넣었다.
+		// 필요하다면 어느 정도 찬 큐를 비우기도 했다.
+		break;
+	case TCPPOSTMSG__SEND_OK_IMMEDIATELY_BUT:
+	case TCPPOSTMSG__SEND_OK_BUT:
+		// 어느 정도 큐가 차서 이 큐를 비우는 데에는 성공했으나
+		// 나머지 큐에 여유 공간이 없어서, 큐에 넣을 수 없었다.
+	case TCPPOSTMSG__WSASEND_IN_PROGRESS_NOT_ENOUGH:
+		// 어느 정도 큐가 차서 이 큐를 비울려고 했으나
+		// 이미 진행중인 WSASend 가 있어서, 큐에 넣을 수 없었다.
+		// 따라서 다음에 메시지를 보내도록 하자...
+		break;
+	case TCPPOSTMSG__ERROR:
+		if (
+			g__lpTCPServer->mf__GetWSALastErrorCode() == WSAECONNRESET
+				||
+			g__lpTCPServer->mf__GetWSALastErrorCode() == WSAECONNABORTED
+		) {
+			// 이미 연결이 끊어졌다. (비 정상적으로)
+		} else {
+			// WSASend의 실패
+			RomeoMustDie();
+		}
+		break;
+	default:	// 이럴 수가 있나?
+		RomeoMustDie();
+		break;
+	}
+
+[단계 4] 네트워크 해제
+	delete glpTCPServer;	// 서버
+//	delete glpTCPClient;	// 클라이언트
+
+[단계 5] 소켓정리
+	if (WSACleanup()) {
+		RomeoMustDie();
+	}

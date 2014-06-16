@@ -1,0 +1,97 @@
+2005/02/18
+----------------
+
+
+1. 편하게 생각하자.
+GetMessage, PeekMessage를 둘 다 구현했다고.
+GetMessage는 이벤트를 이용해서 blocking이 되고,
+PeekMessage는 polling방식으로.
+물론 이벤트방식으로는 들어오는 모든 메시지를 동시에 처리할 수 없다.
+이벤트 발생속도가 처리속도보다 빠를 때가 바로 그런 경우이다.
+ 
+이벤트방식: (Blocking)
+ 
+        switch (gmhTCP.mf__GetMessage(&TCPBuf)) {        // blocking
+        }
+ 
+폴링방식:
+ 
+        while (1) {
+                gmTCPBUF__STATUS    gmTCPBufStatus = gmhTCP.mf__PeekMessage(&TCPBuf, &lpMsgLen);
+                switch (gmTCPBufStatus) {
+                }
+        }
+ 
+2. 공용큐를 두지 않고, 개인큐를 사용하므로
+개인큐에서 읽을 때의 리턴값에는 OOB상태가 포함되어 있으면 좋겠다.
+ 
+        enum gmTCPBUF__STATUS {
+                gmTCPBUF__DISCONNECTED        = ...;
+                gmTCPBUF__PAUSED                    = ...;
+                ......
+        }
+ 
+3. 개인큐를 조사하는 방식에 대해서 생각해보자. 지금의
+ 
+        gmTCPBase::mf__iterReset();
+        gmTCPBase::mf__nextTCP(...);
+ 
+방식의 다른 형태는? 쓰기 편하면서 기존의 다른 방법과 유사한 것은 없는가?
+예를 들어, EnumerateTCP와 같은 Enumerate...을 사용하는 것은 어떤가?
+ 
+
+
+----- Original Message ----- 
+From: Gwang-Ho Kim 
+To: ghkim@geomind.co.kr 
+Sent: Friday, February 18, 2005 6:08 PM
+Subject: gmIocp-1.8.#
+
+
+gmIocp-1.8.4$
+ 
+서버의 경우에는
+mf__PeekMessage의 리턴값이 TCPBUF__OK인 경우에도,
+메시지를 받는 것 중지했는 지 판단해야 한다.
+즉
+   if (dwOOB & gmPseudoTCP::gmPseudoTCPOOBStatusPaused) {
+    g__lpTCPServer->mf__printf(
+     "[%u.%u] 다시 메시지를 받도록 한다.\n"
+     ,
+     gmhTCP->mf__GetGlobalIndex(),
+     gmhTCP->mf__GetIndex()
+    );
+    if (gmhTCP->mf__IOCPRecvContinue() < 0) {
+     g__lpTCPServer->mf__printf(
+      "[%u.%u] 더 이상 이 연결을 사용할 수가 없다.\n"
+      ,
+      gmhTCP->mf__GetGlobalIndex(),
+      gmhTCP->mf__GetIndex()
+     );
+     gmhTCP->mf__disconnect();
+    }
+   }
+를 switch(iReturnVal)밖으로 내어야 한다.
+ 
+클라이언트의 경우에는
+gmPseudoTCP.h에
+         BOOL mf__bDisconnect(VOID) {return mf__GetOOB() & gmPseudoTCPOOBStatusDisconnect;}
+         BOOL mf__bPaused(VOID) {return mf__GetOOB() & gmPseudoTCPOOBStatusPaused;}
+을 추가해야 제대로 동작한다.
+ 
+이렇더라도 메시지를 제대로 가져오는 데에는 문제가 있다.
+서버에서 메시지를 가져올 때,
+ 
+1) Event의 경우에는 제일 마지막 메시지를 가져오지 못할 수도 있다.
+Event를 처리하는 속도보다 발생하는 속도가 빠른 경우이다.
+즉 받는 쪽에서는 두 개의 메시지를 받을 때마다 두 번의 이벤트를 발생시켰지만
+처리하는 곳에서 천천히 처리하면 마지막으로 발생한 이벤트만 처리할 수도 있기 때문이다.
+따라서 이 방법은 적절하지 않다.
+ 
+2) 타이머를 설정하면 되지만 한 번에 하나씩 메시지를 가져가는 방법은 수정해야 한다.
+타이머가 아주 작은 값(1ms)로 설정되어 있다면 모를까.
+이 방법도 문제가 있다.
+ 
+gmIocp-1.8.5- 에서는 이런한 메시지를 가져가는 어려움을 해결하려 했다.
+어떻게...
+다시 생각해서 새로 써야 할 것이다. gmIocp-1.9.0은 그렇게 탄생했다.
