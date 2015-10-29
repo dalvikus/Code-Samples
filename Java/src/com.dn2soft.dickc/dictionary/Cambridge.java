@@ -1,14 +1,13 @@
-package com.dn2soft.dick.dictionary;
+package com.dn2soft.dickc.dictionary;
 
-import com.dn2soft.dick.utility.MultiLine;
-import com.dn2soft.dick.utility.Joint;
-import com.dn2soft.dick.utility.AnsiText;
-import com.dn2soft.dick.utility.AnsiText.ColorAttr;
-import com.dn2soft.dick.utility.Json;
+import com.dn2soft.util.Jsonable;
+import com.dn2soft.util.MultiLine;
+import com.dn2soft.util.Joint;
+import com.dn2soft.util.AnsiText;
+import com.dn2soft.util.AnsiText.ColorAttr;
+import com.dn2soft.util.Json;
 
 import java.io.File;
-import java.nio.file.Files;
-import java.nio.file.FileSystems;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -59,6 +58,7 @@ public class Cambridge {
         public boolean  showHref0Only   = false;// if set, showHref0 implied
         public boolean  followWord  = false;// gui mode only
         public boolean  resultOnly  = false;
+        public boolean  downloadAll = false;
         public String   dbpath      = null;
     }
 
@@ -111,8 +111,66 @@ public class Cambridge {
         AnsiText.colorText("==== page glue ====", COLOR_ATTR_GLUE) +
      */
         "\n";
-    public static class Block {
-        public static class Head {
+    // Block.Head
+            static String   POS_GLUE = AnsiText.colorText(
+            /*
+                "-- IG --"
+             */
+                ","
+                , COLOR_ATTR_GLUE
+            );
+            static String   IPA_GLUE = AnsiText.colorText(
+            /*
+                "-- IG --"
+             */
+                ","
+                , COLOR_ATTR_GLUE
+            );
+            static String   HEAD_GLUE =
+            /*
+                AnsiText.colorText("-- HG --", COLOR_ATTR_GLUE);
+             */
+                " ";
+    // Block.Body
+            static final String DEF_MULTILINE_GLUE =
+            /*
+                "\n" +
+                AnsiText.colorText("---- multi-line glue ----", COLOR_ATTR_GLUE) +
+             */
+                "\n";
+            static final String EXAMP_MULTILINE_GLUE =
+            /*
+                "\n" +
+                AnsiText.colorText("---- multi-line glue ----", COLOR_ATTR_GLUE) +
+             */
+                "\n      ";
+            static final String EXAMP_GLUE =
+            /*
+                "\n" +
+                AnsiText.colorText("---- example glue ----", COLOR_ATTR_GLUE) +
+             */
+                "\n";
+            static final String DEF_EXAMP_GLUE =
+            /*
+                "\n" +
+                AnsiText.colorText("---- def-examp glue ----", COLOR_ATTR_GLUE) +
+             */
+                "\n";
+    // Block
+        static final String BODY_GLUE =
+        /*
+            "\n" +
+            AnsiText.colorText("---- body glue ----", COLOR_ATTR_GLUE) +
+         */
+            "\n";
+        static final String HEAD_BODY_GLUE =
+        /*
+            "\n" +
+            AnsiText.colorText("---- head body glue ----", COLOR_ATTR_GLUE) +
+         */
+            "\n";
+    public static class Block implements Jsonable {
+        public static class Head implements Jsonable {
             public String   word;
             public String   gw;
             public List<String>   pos = new ArrayList<String>();
@@ -155,25 +213,6 @@ public class Cambridge {
                 //return String.format("{\n    %s\n}", Joint.join(str_a, ",\n    "));
                 return String.format("{%s}", Joint.join(str_a, ","));
             }
-            static String   POS_GLUE = AnsiText.colorText(
-            /*
-                "-- IG --"
-             */
-                ","
-                , COLOR_ATTR_GLUE
-            );
-            static String   IPA_GLUE = AnsiText.colorText(
-            /*
-                "-- IG --"
-             */
-                ","
-                , COLOR_ATTR_GLUE
-            );
-            static String   HEAD_GLUE =
-            /*
-                AnsiText.colorText("-- HG --", COLOR_ATTR_GLUE);
-             */
-                " ";
             public String  getAudioURL()
             {
                 if (us_ogg != null && !us_ogg.equals(""))
@@ -228,7 +267,7 @@ public class Cambridge {
                     println(str);
             }
         }
-        public static class Body {
+        public static class Body implements Jsonable {
             public String   def;
             public List<String> example = new ArrayList<String>();
 
@@ -253,30 +292,6 @@ public class Cambridge {
                 return String.format("{%s}", Joint.join(str_a, ","));
             }
 
-            static final String DEF_MULTILINE_GLUE =
-            /*
-                "\n" +
-                AnsiText.colorText("---- multi-line glue ----", COLOR_ATTR_GLUE) +
-             */
-                "\n";
-            static final String EXAMP_MULTILINE_GLUE =
-            /*
-                "\n" +
-                AnsiText.colorText("---- multi-line glue ----", COLOR_ATTR_GLUE) +
-             */
-                "\n      ";
-            static final String EXAMP_GLUE =
-            /*
-                "\n" +
-                AnsiText.colorText("---- example glue ----", COLOR_ATTR_GLUE) +
-             */
-                "\n";
-            static final String DEF_EXAMP_GLUE =
-            /*
-                "\n" +
-                AnsiText.colorText("---- def-examp glue ----", COLOR_ATTR_GLUE) +
-             */
-                "\n";
             String  getBodyStr(boolean ansi)
             {
                 List<String>    str_list = new ArrayList<String>();
@@ -310,18 +325,6 @@ public class Cambridge {
             }
         }
 
-        static final String BODY_GLUE =
-        /*
-            "\n" +
-            AnsiText.colorText("---- body glue ----", COLOR_ATTR_GLUE) +
-         */
-            "\n";
-        static final String HEAD_BODY_GLUE =
-        /*
-            "\n" +
-            AnsiText.colorText("---- head body glue ----", COLOR_ATTR_GLUE) +
-         */
-            "\n";
         public Head head = new Head();
         public List<Body>   bodyList = new ArrayList<Body>();
         public String       jsonStrWordSmart = null;
@@ -359,11 +362,24 @@ public class Cambridge {
                 println(str);
         }
     }
-    public static class More {
-        public static class Info {
+    // More
+        static final String MORE_GLUE =
+        /*
+            "\n" +
+            AnsiText.colorText("---- more glue ----", COLOR_ATTR_GLUE) +
+         */
+            "\n";
+        static final String INFO_HREF_GLUE =
+        /*
+            "\n" +
+            AnsiText.colorText("---- info-href glue ----", COLOR_ATTR_GLUE) +
+         */
+            "\n";
+    public static class More implements Jsonable {
+        public static class Info implements Jsonable {
             public String   href;   //
-            int arl;                //
-            String  arl0;           //
+            public int arl;         //
+            public String  arl0;    //
             public String   word;   //
             public String   pos;    //
             public String   gw;     //
@@ -419,6 +435,9 @@ public class Cambridge {
                 info.gw = ((Json.StringType) ((Json.MapType) TinfoList).toMap().get("gw")).toString();
             }
         }
+        static final Pattern Pgw1 = Pattern.compile("<span[^<>]*class=\"gw\".*?>(.*?)</span>");
+        static final Pattern Pgw2 = Pattern.compile("<b[^<>]*class=\"gw\".*?>(.*?)</b>");
+        static final Pattern Ppos = Pattern.compile("<span[^<>]*class=\"pos\">(.*?)</span>");
         void setInfoList(String href, String href0) throws IOException {
             if (href == null)
                 return;
@@ -429,73 +448,59 @@ public class Cambridge {
     <ul class="result-list">
                                 <li><a href="http://dictionary.cambridge.org/dictionary/american-english/word_1" title="Definition of word n LANGUAGE UNIT in American English"><span class='arl1'><span class="base"><span class="hw">word</span></span> <span class="pos">n</span> <span title="Guideword" class="gw">LANGUAGE UNIT</span></span></a></li>
  */
-Pattern Pgw1 = Pattern.compile("<span[^<>]*class=\"gw\".*?>(.*?)</span>");
-Pattern Pgw2 = Pattern.compile("<b[^<>]*class=\"gw\".*?>(.*?)</b>");
-Pattern Ppos = Pattern.compile("<span[^<>]*class=\"pos\">(.*?)</span>");
-String  gw;
-String  pos;
-            Element ul = doc.select("ul.result-list").first();
-            for (Element li: ul.select("li")) {
-gw = null;
-pos = null;
-                Element a = li.select("a").first();
+//          Element ul = doc.select("ul.result-list").first();
+            for (Element ul: doc.select("div.results-container-all ul.result-list")) {
+                for (Element li: ul.select("li")) {
+                    String gw = null;
+                    String pos = null;
+                    Element a = li.select("a").first();
 
-                String  ref = a.attr("href");
-                assert !ref.toString().isEmpty() : AnsiText.fatalStr("no \"href\" attribute");
-                if (ref.equals(href0))
-                    continue;
+                    String  ref = a.attr("href");
+                    assert !ref.toString().isEmpty() : AnsiText.fatalStr("no \"href\" attribute");
+                    if (ref.equals(href0))
+                        continue;
 
-                Info    info = new Info();
-                infoList.add(info);
-                info.href = ref;
-                Element arl = a.select("span").first();
-                info.arl = new Integer(arl.attr("class").substring(3)).intValue();
-                String  s = arl.toString();
-                info.arl0 = s;
-Matcher mgw1 = Pgw1.matcher(s);
-if (mgw1.find()) {
-//  System.out.println("\t|" + mgw1.group() + "|, |" + mgw1.group(1) + "|");
-    gw = mgw1.group(1);
-}
-                //s = s.replaceFirst("<span[^<>]*class=\"gw\".*?>(.*?)</span>", AnsiText.colorText("[$1]", COLOR_ATTR_GW, ansi));
-                s = s.replaceFirst("<span[^<>]*class=\"gw\".*?>(.*?)</span>", "");
-                // http://dictionary.cambridge.org/dictionary/british/sake_1
-Matcher mgw2 = Pgw2.matcher(s);
-if (mgw2.find()) {
-//  System.out.println("\t|" + mgw2.group() + "|, |" + mgw2.group(1) + "|");
-    gw = mgw2.group(1);
-}
-                //s = s.replaceFirst("<b[^<>]*class=\"gw\".*?>(.*?)</b>", AnsiText.colorText("[$1]", COLOR_ATTR_GW, ansi));
-                s = s.replaceFirst("<b[^<>]*class=\"gw\".*?>(.*?)</b>", "");
-//              s = s.replaceFirst("<([a-zA-Z]+)[^<>]*class=\"gw\".*?>(.*?)</$1>", AnsiText.colorText("[$2]", COLOR_ATTR_GW, ansi));
-Matcher mpos = Ppos.matcher(s);
-if (mpos.find()) {
-//  System.out.println("\t|" + mpos.group() + "|, |" + mpos.group(1) + "|");
-    pos = mpos.group(1);
-}
-                //s = s.replaceFirst("<span[^<>]*class=\"pos\">(.*?)</span>", AnsiText.colorText("($1)", COLOR_ATTR_POS, ansi));
-                s = s.replaceFirst("<span[^<>]*class=\"pos\">(.*?)</span>", "");
-                s = s.replaceAll("<[^<>]*>", "").trim();
-info.word = s;
-info.pos = pos;
-info.gw = gw;
-                // nested ansi
-                assert !s.isEmpty() : AnsiText.fatalStr("no \"info\"");
+                    Info    info = new Info();
+                    infoList.add(info);
+                    info.href = ref;
+                    Element arl = a.select("span").first();
+                    info.arl = new Integer(arl.attr("class").substring(3)).intValue();
+                    String  s = arl.toString();
+                    info.arl0 = s;
+                    Matcher mgw1 = More.Pgw1.matcher(s);
+                    if (mgw1.find()) {
+                    //  System.out.println("\t|" + mgw1.group() + "|, |" + mgw1.group(1) + "|");
+                        gw = mgw1.group(1);
+                    }
+                    //s = s.replaceFirst("<span[^<>]*class=\"gw\".*?>(.*?)</span>", AnsiText.colorText("[$1]", COLOR_ATTR_GW, ansi));
+                    s = s.replaceFirst("<span[^<>]*class=\"gw\".*?>(.*?)</span>", "");
+                    // http://dictionary.cambridge.org/dictionary/british/sake_1
+                    Matcher mgw2 = More.Pgw2.matcher(s);
+                    if (mgw2.find()) {
+                    //  System.out.println("\t|" + mgw2.group() + "|, |" + mgw2.group(1) + "|");
+                        gw = mgw2.group(1);
+                    }
+                    //s = s.replaceFirst("<b[^<>]*class=\"gw\".*?>(.*?)</b>", AnsiText.colorText("[$1]", COLOR_ATTR_GW, ansi));
+                    s = s.replaceFirst("<b[^<>]*class=\"gw\".*?>(.*?)</b>", "");
+    //              s = s.replaceFirst("<([a-zA-Z]+)[^<>]*class=\"gw\".*?>(.*?)</$1>", AnsiText.colorText("[$2]", COLOR_ATTR_GW, ansi));
+                    Matcher mpos = More.Ppos.matcher(s);
+                    if (mpos.find()) {
+                    //  System.out.println("\t|" + mpos.group() + "|, |" + mpos.group(1) + "|");
+                        pos = mpos.group(1);
+                    }
+                    //s = s.replaceFirst("<span[^<>]*class=\"pos\">(.*?)</span>", AnsiText.colorText("($1)", COLOR_ATTR_POS, ansi));
+                    s = s.replaceFirst("<span[^<>]*class=\"pos\">(.*?)</span>", "");
+                    s = s.replaceAll("<[^<>]*>", "").trim();
+
+                    info.word = s;
+                    info.pos = pos;
+                    info.gw = gw;
+                    // nested ansi
+                    assert !s.isEmpty() : AnsiText.fatalStr("no \"info\"");
+                }
             }
         }
 
-        static final String MORE_GLUE =
-        /*
-            "\n" +
-            AnsiText.colorText("---- more glue ----", COLOR_ATTR_GLUE) +
-         */
-            "\n";
-        static final String INFO_HREF_GLUE =
-        /*
-            "\n" +
-            AnsiText.colorText("---- info-href glue ----", COLOR_ATTR_GLUE) +
-         */
-            "\n";
         public String  getJSONStr()
         {
             List<String>    str_a = new ArrayList<String>();
@@ -544,7 +549,9 @@ info.gw = gw;
         }
         String  urlStr = null;
         urlStr = "http://dictionary.cambridge.org/search/";
-        urlStr += flag.uk ? "british" : "american-english";
+        //urlStr += flag.uk ? "british" : "american-english";
+        urlStr += "english";
+//  http://dictionary.cambridge.org/search/english/direct/?q=fingers+crossed
         urlStr += "/direct/?q=" + URLEncoder.encode(wordStr, "UTF-8");
         if (flag.verbose)
             printInfo("getHref0#wordStr:\t|" + urlStr + "|");
@@ -677,6 +684,7 @@ info.gw = gw;
         String  pathname = dir + audioURL.substring(audioURL.lastIndexOf('/'));
         //ProcessBuilder pb = new ProcessBuilder("play", audioURL);
         Process p;
+        //System.out.println(pathname);
         if (!downloadOnly && new File(pathname).isFile()) {
             ProcessBuilder pb = new ProcessBuilder("play", pathname);
             p = pb.start();
@@ -703,7 +711,67 @@ info.gw = gw;
         }
         return pathname;
     }
+    public static void downloadAudio(Result result)
+    {
+        for (Result.Page page: result.doc) {
+            for (Block block: page.content) {
+                String s = block.head.getAudioURL();
+                //System.out.println(s);
+                if (s != null) {
+                    try {
+                        s = play(s, true);
+                        //System.out.println(s);
+                    }
+                    catch (IOException e) {e.printStackTrace();}
+                    catch (InterruptedException e) {e.printStackTrace();}
+                }
+            }
+        }
+    }
 
+    static final Pattern Ptitle = Pattern.compile("\"(.+?)\" in (\\S+) English");
+    static String   getWordFromTitle(
+        Element title,
+        Flag    flag
+    )
+    {
+        final boolean verbose     = flag.verbose;
+        final boolean trace       = flag.trace;
+        String word = title.text();
+        if (verbose)
+            printInfo("w-:\t|" + word + "|");
+        Matcher Mtitle = Cambridge.Ptitle.matcher(word);
+        if (Mtitle.find()) {
+            if (trace)
+                printf("|%s| in |%s| English|%n", Mtitle.group(1), Mtitle.group(2));
+            word = Mtitle.group(1);
+        }
+        if (verbose)
+            printInfo("w:\t|" + word + "|");
+        return word;
+/*
+        Element hw = di_title.select(tags[1]).first();
+        if (trace) {
+            printTrace("|||" + tags[1] + "|||");
+            println(hw);
+        }
+        String  s = hw.textNodes().get(0).text();
+            printInfo("w-:\t|" + s + "|");
+        if (verbose)
+            printInfo("w-:\t|" + s + "|");
+        //int ii = s.indexOf("“");
+        int ii = s.indexOf("\"");
+        if (ii++ >= 0) {
+            //int fi = s.indexOf("”", ii);
+            int fi = s.indexOf("\"", ii);
+            s = s.substring(ii, fi);
+        } else
+            s = s.trim();
+        if (verbose)
+            printInfo("w:\t|" + s + "|");
+        head.word = s;
+ */
+    }
     static String   setAssertStr(
         String  str,
         String  href0,
@@ -752,23 +820,7 @@ info.gw = gw;
             printTrace("|||" + tags[0] + "|||");
             println(di_title);
         }
-        Element hw = di_title.select(tags[1]).first();
-        if (trace) {
-            printTrace("|||" + tags[1] + "|||");
-            println(hw);
-        }
-        String  s = hw.textNodes().get(0).text();
-        if (verbose)
-            printInfo("w-:\t|" + s + "|");
-        int ii = s.indexOf("“");
-        if (ii++ >= 0) {
-            int fi = s.indexOf("”", ii);
-            s = s.substring(ii, fi);
-        } else
-            s = s.trim();
-        if (verbose)
-            printInfo("w:\t|" + s + "|");
-        head.word = s;
+        head.word = Cambridge.getWordFromTitle(di_title, flag);
         Element info = headElement.select(tags[2]).first();
         if (trace) {
             printTrace("|||" + tags[2] + "|||");
@@ -791,6 +843,8 @@ info.gw = gw;
         gw = gw.replaceAll("&nbsp;", "");
         gw = gw.trim();
         head.gw = gw.isEmpty() ? null : gw;
+/** format changed; separate calls: setAudio, setIPA
+
         Elements    POSes = info.select("span.pos");
         if (!POSes.isEmpty()) { // could be none
             // http://dictionary.cambridge.org/dictionary/american-english/breathe-a-word
@@ -835,6 +889,43 @@ info.gw = gw;
             if (verbose)
                 printInfo("ipa:\t|" + ipa.text() + "|");
             head.ipa.add(ipa.text());
+        }
+ */
+    }
+    static void setAudio(
+        Element     bodyElement,
+        Block.Head  head        /* OUT */
+    )
+    {
+        Elements uk_a = bodyElement.select("span.uk span[title]");
+        if (uk_a != null) {
+            Element uk0 = uk_a.first();
+            head.uk_mp3 = uk0.attr("data-src-mp3");
+            head.uk_ogg = uk0.attr("data-src-ogg");
+        } else {
+            head.uk_mp3 = null;
+            head.uk_ogg = null;
+        }
+        Elements us_a = bodyElement.select("span.us span[title]");
+        if (us_a != null) {
+            Element us0 = us_a.first();
+            head.us_mp3 = us0.attr("data-src-mp3");
+            head.us_ogg = us0.attr("data-src-ogg");
+        } else {
+            head.uk_mp3 = null;
+            head.uk_ogg = null;
+        }
+    }
+    static void setIPA(
+        Element     bodyElement,
+        Block.Head  head        /* OUT */
+    )
+    {
+        for (Element uke: bodyElement.select("span.uk span.ipa")) {
+            head.ipa.add(uke.text());
+        }
+        for (Element use: bodyElement.select("span.us span.ipa")) {
+            head.ipa.add(use.text());
         }
     }
 
@@ -1118,7 +1209,14 @@ else                // 1.
 
         Elements    di_a = doc.select("div.di");
         assert !di_a.isEmpty() : setAssertStr("No div.di", href0, doc);
-        assert di_a.size() == 1 : setAssertStr("Two or more div.di", href0, doc);
+//      assert di_a.size() == 1 : setAssertStr("Two or more div.di", href0, doc);
+/*
+for (Element die: di_a) {
+    printTrace("|||div.di|||");
+    println(die);
+}
+ */
+
         Element di = di_a.first();
         if (trace) {
             printTrace("|||div.di|||");
@@ -1136,7 +1234,7 @@ else                // 1.
             printTrace("||||div.di-head|||");
             println(di_head);
         }
-        String[]    tags = {"div.di-title", "h1.hw", "span.di-info"};
+        String[]    tags = {"div.di-title", "h2.hw", "span.di-info"};
         setHead(di_head, tags, flag, block.head);
 
         // body
@@ -1148,6 +1246,8 @@ else                // 1.
             printTrace("||||div.di-body|||");
             println(di_body);
         }
+        Cambridge.setAudio(di_body, block.head);
+        Cambridge.setIPA(di_body, block.head);
         Elements    sense_block_a = di_body.select("div.sense-block");
         if (sense_block_a.isEmpty()) {
             if (verbose) {
@@ -1176,21 +1276,24 @@ else                // 1.
             //assert sense_block_a.size() == 1 : setAssertStr("Two or more div.sense-block", href0, di_body);
             // two div.sense-block: indemnify
             //Element sense_block = sense_block_a.first();
-        for (Element sense_block: sense_block_a) {
-            if (trace) {
-                printTrace("|||div.sense-block|||");
-                println(sense_block);
+            for (Element sense_block: sense_block_a) {
+                if (trace) {
+                    printTrace("|||div.sense-block|||");
+                    println(sense_block);
+                }
+                Elements    sense_body_a = sense_block.select("div.sense-body");
+                if (sense_body_a.isEmpty()) {
+                    sense_body_a = sense_block.select("span.sense-body");
+                    assert !sense_body_a.isEmpty() : setAssertStr("Neither div.sense-body nor span.sense-body", href0, sense_block);
+                }
+                assert sense_body_a.size() == 1 : setAssertStr("Two or more [div|span].sense-body", href0, sense_block);
+                Element body = sense_body_a.first();
+                if (trace) {
+                    printInfo("|||[div|span].sense-body|||");
+                    println(body);
+                }
+                setBody(body, flag, block.bodyList);
             }
-            Elements    sense_body_a = sense_block.select("span.sense-body");
-            assert !sense_body_a.isEmpty() : setAssertStr("No span.sense-body", href0, sense_block);
-            assert sense_body_a.size() == 1 : setAssertStr("Two or more div.sense-body", href0, sense_block);
-            Element body = sense_body_a.first();
-            if (trace) {
-                printInfo("|||span.sense-body|||");
-                println(body);
-            }
-            setBody(body, flag, block.bodyList);
-        }
         }
 
         // another block(head, body)
@@ -1228,6 +1331,8 @@ else                // 1.
                 printInfo("|||span.runon-body|||");
                 println(runon_body);
             }
+            Cambridge.setAudio(runon_body, runonBlock.head);
+            Cambridge.setIPA(runon_body, runonBlock.head);
             setBody(runon_body, flag, runonBlock.bodyList);
         }
 
@@ -1280,7 +1385,7 @@ else                // 1.
                 String  s = ea.attr("href");
     //          println(ea.attr("href"));
     //          println(ea.attr("title"));
-                if (ea.attr("title").startsWith("All results")) {
+                if (ea.attr("title").startsWith("All meanings")) {
                     if (all_href == null)
                         all_href = s;
                     else {
@@ -1335,17 +1440,17 @@ else                // 1.
                 sws.add(e.text().trim());
             }
         }
-        return sws;
+        return sws.isEmpty() ? null : sws;
     }
 
-    static abstract class ResultBase {
-        public String       wordStr = null;
-        public List<String> ErrorMessageList = null;
-        public String       WarnMessage = null;
-        public List<String> tryWordList = new ArrayList<String>();
+    public static class ResultBase implements Jsonable {
+        public String       wordStr;
+        public List<String> ErrorMessageList;
+        public String       WarnMessage;
+        public List<String> tryWordList;
     }
-    public static class Result extends ResultBase {
-        public static class Page {
+    public static class Result extends ResultBase implements Jsonable {
+        public static class Page implements Jsonable {
             public String       href;
             public List<Block>  content = new ArrayList<Block>();
             public More         more = new More();

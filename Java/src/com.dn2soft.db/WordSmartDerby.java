@@ -1,6 +1,9 @@
-package com.dn2soft.dick.utility;
+package com.dn2soft.db;
 
-import com.dn2soft.dick.utility.Derby;
+import com.dn2soft.util.Joint;
+import com.dn2soft.db.Derby;
+
+import com.dn2soft.dickc.dictionary.Cambridge;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -9,26 +12,86 @@ import java.sql.SQLException;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
-public class NationalCancerInstituteDerby extends Derby {
-    public NationalCancerInstituteDerby(String dbpath) {
+public class WordSmartDerby extends Derby {
+    public WordSmartDerby(String dbpath) {
         super(dbpath, false);
+    }
+    public WordSmartDerby(String dbpath, boolean createDatabase) {
+        super(dbpath, createDatabase);
     }
 /**
  * tables
  *
-CREATE TABLE TermsDef (
-    src     SMALLINT        NOT NULL,   -- 1: genetics, 2: cancer
-    terms   VARCHAR(128)    NOT NULL,   -- can be duplicated
-    mp3     VARCHAR(16)     NOT NULL,   -- "": None
-    mtd     VARCHAR(128)    NOT NULL,   -- "": None
-    def     VARCHAR(4096)   NOT NULL,
-    UTERMS  VARCHAR(128) GENERATED ALWAYS AS (UPPER(terms)),-- Derby specific
+CREATE TABLE Web (
+    href0   VARCHAR(128)    NOT NULL,
+    page    VARCHAR(8192)   NOT NULL,   -- Page::getJSONStr()
+    more    VARCHAR(4096),              -- More::getJSONStr()
+                                        --      NULL:   not retrieved yet
+                                        --      "":     none
 
-    UNIQUE(terms, def)
+    UNIQUE(href0)       -- used as INDEX
 );
-CREATE INDEX IDX_TermsDef_UTERMS ON TermsDef(UTERMS);       -- Derby specific
+
+CREATE TABLE Link (
+    id      INT GENERATED ALWAYS AS IDENTITY,               -- Derby specific
+    href0   VARCHAR(128)    NOT NULL,
+    href    VARCHAR(128)    NOT NULL,
+
+    UNIQUE (href0, href)--,
+--  FOREIGN KEY (href) REFERENCES Web (href0),
+--  FOREIGN KEY (href0) REFERENCES Web (href0)
+);
+CREATE INDEX IDX_Link_href0 ON Link(href0);
+
+CREATE TABLE Vocabulary (
+    id      INT GENERATED ALWAYS AS IDENTITY,               -- Derby specific
+    word    VARCHAR(64)     NOT NULL,
+    UWORD   VARCHAR(64) GENERATED ALWAYS AS (UPPER(word)),  -- Derby specific
+    href0   VARCHAR(128)    NOT NULL,
+    wordStr SMALLINT        NOT NULL DEFAULT 0, -- is wordStr a variance of word
+                                                --  0: given wordStr is one of words
+                                                --  1: otherwise
+
+    UNIQUE(word, href0)
+);
+CREATE INDEX IDX_Vocabulary_UWORD ON Vocabulary(UWORD);     -- Derby specific
+
+CREATE TABLE NotFound(
+    word    VARCHAR(64)     NOT NULL,
+    UWORD   VARCHAR(64) GENERATED ALWAYS AS (UPPER(word)),  -- Derby specific
+    refer   VARCHAR(64),    -- NULL: refer not found
+    UREFER  VARCHAR(64) GENERATED ALWAYS AS (UPPER(refer)), -- Derby specific
+
+    UNIQUE(word)
+);
+CREATE INDEX IDX_NotFound_UREFER ON NotFound(UREFER);       -- Derby specific
  */
 /*
+ * update: "Vocabulary" heavily used with support of NotFound table - 02/15/2014
+ *
+ */
+/*
+ *
+ * In a normal usage, "Vocabulary" is not used;
+ * its purpose is to speed up looking for word.
+ * However, the preferred method is the "direct" check through url in Cambridge::get_href0: 1) spelling check 2) change of the contents of web page
+ * For the history and/or unavaliablity of internet,
+ * the "Vocabulary" is still maintained.
+ *
+ * procedure:
+ *  step 1. call to Cambridge::get_href0
+ *  step 2. inquiry to db with "href0"
+ *  step 3. if succeeded, fetch "glob" from "Web" and
+ *          "href" from "Link". With "-a" option,
+ *          further inquiry to "Web" for each "href",
+ *          in case of no "glob" for each "href",
+ *          inquiry to web
+ *          if failed, i.e., no data, inquery to web
+ *  step 4. after display the result, new "glob" is "inserted" into db.
+ *
+ *  "-f" option bypass all db inquries and
+ *  every entry in tables will be "updated" if any.
+ */
     List<String> getLinks(String href0)
     throws SQLException
     {
@@ -227,6 +290,14 @@ CREATE INDEX IDX_TermsDef_UTERMS ON TermsDef(UTERMS);       -- Derby specific
     public void insert(Cambridge.Result result, boolean force)
     throws SQLException
     {
+    /*
+        String  rjs = result.getJSONStr();
+        //System.err.println(rjs);
+        Json.BasicType  rj = Json.setJson(rjs);
+        if (rj != null) {
+            rj.print(1, "....");
+        }
+     */
         String  href0 = result.doc.get(0).href;
         //println("HREF0: |" + href0 + "|");
         try {
@@ -317,5 +388,4 @@ CREATE INDEX IDX_TermsDef_UTERMS ON TermsDef(UTERMS);       -- Derby specific
             printSQLException(e);
         }
     }
- */
 }

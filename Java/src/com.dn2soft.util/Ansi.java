@@ -1,4 +1,4 @@
-package com.dn2soft.dick.utility;
+package com.dn2soft.util;
 
 /**
  * http://www.termsys.demon.co.uk/vtansi.htm

@@ -1,8 +1,8 @@
-package com.dn2soft.dick;
+package com.dn2soft.dickc;
 
-import com.dn2soft.dick.DickWrapper;
-import com.dn2soft.dick.dictionary.Cambridge;
-import com.dn2soft.dick.utility.GetOpt;
+import com.dn2soft.dickc.DickcWrapper;
+import com.dn2soft.dickc.dictionary.Cambridge;
+import com.dn2soft.util.GetOpt;
 
 
 import java.awt.*;
@@ -16,7 +16,7 @@ import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 
 
-public class DickW
+public class DickcW
     extends JPanel
     implements
         ActionListener,
@@ -63,7 +63,7 @@ public class DickW
     int startIndexOfClickableLine = -1; // start index of clickable line
 // TextDemo.java    // }
 
-    public DickW() {
+    public DickcW() {
         super(new BorderLayout());
 /*
     public static class Flag {
@@ -86,7 +86,7 @@ public class DickW
         flag.resultOnly     = true;
         init();
     }
-    public DickW(Cambridge.Flag flag) {
+    public DickcW(Cambridge.Flag flag) {
         super(new BorderLayout());
         this.flag = flag;
         init();
@@ -351,10 +351,11 @@ try {
             iLine >= startIndexOfClickableLine &&
             (iStartOffset <= dot && dot < (iEndOffset - 1)) // 1:= "\n"
         ) {
-            if (result.tryWordList.isEmpty())
-                wordStr = result.doc.get(0).more.infoList.get(iLine - startIndexOfClickableLine).href;
-            else
+            if (result.tryWordList != null && result.tryWordList.isEmpty()) {
                 wordStr = result.tryWordList.get(iLine - startIndexOfClickableLine);
+            } else {
+                wordStr = result.doc.get(0).more.infoList.get(iLine - startIndexOfClickableLine).href;
+            }
         } else {
             wordStr = null;
         }
@@ -441,13 +442,13 @@ finally {
 class Task extends SwingWorker<Cambridge.Result, Void> {
     @Override
     public Cambridge.Result doInBackground()
-    throws java.io.IOException, InterruptedException
+    throws java.io.IOException, InterruptedException, ClassNotFoundException, java.sql.SQLException
     {
         setProgress(0);
         String wordStr = wordStrField.getText();
         Cambridge.Result    result = null;
         if (!wordStr.equals(""))
-            result = DickWrapper.lookup(wordStr, flag);
+            result = DickcWrapper.lookup(wordStr, flag);
         setProgress(100);
         return result;
     }
@@ -473,7 +474,7 @@ class Task extends SwingWorker<Cambridge.Result, Void> {
             why = e.getMessage();
         }
         System.err.println("done: Error: " + why);
-        }
+    }
     // Tutorial > Concurrency in Swing > Simple Background Tasks    // }
 
         int lineIndex = 0;
@@ -483,12 +484,12 @@ try {
             doc.insertString(doc.getLength(), "null", ATTR_ERROR);
             return;
         }
-    if (result.doc.isEmpty() || !result.tryWordList.isEmpty()) {
+    if (result.doc.isEmpty()) {
         doc.insertString(doc.getLength(), "WARN", ATTR_WARN);
         doc.insertString(doc.getLength(), ": ", ATTR_TEXT);
         doc.insertString(doc.getLength(), result.wordStr, ATTR_WORD);
         doc.insertString(doc.getLength(), " not found" + newline, ATTR_TEXT);
-        if (!result.tryWordList.isEmpty()) {
+        if (result.tryWordList != null && !result.tryWordList.isEmpty()) {
             lineIndex = 2;
             doc.insertString(doc.getLength(), "Try these:" + newline, ATTR_TEXT);
             for (String w: result.tryWordList) {
@@ -577,11 +578,11 @@ catch (BadLocationException ignore) {}
     private static void createAndShowGUI()
     {
         //Create and set up the window.
-        JFrame  frame = new JFrame("DickW");
+        JFrame  frame = new JFrame("DickcW");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         //Create and set up the content pane.
-        JComponent  newContentPane = new DickW();
+        JComponent  newContentPane = new DickcW();
         newContentPane.setOpaque(true);
         frame.setContentPane(newContentPane);
 

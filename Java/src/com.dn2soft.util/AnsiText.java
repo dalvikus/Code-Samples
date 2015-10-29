@@ -1,4 +1,4 @@
-package com.dn2soft.dick.utility;
+package com.dn2soft.util;
 
 import java.util.Map;
 import java.util.HashMap;

@@ -1,6 +1,6 @@
-package com.dn2soft.dick.utility;
+package com.dn2soft.util;
 
-import com.dn2soft.dick.utility.AnsiText;
+import com.dn2soft.util.AnsiText;
 
 import java.util.List;
 import java.util.ArrayList;

@@ -1,4 +1,4 @@
-package com.dn2soft.dick.utility;
+package com.dn2soft.util;
 
 import java.util.List;
 import java.util.ArrayList;

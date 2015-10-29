@@ -1,15 +1,16 @@
-package com.dn2soft.dick;
+package com.dn2soft.dickc;
 
-import com.dn2soft.dick.dictionary.Cambridge;
-import com.dn2soft.dick.DickW;
-import com.dn2soft.dick.DickWrapper;
-import com.dn2soft.dick.utility.GetOpt;
+import com.dn2soft.dickc.dictionary.Cambridge;
+import com.dn2soft.dickc.DickcW;
+import com.dn2soft.dickc.DickcWrapper;
+import com.dn2soft.util.GetOpt;
 
 import java.util.List;
 
-public class Dick {
-    static final String optStr = "Wkafxd:";
-    static final String optStrForExpert = "wsNvthHTRDcC";
+public class DickC {
+    static final String optStr = "WkaAfxd:";
+    //static final String optStrForExpert = "wsNvthHTRDcC";
+    static final String optStrForExpert = "wsNvthHTR";
     static void Usage(boolean showExpertOption)
     {
         String  s = "\n";
@@ -35,10 +36,11 @@ public class Dick {
             s += "\t-h: show href0(real URL); disabled in gui mode\n";
             s += "\t-H: show href0(real URL) only; -h implied; disabled in gui mode\n";
             s += "\t-T: no ANSI; implied with -W (gui mode)\n";
+            s += "\t-A: -a plus download others when combined -s\n";
             s += "\t-R: act like robot\n";
-            s += "\t-D: dump data in database\n";
-            s += "\t-c: create database given in -d option\n";
-            s += "\t-C: -c plus create tables\n";
+//          s += "\t-D: dump data in database\n";
+//          s += "\t-c: create database given in -d option\n";
+//          s += "\t-C: -c plus create tables\n";
         }
         System.out.println(s);
     }
@@ -46,11 +48,11 @@ public class Dick {
     private static void createAndShowGUI(Cambridge.Flag flag)
     {
         //Create and set up the window.
-        javax.swing.JFrame  frame = new javax.swing.JFrame("DickW");
+        javax.swing.JFrame  frame = new javax.swing.JFrame("DickcW");
         frame.setDefaultCloseOperation(javax.swing.JFrame.EXIT_ON_CLOSE);
 
         //Create and set up the content pane.
-        javax.swing.JComponent  newContentPane = new DickW(flag);
+        javax.swing.JComponent  newContentPane = new DickcW(flag);
         //newContentPane.setName("newContentPane");
         newContentPane.setOpaque(true);
         frame.setContentPane(newContentPane);
@@ -64,22 +66,26 @@ public class Dick {
     main(String[] args)
     throws
         InterruptedException,
-        GetOpt.GetOptStrException, GetOpt.GetOptParseException
+        GetOpt.GetOptStrException, GetOpt.GetOptParseException,
+        ClassNotFoundException, java.sql.SQLException
     {
         GetOpt.Option   option = GetOpt.getopt(args, optStr + optStrForExpert);
         List<String>    wordStrArgs = option.getArgs();
         boolean robot = option.hasKey("-R");
+/*
         boolean dump = option.hasKey("-D");
         boolean createDatabase = option.hasKey("-c");
         boolean createTables = option.hasKey("-C");
+ */
         String dbpath = null;
         if (option.hasKey("-d")) {
             dbpath =  option.getValue("-d");
         }
+/*
         if (createDatabase || createTables) {
             if (dbpath != null) {
                 //System.out.printf("|%s|\n", dbpath);
-                DickWrapper.createDatabase(dbpath, createTables);
+                DickcWrapper.createDatabase(dbpath, createTables);
 //              System.exit(0);
             } else {
                 System.err.println("ERR: database pathname not given: use -d dbpath");
@@ -88,14 +94,13 @@ public class Dick {
             }
         }
         if (dump) {
-            DickWrapper.dump(dbpath);
+            DickcWrapper.dump(dbpath);
             System.exit(0);
         }
+ */
         boolean gui = !robot && option.hasKey("-W");
         if (!gui && wordStrArgs.isEmpty()) {
-            if (!createDatabase && !createTables) {
-                Usage(option.hasKey("-x"));
-            }
+            Usage(option.hasKey("-x"));
             return;
         }
 
@@ -103,7 +108,7 @@ public class Dick {
             // lookup
             final Cambridge.Flag    flag    = new Cambridge.Flag();
             flag.uk             = option.hasKey("-k");
-            flag.showAll        = option.hasKey("-a");
+            flag.showAll        = option.hasKey("-a") || option.hasKey("-A");
             flag.force          = option.hasKey("-f");
             flag.showLink       = !option.hasKey("-N");
             flag.playPron       = option.hasKey("-s");
@@ -114,6 +119,7 @@ public class Dick {
             flag.showHref0Only  = option.hasKey("-H");
             flag.followWord     = false;
             flag.resultOnly     = false;    // just print
+            flag.downloadAll    = option.hasKey("-s") && option.hasKey("-A");
             flag.dbpath         = dbpath;
 
             if (gui) {
@@ -135,9 +141,9 @@ public class Dick {
                 flag.playPron = false;
                 flag.showAll = true;
                 flag.resultOnly = true;
-                DickWrapper.robot(wordStrArgs.get(0), flag);
+                DickcWrapper.robot(wordStrArgs.get(0), flag);
             } else
-                DickWrapper.lookup(wordStrArgs.get(0), flag);
+                DickcWrapper.lookup(wordStrArgs.get(0), flag);
 
             // rescan
             wordStrArgs.remove(0);

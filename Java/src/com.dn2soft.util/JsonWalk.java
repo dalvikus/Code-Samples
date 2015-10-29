@@ -1,9 +1,9 @@
-package com.dn2soft.dick.utility;
+package com.dn2soft.util;
 
-import com.dn2soft.dick.utility.Joint;
-import com.dn2soft.dick.utility.Jsonable;
-import com.dn2soft.dick.utility.Json;
-import com.dn2soft.dick.utility.AnsiText;
+import com.dn2soft.util.Joint;
+import com.dn2soft.util.Jsonable;
+import com.dn2soft.util.Json;
+import com.dn2soft.util.AnsiText;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -102,6 +102,7 @@ String[] sa0;
  *
 Field.getGenericType() will consult the Signature Attribute in the class file if it's present. If the attribute isn't available, it falls back on Field.getType() which was not changed by the introduction of generics. The other methods in reflection with name getGenericFoo for some value of Foo are implemented similarly.
  */
+/*
     private static boolean isJsonable(Class c)
     {
         for (Class i: c.getInterfaces()) {
@@ -110,6 +111,43 @@ Field.getGenericType() will consult the Signature Attribute in the class file if
         }
         Class c0 = c.getSuperclass();
         return c0 == null ? false : isJsonable(c0);
+    }
+ */
+    private static boolean isJsonableByInterface(Class i0)
+    {
+        if (i0.getName().equals(Jsonable.class.getName()))
+            return true;
+        for (Class i: i0.getInterfaces())
+            if (isJsonableByInterface(i))
+                return true;
+        return false;
+    }
+    private static boolean isJsonable(Class c)  // by Class
+    {
+        for (Class i: c.getInterfaces())
+            if (isJsonableByInterface(i))
+                return true;
+        Class c0 = c.getSuperclass();
+        return c0 == null ? false : isJsonable(c0);
+    }
+    private static void getDeclaredFields(Class cls, Map<String, Field> map)
+    {
+        for (Field f: cls.getDeclaredFields()) {
+            String key = f.getName();
+            if (map.get(key) == null)
+                map.put(key, f);
+            //else
+            //    System.out.println("class: " + cls + ", field: " + f + ": already defined");
+        }
+        Class c0 = cls.getSuperclass();
+        if (c0 != null)
+            JsonWalk.getDeclaredFields(c0, map);
+    }
+    private static Field[] getDeclaredFields(Class cls)
+    {
+        Map<String, Field> map = new HashMap<String, Field>();
+        JsonWalk.getDeclaredFields(cls, map);
+        return map.values().toArray(new Field[map.size()]);
     }
 
     static String INDENT_PARAMETRIZEDTYPE = JsonWalk.TRACE ? "<>" : "  ";
@@ -125,12 +163,17 @@ Field.getGenericType() will consult the Signature Attribute in the class file if
  * it is a building block of all others.
  */
 ////////////////////////////////////////////////////////////////////////////////
+    private static String walkParametrizedType(Type type)
+    throws ClassNotFoundException
+    {
+        return walkParametrizedType(type, null);
+    }
     private static String walkParametrizedType(Type type, String indent)
     throws ClassNotFoundException
     {
         final String traceStr0 = "walkParametrizedType";
         final String nextIndent = indent + JsonWalk.INDENT_PARAMETRIZEDTYPE;
-        if (JsonWalk.TRACE)
+        if (indent != null)
             println(indent + traceStr0 + ": |" + type + "|");
         if (!(type instanceof ParameterizedType)) {
             String msg = AnsiText.fatalStr0(traceStr0 + ": Not ParameterizedType: |" + type + "|");
@@ -146,12 +189,17 @@ Field.getGenericType() will consult the Signature Attribute in the class file if
         String msg = AnsiText.fatalStr0(traceStr0 + ": rawClass: List or Map only: |" + rawClassStr + "|");
         throw new ClassNotFoundException(msg);
     }
+    private static String walkList(ParameterizedType paraType)
+    throws ClassNotFoundException
+    {
+        return walkList(paraType, null);
+    }
     private static String walkList(ParameterizedType paraType, String indent)
     throws ClassNotFoundException
     {
         final String traceStr0 = "walkList";
-        final String nextIndent = indent + JsonWalk.INDENT_LIST;
-        if (JsonWalk.TRACE)
+        final String nextIndent = indent == null ? null : indent + JsonWalk.INDENT_LIST;
+        if (indent != null)
             println(indent + traceStr0 + ": |" + paraType + "|");
         Type[] types = paraType.getActualTypeArguments();
         if (types.length != 1) {
@@ -165,12 +213,17 @@ Field.getGenericType() will consult the Signature Attribute in the class file if
         String str = walkType(type, nextIndent);
         return '[' + str + ']';
     }
+    private static String walkMap(ParameterizedType paraType)
+    throws ClassNotFoundException
+    {
+        return walkMap(paraType, null);
+    }
     private static String walkMap(ParameterizedType paraType, String indent)
     throws ClassNotFoundException
     {
         final String traceStr0 = "walkMap";
-        final String nextIndent = indent + JsonWalk.INDENT_MAP;
-        if (JsonWalk.TRACE)
+        final String nextIndent = indent == null ? null : indent + JsonWalk.INDENT_MAP;
+        if (indent != null)
             println(indent + traceStr0 + ": |" + paraType + "|");
         Type[] types = paraType.getActualTypeArguments();
         if (types.length != 2) {
@@ -194,12 +247,17 @@ Field.getGenericType() will consult the Signature Attribute in the class file if
         String str = walkType(valType, nextIndent);
         return '{' + str + '}';
     }
+    private static String walkType(Type type)
+    throws ClassNotFoundException
+    {
+        return walkType(type, null);
+    }
     private static String walkType(Type type, String indent)
     throws ClassNotFoundException
     {
         final String traceStr0 = "walkType";
-        final String nextIndent = indent + JsonWalk.INDENT_TYPE;
-        if (JsonWalk.TRACE)
+        final String nextIndent = indent == null ? null : indent + JsonWalk.INDENT_TYPE;
+        if (indent != null)
             println(indent + traceStr0 + ": |" + type + "|");
         if (type instanceof Class) {
             return walkClass((Class) type, nextIndent);
@@ -227,12 +285,17 @@ Field.getGenericType() will consult the Signature Attribute in the class file if
         String msg = AnsiText.fatalStr0(traceStr0 + ": Class or ParameterizedType only: |" + type.toString() + "|");
         throw new ClassNotFoundException(msg);
     }
+    public static String walkClass(Class cls)
+    throws ClassNotFoundException
+    {
+        return walkClass(cls, null);
+    }
     public static String walkClass(Class cls, String indent)
     throws ClassNotFoundException
     {
         final String traceStr0 = "walkClass";
-        final String nextIndent = indent + JsonWalk.INDENT_CLASS;
-        if (JsonWalk.TRACE)
+        final String nextIndent = indent == null ? null : indent + JsonWalk.INDENT_CLASS;
+        if (indent != null)
             println(indent + traceStr0 + ": |" + cls + "|");
         TypeVariable[] tv = cls.getTypeParameters();
         if (tv.length > 0) {
@@ -277,20 +340,20 @@ Field.getGenericType() will consult the Signature Attribute in the class file if
         // See the page:
         //  http://docs.oracle.com/javase/tutorial/reflect/class/classMembers.html
         List<String> sa = new ArrayList<String>();
-        for (Field field: cls.getDeclaredFields()) {
+        for (Field field: JsonWalk.getDeclaredFields(cls)) {
             String key = field.getName();
-            if (JsonWalk.TRACE)
+            if (indent != null)
                 println(indent + traceStr0 + ": Field: |" + key + "|");
             if (field.isSynthetic()) {
                 // ignore: see the end of page:
                 //  http://docs.oracle.com/javase/tutorial/reflect/member/fieldModifiers.html
-                if (JsonWalk.TRACE)
+                if (indent != null)
                     println(indent + traceStr0 + "    isSynthetic");
                 continue;
             }
             if (field.isEnumConstant()) {
                 // ignore for simplicity; use other type
-                if (JsonWalk.TRACE)
+                if (indent != null)
                     println(indent + traceStr0 + "    isEnumConstant");
                 continue;
             }
@@ -301,7 +364,8 @@ Field.getGenericType() will consult the Signature Attribute in the class file if
             String str = walkType(fieldType, nextIndent);
             sa.add(String.format("'%s': %s", key, str));
         }
-        return String.format("{%s}", sa.isEmpty() ? "" : "\n" + indent + "    " + Joint.join(sa, ",\n" + indent + "    ") + "\n" + indent);
+        String indent1 = indent == null ? "" : indent;
+        return String.format("{%s}", sa.isEmpty() ? "" : "\n" + indent1 + "    " + Joint.join(sa, ",\n" + indent1 + "    ") + "\n" + indent1);
     }
 ////////////////////////////////////////////////////////////////////////////////}
 
@@ -311,12 +375,17 @@ Field.getGenericType() will consult the Signature Attribute in the class file if
  * given class, return json string
  */
 ////////////////////////////////////////////////////////////////////////////////
+    private static String walkParametrizedType(Type type, Object object)
+    throws ClassNotFoundException, IllegalAccessException
+    {
+        return walkParametrizedType(type, object, null);
+    }
     private static String walkParametrizedType(Type type, Object object, String indent)
     throws ClassNotFoundException, IllegalAccessException
     {
         final String traceStr0 = "walkParametrizedType";
-        final String nextIndent = indent + JsonWalk.INDENT_PARAMETRIZEDTYPE;
-        if (JsonWalk.TRACE)
+        final String nextIndent = indent == null ? null : indent + JsonWalk.INDENT_PARAMETRIZEDTYPE;
+        if (indent != null)
             println(indent + traceStr0 + ": |" + type + "|");
         if (!(type instanceof ParameterizedType)) {
             String msg = AnsiText.fatalStr0(traceStr0 + ": Not ParameterizedType: |" + type + "|");
@@ -332,12 +401,17 @@ Field.getGenericType() will consult the Signature Attribute in the class file if
         String msg = AnsiText.fatalStr0(traceStr0 + ": rawClass: List or Map only: |" + rawClassStr + "|");
         throw new ClassNotFoundException(msg);
     }
+    private static String walkList(ParameterizedType paraType, Object object)
+    throws ClassNotFoundException, IllegalAccessException
+    {
+        return walkList(paraType, object, null);
+    }
     private static String walkList(ParameterizedType paraType, Object object, String indent)
     throws ClassNotFoundException, IllegalAccessException
     {
         final String traceStr0 = "walkList";
-        final String nextIndent = indent + JsonWalk.INDENT_LIST;
-        if (JsonWalk.TRACE)
+        final String nextIndent = indent == null ? null : indent + JsonWalk.INDENT_LIST;
+        if (indent != null)
             println(indent + traceStr0 + ": |" + paraType + "|");
         Type[] types = paraType.getActualTypeArguments();
         if (types.length != 1) {
@@ -361,12 +435,17 @@ Field.getGenericType() will consult the Signature Attribute in the class file if
         }
         return '[' + (sa.isEmpty() ? "" : Joint.join(sa, ",")) + ']';
     }
+    private static String walkMap(ParameterizedType paraType, Object object)
+    throws ClassNotFoundException, IllegalAccessException
+    {
+        return walkMap(paraType, object, null);
+    }
     private static String walkMap(ParameterizedType paraType, Object object, String indent)
     throws ClassNotFoundException, IllegalAccessException
     {
         final String traceStr0 = "walkMap";
-        final String nextIndent = indent + JsonWalk.INDENT_MAP;
-        if (JsonWalk.TRACE)
+        final String nextIndent = indent == null ? null : indent + JsonWalk.INDENT_MAP;
+        if (indent != null)
             println(indent + traceStr0 + ": |" + paraType + "|");
         Type[] types = paraType.getActualTypeArguments();
         if (types.length != 2) {
@@ -401,12 +480,17 @@ Field.getGenericType() will consult the Signature Attribute in the class file if
         }
         return '{' + (sa.isEmpty() ? "" : Joint.join(sa, ",")) + '}';
     }
+    private static String walkType(Type type, Object object)
+    throws ClassNotFoundException, IllegalAccessException
+    {
+        return walkType(type, object, null);
+    }
     private static String walkType(Type type, Object object, String indent)
     throws ClassNotFoundException, IllegalAccessException
     {
         final String traceStr0 = "walkType";
-        final String nextIndent = indent + JsonWalk.INDENT_TYPE;
-        if (JsonWalk.TRACE)
+        final String nextIndent = indent == null ? null : indent + JsonWalk.INDENT_TYPE;
+        if (indent != null)
             println(indent + traceStr0 + ": |" + type + "|");
         if (type instanceof Class) {
             return walkClass((Class) type, object, nextIndent);
@@ -440,12 +524,17 @@ Field.getGenericType() will consult the Signature Attribute in the class file if
         String msg = AnsiText.fatalStr0(traceStr0 + ": Class or ParameterizedType only: |" + type.toString() + "|");
         throw new ClassNotFoundException(msg);
     }
+    public static String walkClass(Class cls, Object object)
+    throws ClassNotFoundException, IllegalAccessException
+    {
+        return walkClass(cls, object, null);
+    }
     public static String walkClass(Class cls, Object object, String indent)
     throws ClassNotFoundException, IllegalAccessException
     {
         final String traceStr0 = "walkClass";
-        final String nextIndent = indent + JsonWalk.INDENT_CLASS;
-        if (JsonWalk.TRACE)
+        final String nextIndent = indent == null ? null : indent + JsonWalk.INDENT_CLASS;
+        if (indent != null)
             println(indent + traceStr0 + ": |" + cls + "|");
         TypeVariable[] tv = cls.getTypeParameters();
         if (tv.length > 0) {
@@ -559,20 +648,20 @@ Field.getGenericType() will consult the Signature Attribute in the class file if
         // See the page:
         //  http://docs.oracle.com/javase/tutorial/reflect/class/classMembers.html
         List<String> sa = new ArrayList<String>();
-        for (Field field: cls.getDeclaredFields()) {
+        for (Field field: JsonWalk.getDeclaredFields(cls)) {
             String key = field.getName();
-            if (JsonWalk.TRACE)
+            if (indent != null)
                 println(indent + traceStr0 + ": Field: |" + key + "|");
             if (field.isSynthetic()) {
                 // ignore: see the end of page:
                 //  http://docs.oracle.com/javase/tutorial/reflect/member/fieldModifiers.html
-                if (JsonWalk.TRACE)
+                if (indent != null)
                     println(indent + traceStr0 + "    isSynthetic");
                 continue;
             }
             if (field.isEnumConstant()) {
                 // ignore for simplicity; use other type
-                if (JsonWalk.TRACE)
+                if (indent != null)
                     println(indent + traceStr0 + "    isEnumConstant");
                 continue;
             }
@@ -595,16 +684,21 @@ Field.getGenericType() will consult the Signature Attribute in the class file if
  * these fill the class that given json string represents
  */
 ////////////////////////////////////////////////////////////////////////////////
+    private static Object setWalkParametrizedTypeJson(Type type, Json.BaseType jsonType)
+    throws ClassNotFoundException, InstantiationException, IllegalAccessException
+    {
+        return setWalkParametrizedTypeJson(type, jsonType, null);
+    }
     private static Object setWalkParametrizedTypeJson(Type type, Json.BaseType jsonType, String indent)
     throws ClassNotFoundException, InstantiationException, IllegalAccessException
     {
         final String traceStr0 = "setWalkParametrizedTypeJson";
-        final String nextIndent = indent + JsonWalk.INDENT_PARAMETRIZEDTYPE;
+        final String nextIndent = indent == null ? null : indent + JsonWalk.INDENT_PARAMETRIZEDTYPE;
         if (jsonType == null) {
             String msg = AnsiText.fatalStr0(traceStr0 + ": No jsonType for |" + type.toString() + "|");
             throw new NullPointerException(msg);
         }
-        if (JsonWalk.TRACE)
+        if (indent != null)
             println(indent + traceStr0 + ": |" + type + "|");
         if (!(type instanceof ParameterizedType)) {
             String msg = AnsiText.fatalStr0(traceStr0 + ": Not ParameterizedType: |" + type + "|");
@@ -620,16 +714,21 @@ Field.getGenericType() will consult the Signature Attribute in the class file if
         String msg = AnsiText.fatalStr0(traceStr0 + ": rawClass: List or Map only: |" + rawClassStr + "|");
         throw new ClassNotFoundException(msg);
     }
+    private static Object setWalkListJson(ParameterizedType paraType, Json.BaseType jsonType)
+    throws ClassNotFoundException, InstantiationException, IllegalAccessException
+    {
+        return setWalkListJson(paraType, jsonType, null);
+    }
     private static Object setWalkListJson(ParameterizedType paraType, Json.BaseType jsonType, String indent)
     throws ClassNotFoundException, InstantiationException, IllegalAccessException
     {
         final String traceStr0 = "setWalkListJson";
-        final String nextIndent = indent + JsonWalk.INDENT_LIST;
+        final String nextIndent = indent == null ? null : indent + JsonWalk.INDENT_LIST;
         if (jsonType == null) {
             String msg = AnsiText.fatalStr0(traceStr0 + ": No jsonType for |" + paraType.toString() + "|");
             throw new NullPointerException(msg);
         }
-        if (JsonWalk.TRACE)
+        if (indent != null)
             println(indent + traceStr0 + ": |" + paraType + "|");
         Type[] types = paraType.getActualTypeArguments();
         if (types.length != 1) {
@@ -654,16 +753,21 @@ Field.getGenericType() will consult the Signature Attribute in the class file if
         }
         return oa;
     }
+    private static Object setWalkMapJson(ParameterizedType paraType, Json.BaseType jsonType)
+    throws ClassNotFoundException, InstantiationException, IllegalAccessException
+    {
+        return setWalkMapJson(paraType, jsonType, null);
+    }
     private static Object setWalkMapJson(ParameterizedType paraType, Json.BaseType jsonType, String indent)
     throws ClassNotFoundException, InstantiationException, IllegalAccessException
     {
         final String traceStr0 = "setWalkMapJson";
-        final String nextIndent = indent + JsonWalk.INDENT_MAP;
+        final String nextIndent = indent == null ? null : indent + JsonWalk.INDENT_MAP;
         if (jsonType == null) {
             String msg = AnsiText.fatalStr0(traceStr0 + ": No jsonType for |" + paraType.toString() + "|");
             throw new NullPointerException(msg);
         }
-        if (JsonWalk.TRACE)
+        if (indent != null)
             println(indent + traceStr0 + ": |" + paraType + "|");
         Type[] types = paraType.getActualTypeArguments();
         if (types.length != 2) {
@@ -699,16 +803,21 @@ Field.getGenericType() will consult the Signature Attribute in the class file if
         }
         return om;
     }
+    private static Object setWalkTypeJson(Type type, Json.BaseType jsonType)
+    throws ClassNotFoundException, InstantiationException, IllegalAccessException
+    {
+        return setWalkTypeJson(type, jsonType, null);
+    }
     private static Object setWalkTypeJson(Type type, Json.BaseType jsonType, String indent)
     throws ClassNotFoundException, InstantiationException, IllegalAccessException
     {
         final String traceStr0 = "setWalkTypeJson";
-        final String nextIndent = indent + JsonWalk.INDENT_TYPE;
+        final String nextIndent = indent == null ? null : indent + JsonWalk.INDENT_TYPE;
         if (jsonType == null) {
             String msg = AnsiText.fatalStr0(traceStr0 + ": No jsonType for |" + type.toString() + "|");
             throw new NullPointerException(msg);
         }
-        if (JsonWalk.TRACE)
+        if (indent != null)
             println(indent + traceStr0 + ": |" + type + "|");
         if (type instanceof Class) {
             return setWalkClassJson((Class) type, jsonType, nextIndent);
@@ -748,16 +857,21 @@ Field.getGenericType() will consult the Signature Attribute in the class file if
         String msg = AnsiText.fatalStr0(traceStr0 + ": Class or ParameterizedType only: |" + type.toString() + "|");
         throw new ClassNotFoundException(msg);
     }
+    public static Object setWalkClassJson(Class cls, Json.BaseType jsonType)
+    throws ClassNotFoundException, InstantiationException, IllegalAccessException
+    {
+        return setWalkClassJson(cls, jsonType, null);
+    }
     public static Object setWalkClassJson(Class cls, Json.BaseType jsonType, String indent)
     throws ClassNotFoundException, InstantiationException, IllegalAccessException
     {
         final String traceStr0 = "setWalkClassJson";
-        final String nextIndent = indent + JsonWalk.INDENT_CLASS;
+        final String nextIndent = indent == null ? null : indent + JsonWalk.INDENT_CLASS;
         if (jsonType == null) {
             String msg = AnsiText.fatalStr0(traceStr0 + ": No jsonType for |" + cls.getName() + "|");
             throw new NullPointerException(msg);
         }
-        if (JsonWalk.TRACE)
+        if (indent != null)
             println(indent + traceStr0 + ": |" + cls + "|");
         TypeVariable[] tv = cls.getTypeParameters();
         if (tv.length > 0) {
@@ -862,20 +976,20 @@ Field.getGenericType() will consult the Signature Attribute in the class file if
         // as it is; no herited members, but private members included
         // See the page:
         //  http://docs.oracle.com/javase/tutorial/reflect/class/classMembers.html
-        for (Field field: cls.getDeclaredFields()) {
+        for (Field field: JsonWalk.getDeclaredFields(cls)) {
             String key = field.getName();
-            if (JsonWalk.TRACE)
+            if (indent != null)
                 println(indent + traceStr0 + ": Field: |" + key + "|");
             if (field.isSynthetic()) {
                 // ignore: see the end of page:
                 //  http://docs.oracle.com/javase/tutorial/reflect/member/fieldModifiers.html
-                if (JsonWalk.TRACE)
+                if (indent != null)
                     println(indent + traceStr0 + "    isSynthetic");
                 continue;
             }
             if (field.isEnumConstant()) {
                 // ignore for simplicity; use other type
-                if (JsonWalk.TRACE)
+                if (indent != null)
                     println(indent + traceStr0 + "    isEnumConstant");
                 continue;
             }

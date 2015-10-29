@@ -7,7 +7,7 @@
  * only one way (in "applet" tag below) is a choice.
  * Moreover, at least self-sign is needed:
  *    keytool -genkeypair -keystore keystore -alias icentrik -dname "CN=Gwang-Ho KIM, OU=R&D, O=DN2 Soft, L=San Diego, S=California, C=US"
- *    jarsigner -keystore keystore -signedjar dickSigned.jar lib/dick.jar icentrik
+ *    jarsigner -keystore keystore -signedjar dickSigned.jar lib/dickc.jar icentrik
  */
 /*
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
@@ -19,7 +19,7 @@
   <body>
     <applet
         alt = "Cambridge Dictionary Look-up"
-        code = 'com.dn2soft.dick.DickApplet'
+        code = 'com.dn2soft.dickc.DickApplet'
         archive = 'dickSigned.jar',
         width = 700,
         height = 500 >
@@ -28,13 +28,13 @@
   </body>
 </html>
  */
-package com.dn2soft.dick;
+package com.dn2soft.dickc;
 
-import com.dn2soft.dick.DickW;
+import com.dn2soft.dickc.DickcW;
 
 import javax.swing.JApplet;
 
-public class DickApplet extends JApplet {
+public class DickcApplet extends JApplet {
     public void init() {
         try {
             javax.swing.SwingUtilities.invokeAndWait(new Runnable() {
@@ -48,7 +48,7 @@ public class DickApplet extends JApplet {
     }
 
     private void createGUI() {
-        DickW newContentPane = new DickW();
+        DickcW newContentPane = new DickcW();
         newContentPane.setOpaque(true);
         setContentPane(newContentPane);
     }

@@ -1,6 +1,6 @@
-package com.dn2soft.dick.dictionary;
+package com.dn2soft.dickc.dictionary;
 
-import com.dn2soft.dick.utility.Json;
+import com.dn2soft.util.Json;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;

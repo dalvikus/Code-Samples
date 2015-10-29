@@ -1,6 +1,6 @@
-package com.dn2soft.dick.utility;
+package com.dn2soft.util;
 
-import com.dn2soft.dick.utility.Joint;
+import com.dn2soft.util.Joint;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
