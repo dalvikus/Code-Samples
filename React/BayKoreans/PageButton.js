@@ -7,14 +7,16 @@ export class PageButton extends React.Component {
     }
 
     handleButtonClick() {
-        this.props.onPageButtonClick(this.props.href);
-        document.getElementById("autoFocused").focus();
+        if (!this.props.disabled) {
+            this.props.onPageButtonClick(this.props.href);
+            document.getElementById("autoFocused").focus();
+        }
     }
 
     render() {
 ////  console.log('PageButton.render()');
       return (
-        <button onClick={this.handleButtonClick} disabled={this.props.disabled}>{this.props.text}</button>
+        <button onClick={this.handleButtonClick}>{this.props.text}</button>
       );
     }
 }
