@@ -44,7 +44,6 @@ export class FetchClips extends React.Component {
     }
 
     handleClick() {
-////    console.log('FetchClips.handleClick: [' + this.props.id + ']: # of clips = ' + this.state.clips.length);
         if (this.state.clips.length === 0)
             listClips(this);
         else
@@ -52,22 +51,19 @@ export class FetchClips extends React.Component {
     }
 
     componentWillReceiveProps(nextProps) {
-////    console.log('FetchClips.componentWillReceiveProps: reset = ' + nextProps.reset);
         if (nextProps.reset) {
             this.setState({'hide': true, 'clips': []});
         }
     }
 
     render() {
-////    console.log('FetchClips.render(): hide = ' + this.state.hide);
-////    console.log('FetchClips.render(): # of clips = ' + this.state.clips.length);
         return (
-          <div>
-          <li key={this.props.id} onClick={this.handleClick}>{this.props.title}</li>
+          <div className="episode-div">
+          <li className="episode-li" key={this.props.id} onClick={this.handleClick}>{this.props.title}</li>
           {this.state.hide ? (
             null
           ) : (
-          <ul>
+          <ul className="links-ul">
             {this.state.clips.map((clip) =>
               <ShowLink key={clip.id} id={clip.id} title={clip.title} href={clip.href}/>
             )}

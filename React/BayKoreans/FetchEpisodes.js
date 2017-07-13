@@ -13,7 +13,14 @@ function getUrl(mid, title)
 function listEpisodes(obj, url)
 {
 ////console.log('url: |' + url + '|');
-////console.log('reset = ' + obj.props.reset);
+////console.log('resetClips = ' + obj.resetClips);
+    const hostRe = '//(.+?)/';
+    let a = url.match(hostRe);
+    if (a === null) {
+        console.error('Invalid url: "' + url + '"');
+        return;
+    }
+    let host = a[1];
     const request = axios.get(urlViaCorsProxy(url));
     request.then(response => {
       if (response.status !== 200) {
@@ -40,12 +47,19 @@ function listEpisodes(obj, url)
             let domPages = doc.querySelectorAll("ul.pagination li a");
             for (let i = 0; i < domPages.length; ++i) {
                 let domPage = domPages[i];
-////            console.log('|' + domPage.href + '|');
+                let href = domPage.href;
+                if (href !== '') {
+                    let a1 = href.match(hostRe);
+                    if (a1 === null || host !== a1[1])
+                        href = '';
+                }
+////            console.log('|' + domPage.href + '|; href = "' + href + '"');
 ////            console.log('|' + domPage.innerText + '|');
-                pages.push({'id': i, 'text': domPage.innerText, 'href': domPage.href});
+                pages.push({'id': i, 'text': domPage.innerText, 'href': href});
             }
         }
-        obj.setState({'reset': true, 'episodes': episodes, 'pages': pages});
+        obj.resetClips = true;
+        obj.setState({'episodes': episodes, 'pages': pages});
       }
     });
 }
@@ -54,8 +68,11 @@ export class FetchEpisodes extends React.Component {
     constructor(props) {
         super(props);
 
+        /// resetClips is set only when listEpisodes is called, where setState is called,
+        /// which means that render is called only if resetClips is true (at shouldComponentUpdate)
+        /// so after render, it should be reset to false (at componentDidUpdate)
+        this.resetClips = false;
         this.state = {
-            reset: false,
             episodes: [],
             pages: []
         };
@@ -64,35 +81,40 @@ export class FetchEpisodes extends React.Component {
     }
 
     handlePageButtonClick(href) {
-////    console.log('handlePageButtonClick: "' + href + '"');
         if (href !== "")
             listEpisodes(this, href);
     }
 
     componentDidMount() {
-////    console.log('FetchEpisodes.componentDidMount: mid = "' + this.props.mid + '", title = "' + this.props.title + '"');
         listEpisodes(this, getUrl(this.props.mid, this.props.title));
     }
 
     componentWillReceiveProps(nextProps) {
-////    console.log('FetchEpisodes.componentWillReceiveProps: mid = "' + nextProps.mid + '", title = "' + nextProps.title + '"');
-        listEpisodes(this, getUrl(nextProps.mid, nextProps.title));
+        if (nextProps.mid !== this.props.mid || nextProps.title !== this.props.title)
+            listEpisodes(this, getUrl(nextProps.mid, nextProps.title));
+    }
+
+    shouldComponentUpdate(nextProps, nextState) {
+        return this.resetClips;
+    }
+    componentDidUpdate(prevProps, prevState) {
+        this.resetClips = false;
     }
 
     render() {
-////    console.log('FetchEpisodes.render: mid = "' + this.props.mid + '", title = "' + this.props.title + '"');
-////    console.log('FetchEpisodes.render: # of episodes = ' + this.state.episodes.length);
         return (
-            <div>
-              <h1>{this.props.midsMap[this.props.mid]}/{this.props.title}</h1>
-              <ul>
+            <div id="content-div">
+              <h1 id="mid-title-h1"><div id="mid-div">{this.props.midsMap[this.props.mid]}</div><div id="mid-title-separator">/</div><div id="title-div">{this.props.title}</div></h1>
+              <ul id="episodes-ul">
                 {this.state.episodes.map((episode) =>
-                  <FetchClips key={episode.id} id={episode.id} reset={this.state.reset} title={episode.title} href={episode.href}/>
+                  <FetchClips key={episode.id} id={episode.id} reset={this.resetClips} title={episode.title} href={episode.href}/>
                 )}
               </ul>
+              <div id="pages-div">
                 {this.state.pages.map((page) =>
                   <PageButton key={page.id} id={page.id} text={page.text} href={page.href} disabled={page.href === ""} onPageButtonClick={this.handlePageButtonClick}/>
                 )}
+              </div>
             </div>
         );
     }

@@ -16,7 +16,7 @@ export class ShowLink extends React.Component {
         let href = this.props.href;
 ////    console.log('ShowLink.render(): href = "' + href + '"');
         return (
-          href === '' ? null : <li key={this.props.id} onClick={this.handleShowLinkClick}>{this.props.title}</li>
+          href === '' ? null : <li className="clip-li" key={this.props.id} onClick={this.handleShowLinkClick}>{this.props.title}</li>
         );
     }
 }

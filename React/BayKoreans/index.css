@@ -1,5 +1,137 @@
 body {
-  margin: 0;
-  padding: 0;
   font-family: sans-serif;
+}
+
+div {
+}
+
+form {
+}
+
+button {
+}
+
+select {
+}
+
+input {
+}
+
+ul {
+}
+
+li {
+}
+
+
+/*
+ *  search-form
+ *  bookmarks-div
+ *  content-div
+ */
+#main-div {
+}
+
+/*
+ *  mid-select
+ *  query-text
+ *  do-search-button
+ *  add-bookmark-button
+ */
+#search-form {
+}
+
+#mid-select {
+}
+
+#query-text {
+}
+
+#do-search-button {
+}
+
+/*
+ * list of bookmark-div classes
+ */
+#bookmarks-div {
+}
+
+/*
+ *  bookmark-title-button
+ *  bookmark-delete-button
+ */
+.bookmark-div {
+    display: inline;
+}
+
+.bookmark-title-button {
+}
+
+.bookmark-delete-button {
+}
+
+/*
+ *  mid-title-h1
+ *  episodes-ul
+ *  pages-div
+ */
+#content-div {
+}
+
+/*
+ *  mid-div
+ *  mid-title-separator
+ *  title-div
+ */
+#mid-div {
+  display: inline;
+  color: #e52a22;
+}
+#mid-title-separator {
+  display: inline;
+  color: #fab100;
+}
+#title-div {
+  display: inline;
+  color: #289d3e;
+}
+
+/*
+ *  list of episode-div classes
+ */
+#episodes-ul {
+}
+
+/*
+ *  episode-li class
+ *  links-ul class
+ */
+.episode-div {
+}
+
+.episode-li {
+  padding: 5px;
+  color: #3269f5;
+  cursor: pointer;
+}
+
+/*
+ *  list of clip-li classes
+ */
+.links-ul {
+}
+
+.clip-li {
+  padding: 2px;
+  color: #3269f5;
+  cursor: pointer;
+}
+
+/*
+ *  list of page-button classes
+ */
+#pages-div {
+}
+
+.page-button {
 }

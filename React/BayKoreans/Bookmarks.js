@@ -113,3 +113,15 @@ export function loadBookmarks()
     }
     return deserializeBookmarks(strBookmarkValue);
 }
+
+export function indexOf(bookmarks, mid, title) {
+    let index = -1;
+    for (let i = 0; i < bookmarks.length; ++i) {
+        let bookmark = bookmarks[i];
+        if (bookmark[0] === mid && bookmark[1] === title) {
+            index = i;
+            break;
+        }
+    };
+    return index;
+}

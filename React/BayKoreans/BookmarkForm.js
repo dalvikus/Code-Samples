@@ -13,7 +13,6 @@ export class BookmarkForm extends React.Component {
         let index = e.target.value;
         let mid = this.props.bookmarks[index][0];
         let title = this.props.bookmarks[index][1];
-////    console.log('BookmarkForm.handleClick: [' + index + ']: mid = "' + mid + '", title = "' + title + '"');
         this.props.onBookmarkButtonClick(mid, title);
     }
 
@@ -22,23 +21,16 @@ export class BookmarkForm extends React.Component {
         let index = e.target.value;
         let mid = this.props.bookmarks[index][0];
         let title = this.props.bookmarks[index][1];
-////    console.log('BookmarkForm.handleDelete: [' + index + ']: mid = "' + mid + '", title = "' + title + '"');
         this.props.onDeleteBookmarkButtonClick(mid, title);
     }
 
     render() {
-////  console.log('BookmarkForm.render()');
-////  console.log('this.props.bookmarks: ' + this.props.bookmarks);
-      let entries = [];
-      for (let entry of this.props.bookmarks.entries()) {
-        entries.push(entry);
-      }
       return (
-        <div>
-          {entries.map((entry) =>
-            <div key={entry[0]} style={{display: `inline`}}>
-              <button value={entry[0]} onClick={this.handleClick}>{entry[1][1]}</button>
-              <button value={entry[0]} onClick={this.handleDelete}>X</button>
+        <div id="bookmarks-div">
+          {this.props.bookmarks.map((entry, index) =>
+            <div className="bookmark-div" key={index}>
+              <button className="bookmark-title-button" value={index} onClick={this.handleClick}>{entry[1]}</button>
+              <button className="bookmark-delete-button" value={index} onClick={this.handleDelete}>X</button>
             </div>
           )}
         </div>
