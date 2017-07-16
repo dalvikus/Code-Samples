@@ -2,9 +2,9 @@ import React from 'react'
 import {connect} from 'react-redux'
 import {fetchEpisodes, fetchEpisodesIfNeeded} from '../actions'
 
-const FetchClips = ({title, href}) => (
+const FetchClips = ({href, text}) => (
   <div>
-  <a href={href}>{title}</a>
+  <a href={href}>{text}</a>
   </div>
 )
 
@@ -55,7 +55,7 @@ class FetchEpisodes extends React.Component {
               <h1 id="mid-title-h1"><div id="mid-div">{fetchedShow.mid}</div><div id="mid-title-separator">/</div><div id="title-div">{fetchedShow.title}</div></h1>
               <ul id="episodes-ul">
                 {episodes.map((episode, i) =>
-                  <FetchClips key={i} title={episode.title} href={episode.href}/>
+                  <FetchClips key={i} href={episode.href} text={episode.text}/>
                 )}
               </ul>
               <div id="pages-div">

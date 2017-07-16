@@ -81,7 +81,7 @@ export const fetchEpisodes = (show, url) => dispatch => {
 ////        console.log('[' + i + ']: |' + domEpisode.innerText + '|');
             if (domEpisode.href.endsWith("#comment"))
                 continue;
-            episodes.push({'title': domEpisode.innerText, 'href': domEpisode.href});
+            episodes.push({'href': domEpisode.href, 'text': domEpisode.innerText});
         }
 ////    console.log('# of episodes = ' + domEpisodes.length);
 
@@ -98,7 +98,7 @@ export const fetchEpisodes = (show, url) => dispatch => {
                 }
 ////            console.log('|' + domPage.href + '|; href = "' + href + '"');
 ////            console.log('|' + domPage.innerText + '|');
-                pages.push({'id': i, 'text': domPage.innerText, 'href': href});
+                pages.push({'href': href, 'text': domPage.innerText});
             }
         }
 ////    console.log('# of pages = ' + pages.length);

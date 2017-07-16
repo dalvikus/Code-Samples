@@ -19,6 +19,21 @@ const fetchedShow = (state = defaultShow, action) => {
     }
 }
 
+/*
+Show.toString(): {
+    isFetching: Boolean,
+    invalidated: Boolean,
+    episodes: [
+        {
+            text: String
+            href: String
+            hide: Boolean
+            links: []
+        }
+    ],
+    pages: []
+}
+ */
 function showInfo(
     state = {
         isFetching: false,
@@ -42,7 +57,12 @@ function showInfo(
         return Object.assign({}, state, {
             isFetching: false,
             invalidated: false,
-            episodes: action.episodes,
+            episodes: action.episodes.map((e) => ({
+                href: e.href,
+                text: e.text,
+                hide: true,
+                clips: []
+            })),
             pages: action.pages
         })
     default:
