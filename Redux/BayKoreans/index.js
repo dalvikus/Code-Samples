@@ -1,98 +1,44 @@
-import React from 'react';
-import ReactDOM from 'react-dom';
+import React from 'react'
+import ReactDOM from 'react-dom'
 
-import {createStore} from 'redux'
+import {createStore, applyMiddleware} from 'redux'
 import {Provider} from 'react-redux'
-import {combineReducers} from 'redux'
+import thunk from 'redux-thunk'
+import {createLogger} from 'redux-logger'
 
-import './index.css';
-import App from './App';
+import reducer from './reducers'
 
-const defaultShow = {mid: 'current', title: ''};
-const show = (state = defaultShow, action) => {
-console.log('reducer: show; ', action);
-    switch (action.type) {
-    case 'FETCH':
-        if (state.mid !== action.show.mid || state.title !== action.show.title) {
-            return action.show;
-        } else {
-            return state;
-        }
-    default:
-        return state;
-    }
-};
-const bookmarks = (state = [], action) => {
-    switch (action.type) {
-    case 'ADD':
-        return [
-            ...state,
-            {
-                id: action.id,
-                show: action.show
-            }
-        ];
-    case 'DELETE':
-        return state.filter((bookmark) => {return bookmark.id !== action.id});
-    default:
-        return state;
-    }
-};
+import BayKoreans from './components/BayKoreans'
+import {addBookmark, deleteBookmark, fetchShow} from './actions'
 
-const reducer = combineReducers({
-  show,
-  bookmarks
-})
-const store = createStore(reducer)
+import {Show} from './Show'
 
-
+const middleware = [ thunk ]
+if (process.env.NODE_ENV !== 'production') {
+  middleware.push(createLogger())
+}
+/*
 store.subscribe(() => {
-    let state = store.getState();
-    console.log('State: ', state);
-});
+    let state = store.getState()
+    console.log('store.subscribe: State: ', state)
+})
+ */
 
-console.log(store.getState());
 
-let bookmark_id = 0;
-store.dispatch(
-    {
-        type: 'ADD',
-        id: bookmark_id++,
-        show: {mid: 'current', title: 'kbs'}
-    }
-);
-store.dispatch(
-    {
-        type: 'ADD',
-        id: bookmark_id++,
-        show: {mid: 'current', title: 'kbs'}
-    }
-);
-store.dispatch(
-    {
-        type: 'DELETE',
-        id: 1,
-    }
-);
-store.dispatch(
-    {
-        type: 'ADD',
-        id: bookmark_id++,
-        show: {mid: 'current', title: 'kbs'}
-    }
-);
-store.dispatch(
-    {
-        type: 'FETCH',
-        show: {mid: 'drama', title: '봉순'}
-    }
-);
+const store = createStore(
+  reducer,
+  applyMiddleware(...middleware)
+)
 
-console.log(store.getState());
+store.dispatch(addBookmark(new Show('current', 'kbs')));
+store.dispatch(addBookmark(new Show('current', 'kbs')));
+store.dispatch(deleteBookmark(1));
+store.dispatch(addBookmark(new Show('current', '이야기 Y')));
+store.dispatch(fetchShow(new Show('drama', '봉순')));
 
 ReactDOM.render(
   <Provider store={store}>
-    <App />
+    <BayKoreans/>
   </Provider>,
   document.getElementById('root')
 )
