@@ -4,25 +4,21 @@ import {deleteBookmark, fetchShow} from '../actions'
 
 const Bookmark = ({bookmark, onFetchClick, onDeleteClick}) => (
   <div style={{display: 'inline'}}>
-    <button onClick={onFetchClick}>{bookmark.show.title}</button>
+    <button onClick={onFetchClick}>{bookmark.title}</button>
     <button onClick={onDeleteClick}>X</button>
   </div>
 )
 
 const BookmarkList = ({bookmarks, onFetchClick, onDeleteClick}) => (
   <div>
-    {bookmarks.map(bookmark =>
+    {bookmarks.map((bookmark, index) =>
       <Bookmark
-        key={bookmark.id}
+        key={index}
         bookmark={bookmark}
         onFetchClick = {() => {
-            let index = bookmarks.map((e) => e.id).indexOf(bookmark.id)
-            if (index === -1)
-                console.error('no bookmark with id = ' + bookmark.id)
-            else
-                onFetchClick(bookmarks[index].show)
+            onFetchClick(bookmarks[index])
         }}
-        onDeleteClick={() => onDeleteClick(bookmark.id)}
+        onDeleteClick={() => onDeleteClick(index)}
       />
     )}
   </div>

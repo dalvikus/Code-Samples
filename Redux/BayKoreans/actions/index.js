@@ -1,21 +1,23 @@
 export const ADD_BOOKMARK = 'ADD_BOOKMARK'
 export const DELETE_BOOKMARK = 'DELETE_BOOKMARK'
+
 export const FETCH_SHOW = 'FETCH_SHOW'
 export const INVALIDATE_SHOW = 'INVALIDATE_SHOW'
 export const REQUEST_EPISODES = 'REQUEST_EPISODES'
 export const RECEIVE_EPISODES = 'RECEIVE_EPISODES'
 
-let nextBookmarkId = 0
+export const TOGGLE_HIDE_CLIPS = 'TOGGLE_HIDE_CLIPS'
+export const REQUEST_CLIPS = 'REQUEST_CLIPS'
+export const RECEIVE_CLIPS = 'RECEIVE_CLIPS'
 
 export const addBookmark = (show) => ({
   type: ADD_BOOKMARK,
-  id: nextBookmarkId++,
   show
 })
 
-export const deleteBookmark = (id) => ({
+export const deleteBookmark = (index) => ({
     type: DELETE_BOOKMARK,
-    id
+    index
 })
 
 export const fetchShow = (show) => ({
@@ -40,6 +42,25 @@ export const receiveEpisodes = (show, episodes, pages) => ({
   pages
 })
 
+
+export const toggleHideClips = (show, href) => ({
+  type: TOGGLE_HIDE_CLIPS,
+  show,
+  href
+})
+
+export const requestClips = (show, href) => ({
+  type: REQUEST_CLIPS,
+  show,
+  href
+})
+
+export const receiveClips = (show, href, clips) => ({
+  type: RECEIVE_CLIPS,
+  show,
+  href,
+  clips
+})
 
 function getUrl(show)
 {
@@ -126,4 +147,32 @@ export const fetchEpisodesIfNeeded = show => (dispatch, getState) => {
   if (shouldFetchEpisodes(getState(), show)) {
     return dispatch(fetchEpisodes(show, getUrl(show)))
   }
+}
+
+export const fetchClips = (show, href, url) => dispatch => {
+    dispatch(requestClips(show, href))
+////console.log('fetchClips: ', show, 'href: "' + href + '"');
+    fetch(urlViaCorsProxy(href))
+    .then(function(response) {
+        if(response.status === 200) {
+            return response.text();
+        } else {
+            throw new Error('Something went wrong on api server!');
+        }
+    })
+    .then(function(data) {
+        const doc = new DOMParser().parseFromString(data, "text/html");
+        // class="button red xLarge"
+        // class="button blue xLarge"
+        const links = doc.querySelectorAll("a[class^=button][class$=xLarge]");
+////    console.log(links);
+        const clips = [];
+        for (let i = 0; i < links.length; ++i) {
+            const link = links[i];
+////        console.log('|' + link.href + '|');
+////        console.log('|' + link.innerText + '|');
+            clips.push({href: link.href, text: link.innerText});
+        }
+        dispatch(receiveClips(show, href, clips))
+    })
 }

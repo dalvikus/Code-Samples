@@ -1,48 +1,16 @@
 import React from 'react'
 import {connect} from 'react-redux'
-import {fetchEpisodes, fetchEpisodesIfNeeded} from '../actions'
 
-const FetchClips = ({href, text}) => (
-  <div>
-  <a href={href}>{text}</a>
-  </div>
-)
+import {fetchEpisodes, fetchEpisodesIfNeeded} from '../actions'
+import FetchClips from './FetchClips';
 
 class FetchEpisodes extends React.Component {
-/*
-  static propTypes = {
-    selectedReddit: PropTypes.string.isRequired,
-    posts: PropTypes.array.isRequired,
-    isFetching: PropTypes.bool.isRequired,
-    lastUpdated: PropTypes.number,
-    dispatch: PropTypes.func.isRequired
-  }
-
-  componentDidMount() {
-    const { dispatch, selectedReddit } = this.props
-    dispatch(fetchPostsIfNeeded(selectedReddit))
-  }
 
   componentWillReceiveProps(nextProps) {
-    if (nextProps.selectedReddit !== this.props.selectedReddit) {
-      const { dispatch, selectedReddit } = nextProps
-      dispatch(fetchPostsIfNeeded(selectedReddit))
-    }
+    const {dispatch, fetchedShow} = this.props
+    if (fetchedShow.toString() !== nextProps.fetchedShow.toString())
+        dispatch(fetchEpisodesIfNeeded(nextProps.fetchedShow))
   }
-
-  handleChange = nextReddit => {
-    this.props.dispatch(selectReddit(nextReddit))
-  }
-
-  handleRefreshClick = e => {
-    e.preventDefault()
-
-    const { dispatch, selectedReddit } = this.props
-    dispatch(invalidateReddit(selectedReddit))
-    dispatch(fetchPostsIfNeeded(selectedReddit))
-  }
- */
-
   componentDidMount() {
     const {dispatch, fetchedShow} = this.props
     dispatch(fetchEpisodesIfNeeded(fetchedShow))
@@ -51,53 +19,30 @@ class FetchEpisodes extends React.Component {
   render() {
     const {dispatch, fetchedShow, isFetching, episodes, pages} = this.props
     return (
-            <div id="content-div">
-              <h1 id="mid-title-h1"><div id="mid-div">{fetchedShow.mid}</div><div id="mid-title-separator">/</div><div id="title-div">{fetchedShow.title}</div></h1>
-              <ul id="episodes-ul">
-                {episodes.map((episode, i) =>
-                  <FetchClips key={i} href={episode.href} text={episode.text}/>
-                )}
-              </ul>
-              <div id="pages-div">
-                {pages.map((page, i) =>
-                  <button key={i} className="page-button" onClick={(e) => {
-                    e.preventDefault();
-                    dispatch(fetchEpisodes(fetchedShow, page.href))
-                  }} disabled={page.href === ''}>{page.text}</button>
-                )}
-              </div>
-            </div>
-    )
-/*
-    const { selectedReddit, posts, isFetching, lastUpdated } = this.props
-    const isEmpty = posts.length === 0
-    return (
-      <div>
-        <Picker value={selectedReddit}
-                onChange={this.handleChange}
-                options={[ 'reactjs', 'frontend' ]} />
-        <p>
-          {lastUpdated &&
-            <span>
-              Last updated at {new Date(lastUpdated).toLocaleTimeString()}.
-              {' '}
-            </span>
-          }
-          {!isFetching &&
-            <button onClick={this.handleRefreshClick}>
-              Refresh
-            </button>
-          }
-        </p>
-        {isEmpty
-          ? (isFetching ? <h2>Loading...</h2> : <h2>Empty.</h2>)
-          : <div style={{ opacity: isFetching ? 0.5 : 1 }}>
-              <Posts posts={posts} />
-            </div>
+      <div id="content-div">
+        <h1 id="mid-title-h1"><div id="mid-div">{fetchedShow.mid}</div><div id="mid-title-separator">/</div><div id="title-div">{fetchedShow.title}</div></h1>
+        {isFetching
+           ? (<h3>fetch episodes...</h3>)
+           : (episodes.length === 0 ? (<h2>Empty</h2>) : (
+               <div>
+               <ul id="episodes-ul">
+                 {episodes.map((episode, i) =>
+                   <FetchClips key={i} fetchedShow={fetchedShow} episode={episode}/>
+                 )}
+               </ul>
+               <div id="pages-div">
+                 {pages.map((page, i) =>
+                   <button key={i} className="page-button" onClick={(e) => {
+                     e.preventDefault();
+                     dispatch(fetchEpisodes(fetchedShow, page.href))
+                   }} disabled={page.href === ''}>{page.text}</button>
+                 )}
+               </div>
+               </div>
+             ))
         }
       </div>
     )
- */
   }
 }
 
