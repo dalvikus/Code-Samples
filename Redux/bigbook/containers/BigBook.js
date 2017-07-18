@@ -2,60 +2,71 @@ import React from 'react'
 import {connect} from 'react-redux'
 import '../index.css'
 
-import {fetchBigBook, fetchChallenges, setChallenge, chooseAnswer} from '../actions'
+import {TIMEOUT} from '../actions'
+import {fetchBigBook, fetchChallenges, haveChallengeReady, chooseAnswer} from '../actions'
 
-var intervalId = 0
 var start
-//import VisibleForm from '../containers/VisibleForm'
-//import VisibleBookmarkList from '../containers/VisibleBookmarkList'
-//import FetchEpisodes from '../containers/FetchEpisodes'
+var intervalId = -1
 
 class BigBook extends React.Component {
 
-  componentWillReceiveProps(nextProps) {
-    const {dispatch, areChallengesFetching} = this.props
-    if (nextProps.areChallengesFetching && areChallengesFetching !== nextProps.areChallengesFetching)
-        dispatch(fetchChallenges())
-  }
+    componentWillReceiveProps(nextProps) {
+        const {dispatch, areChallengesFetching} = this.props
+        if (nextProps.areChallengesFetching && areChallengesFetching !== nextProps.areChallengesFetching) {
+            dispatch(fetchChallenges())
+        }
+    }
+
     componentDidMount() {
         this.props.dispatch(fetchBigBook('http://localhost:1337/user'))
     }
 
     componentDidUpdate() {
-        const {dispatch, isBigBookFetching, bigbook, areChallengesFetching, challenges, challenge} = this.props
-        if (!isBigBookFetching && bigbook.length > 0 && challenges.length > 0 && challenge.serial >= 0) {
-            const progress = document.getElementById('progress')
-            const bar = document.getElementById('bar')
+        const {dispatch, isBigBookFetching, bigbook, challenges, challenge} = this.props
+console.log(challenges.length)
+console.log(challenge.indexToChallenges)
+        const bar = document.getElementById('bar')
+        const confidenceLevels = document.getElementsByName('confidence-level')
+        if (!isBigBookFetching && bigbook.length > 0 && challenges.length > 0 && challenge.indexToChallenges >= 0 && challenge.indexToChallenges < challenges.length) {
+            start = Date.now()
             let n = 0
             intervalId = window.setInterval(() => {
+                if (n < 100 && n % 20 === 0) {
+                    confidenceLevels.value = 5 - n / 20
+                    confidenceLevels[4 - n / 20].checked = true
+                }
+
                 ++n
+                if (n <= 100)
                 bar.style.width = n + '%'
-                if (n === 100)
-                    dispatch(chooseAnswer(challenges, challenge, start, intervalId))
-            }, 300)
-console.log(intervalId)
+
+                if (n === 100) {
+                    dispatch(chooseAnswer(bigbook, challenges, challenge, start, intervalId))
+                }
+            }, TIMEOUT / 100 /* in percents */)
         }
     }
 
     render() {
         const {dispatch, isBigBookFetching, bigbook, areChallengesFetching, challenges, challenge} = this.props
-        start = Date.now()
+console.log(challenge)
+        const quiz = challenge.quiz
         return (
           <div>
             {isBigBookFetching ? (<h2>fetch bigbook...</h2>) : (
                 (bigbook.length > 0 && challenges.length > 0) ?
                 (
-                challenge.serial < 0 ? (
+                challenge.indexToChallenges < 0 ? (
                     <button onClick={(e) => {
                         e.preventDefault()
-                        dispatch(setChallenge(0))
+                        dispatch(haveChallengeReady(bigbook, challenges, 0, null))
                     }}>Start...</button>
                 ) : (
                     <div>
-                    <div>{challenge.question}</div>
-                    {challenge.choices.map((choice, index) =>
+                    <div>{quiz.question}</div>
+                    {quiz.choices.map((choice, index) =>
                         <div key={index}>
-                        <input type='radio' name='choose' value={index}/>
+                        <input type='radio' name='choice' value={index}/>
                         {choice}
                         </div>
                     )}
@@ -63,9 +74,16 @@ console.log(intervalId)
                     <div id="progress">
                       <div id="bar"></div>
                     </div>
+                    <div id="confidence">Confidence
+                        <input type='radio' name='confidence-level' value='1' />
+                        <input type='radio' name='confidence-level' value='2' />
+                        <input type='radio' name='confidence-level' value='3' />
+                        <input type='radio' name='confidence-level' value='4' />
+                        <input type='radio' name='confidence-level' value='5' />
+                    </div>
                     <button onClick={(e) => {
                         e.preventDefault()
-                        dispatch(chooseAnswer(challenges, challenge, start, intervalId))
+                        dispatch(chooseAnswer(bigbook, challenges, challenge, start, intervalId))
                         }}>next</button>
                     </div>
                     </div>

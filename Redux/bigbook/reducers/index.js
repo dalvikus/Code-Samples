@@ -1,8 +1,6 @@
 import {REQUEST_BIGBOOK, RECEIVE_BIGBOOK} from "../actions"
 import {REQUEST_CHALLENGES, RECEIVE_CHALLENGES} from "../actions"
-import {NEXT_QUIZ, SET_CHALLENGE, CLEAR_CHALLENGE, UPDATE_ANSWER} from "../actions"
-
-import {Answer} from '../Answer'
+import {INIT_CHALLENGE, SET_CHALLENGE, CLEAR_CHALLENGE, UPDATE_ANSWER} from "../actions"
 
 /*
     {
@@ -30,25 +28,17 @@ import {Answer} from '../Answer'
     }
  */
 
-const reducer =
-(
-    state = {
-        isBigBookFetching: false,
-        bigbook: [],
+const INIT_STATE = {
+    isBigBookFetching: false,
+    bigbook: [],
 
-        areChallengesFetching: false,
-        challenges: [],
+    areChallengesFetching: false,
+    challenges: [],
 
-        challenge: {
-            'serial': -1,
-            'note': '',
-            'question': '',
-            'choices': [],
-            'answer': -1
-        }
-    },
-    action
-) => {
+    challenge: INIT_CHALLENGE
+}
+
+const reducer = (state = INIT_STATE, action) => {
     switch (action.type) {
     case REQUEST_BIGBOOK:
         return Object.assign({}, state, {
@@ -69,22 +59,23 @@ const reducer =
             challenges: action.challenges
         })
     case SET_CHALLENGE:
-        if (action.index >= 0 && action.index < state.challenges.length)
-            return Object.assign({}, state, {
-                challenge: state.bigbook[state.challenges[action.index].serial - 1]
-            })
-        else
-            return state
+        return Object.assign({}, state, {
+            challenge: action.challenge
+        })
     case CLEAR_CHALLENGE:
         return Object.assign({}, state, {
             challenges: state.challenges.filter((challenge, index) => {return index !== action.index})
         })
     case UPDATE_ANSWER:
+console.log(action.challenge)
         return Object.assign({}, state, {
+            challenge: action.challenge,
             challenges: state.challenges.map((challenge, index) => {
-                if (index === action.index) {
+                if (index === action.answer.index) {
+                    let answers = challenge.answers.slice(0, challenge.answers.length)
+                    answers.push(action.answer.answer)
                     return Object.assign({}, challenge, {
-                        answers: challenge.answers.push(action.answer)
+                        answers: answers
                     })
                 } else
                     return challenge
