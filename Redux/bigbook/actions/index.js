@@ -1,6 +1,9 @@
 import axios from 'axios'
 import {Answer} from '../Answer'
 
+export const FETCH_BIGBOOK_URL = 'http://localhost:1337/bigbook'
+export const SYNC_CHALLENGES_URL = 'http://localhost:1337/sync'
+export const FETCH_CHALLENGES_URL = 'http://localhost:1337/challenges'
 export const TIMEOUT = 30000    // in milliseconds; multiple of 1000
 
 export const INIT_CHALLENGE = {
@@ -18,9 +21,8 @@ export const RECEIVE_BIGBOOK = 'RECEIVE_BIGBOOK'
 export const REQUEST_CHALLENGES = 'REQUEST_CHALLENGES'
 export const RECEIVE_CHALLENGES = 'RECEIVE_CHALLENGES'
 
-export const UPDATE_ANSWER = 'UPDATE_ANSWER'
+export const SYNC_CHALLENGES = 'SYNC_CHALLENGES'
 export const SET_CHALLENGE = 'SET_CHALLENGE'
-export const CLEAR_CHALLENGE = 'CLEAR_CHALLENGE'
 
 export const requestBigBook = () => ({
   type: REQUEST_BIGBOOK
@@ -45,21 +47,17 @@ export const setChallenge = (challenge) => ({
   challenge
 })
 
-export const clearChallenge = (index) => ({
-  type: CLEAR_CHALLENGE,
-  index
-})
-
-export const updateAnswer = (answer, challenge) => ({
-  type: UPDATE_ANSWER,
+export const syncChallenges = (answer, challenge, clear) => ({
+  type: SYNC_CHALLENGES,
   answer,
-  challenge
+  challenge,
+  clear
 })
 
-export const fetchBigBook = (url) => dispatch => {
+export const fetchBigBook = () => dispatch => {
     dispatch(requestBigBook())
 
-    const request = axios.get(url);
+    const request = axios.get(FETCH_BIGBOOK_URL);
     request.then(response => {
       if (response.status !== 200) {
         console.error(response.status);
@@ -70,24 +68,10 @@ export const fetchBigBook = (url) => dispatch => {
         dispatch(requestChallenges())
       }
     });
-/*
-console.log(url)
-    fetch(url, {mode: 'no-cors'})
-    .then(function(response) {
-console.log(response)
-console.log(response.statue)
-            return response.blob();
-    })
-    .then(function(bigbook_json) {
-        dispatch(receiveBigBook(bigbook_json))
-    })
-.catch(function(error) {
-  console.log('There has been a problem with your fetch operation: ' + error.message);
-})
- */
 }
 
 export const fetchChallenges = () => dispatch => {
+/*
     let challenges = [
         {'serial': 377, 'answers': []},
         {'serial': 2, 'answers': []},
@@ -97,19 +81,22 @@ export const fetchChallenges = () => dispatch => {
         {'serial': 78, 'answers': []},
     ]
     dispatch(receiveChallenges(challenges))
-/*
-    const request = axios.get(url);
+ */
+    const request = axios.get(FETCH_CHALLENGES_URL);
     request.then(response => {
       if (response.status !== 200) {
         console.error(response.status);
         console.error(response.statusText);
         console.error(response.headers);
       } else {
-        dispatch(receiveBigBook(response.data))
-        dispatch(requestChallenges())
+        const challenges = response.data.filter((challenge, index) => {
+            const answers = challenge.answers
+            const len = answers.length
+            return len === 0 || answers[len - 1]['result'] === false
+        })
+        dispatch(receiveChallenges(challenges))
       }
     });
- */
 }
 
 // The maximum is exclusive and the minimum is inclusive
@@ -165,7 +152,7 @@ export const haveChallengeReady = (bigbook, challenges, indexToChallenges, answe
     if (answer === null)
         dispatch(setChallenge(challenge))
     else
-        dispatch(updateAnswer(answer, challenge))
+        dispatch(syncChallenges(answer, challenge, false))
 }
 
 export const chooseAnswer = (bigbook, challenges, challenge, start, intervalId) => dispatch => {
@@ -174,7 +161,6 @@ export const chooseAnswer = (bigbook, challenges, challenge, start, intervalId) 
     window.clearInterval(intervalId)
 
     const end = Date.now()
-    console.log(end - start)
 
     const confidenceLevels = document.getElementsByName('confidence-level')
     let confidenceLevel = 5
@@ -196,7 +182,6 @@ export const chooseAnswer = (bigbook, challenges, challenge, start, intervalId) 
             break
         }
     }
-//  console.log('selected = ' + selected)
     let quiz = challenge.quiz
     let selectedAnswer = ''
     if (selected !== -1)
@@ -216,6 +201,48 @@ export const chooseAnswer = (bigbook, challenges, challenge, start, intervalId) 
     if (indexToChallenges !== challenges.length) {
         dispatch(haveChallengeReady(bigbook, challenges, indexToChallenges, answer))
     } else {
-        dispatch(updateAnswer(answer, INIT_CHALLENGE))
+        dispatch(haveSyncChallengesReady(challenges, answer))
     }
+}
+
+export const haveSyncChallengesReady = (challenges, answer) => dispatch => {
+    const updatedChallenges = challenges.map((challenge, index) => {
+        if (index === answer.index) {
+            let answers = challenge.answers.slice(0, challenge.answers.length)
+            answers.push(answer.answer)
+            return Object.assign({}, challenge, {
+                answers: answers
+            })
+        } else
+            return challenge
+    })
+
+    const headers = new Headers({
+        'Content-Type': 'application/json'
+    })
+    const init = {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify(updatedChallenges),
+    }
+    const request = new Request(SYNC_CHALLENGES_URL, init)
+    fetch(request).then((resonse) => {
+        return resonse.json()
+    }).then((json) => {
+        dispatch(syncChallenges(answer, INIT_CHALLENGE, true))
+    }).catch((error) => {
+        console.error('ERR: ' + error.message);
+    })
+/*
+    const request = axios.post(SYNC_CHALLENGES_URL, challenges);
+    request.then(response => {
+      if (response.status !== 200) {
+        console.error(response.status);
+        console.error(response.statusText);
+        console.error(response.headers);
+      } else {
+        dispatch(syncChallenges(answer, INIT_CHALLENGE, true))
+      }
+    });
+ */
 }

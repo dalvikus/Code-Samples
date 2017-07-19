@@ -1,6 +1,6 @@
 import {REQUEST_BIGBOOK, RECEIVE_BIGBOOK} from "../actions"
 import {REQUEST_CHALLENGES, RECEIVE_CHALLENGES} from "../actions"
-import {INIT_CHALLENGE, SET_CHALLENGE, CLEAR_CHALLENGE, UPDATE_ANSWER} from "../actions"
+import {INIT_CHALLENGE, SET_CHALLENGE, SYNC_CHALLENGES} from "../actions"
 
 /*
     {
@@ -62,12 +62,7 @@ const reducer = (state = INIT_STATE, action) => {
         return Object.assign({}, state, {
             challenge: action.challenge
         })
-    case CLEAR_CHALLENGE:
-        return Object.assign({}, state, {
-            challenges: state.challenges.filter((challenge, index) => {return index !== action.index})
-        })
-    case UPDATE_ANSWER:
-console.log(action.challenge)
+    case SYNC_CHALLENGES:
         return Object.assign({}, state, {
             challenge: action.challenge,
             challenges: state.challenges.map((challenge, index) => {
@@ -79,6 +74,10 @@ console.log(action.challenge)
                     })
                 } else
                     return challenge
+            }).filter((challenge, index) => {
+                const answers = challenge.answers
+                const len = answers.length
+                return !action.clear || len === 0 || answers[len - 1]['result'] === false
             })
         })
     default:

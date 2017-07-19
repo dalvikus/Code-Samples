@@ -18,13 +18,11 @@ class BigBook extends React.Component {
     }
 
     componentDidMount() {
-        this.props.dispatch(fetchBigBook('http://localhost:1337/user'))
+        this.props.dispatch(fetchBigBook())
     }
 
     componentDidUpdate() {
         const {dispatch, isBigBookFetching, bigbook, challenges, challenge} = this.props
-console.log(challenges.length)
-console.log(challenge.indexToChallenges)
         const bar = document.getElementById('bar')
         const confidenceLevels = document.getElementsByName('confidence-level')
         if (!isBigBookFetching && bigbook.length > 0 && challenges.length > 0 && challenge.indexToChallenges >= 0 && challenge.indexToChallenges < challenges.length) {
@@ -49,7 +47,6 @@ console.log(challenge.indexToChallenges)
 
     render() {
         const {dispatch, isBigBookFetching, bigbook, areChallengesFetching, challenges, challenge} = this.props
-console.log(challenge)
         const quiz = challenge.quiz
         return (
           <div>
