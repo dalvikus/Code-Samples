@@ -1,12 +1,12 @@
-import {REQUEST_BIGBOOK, RECEIVE_BIGBOOK} from "../actions"
+import {REQUEST_QUIZ_SET, RECEIVE_QUIZ_SET} from "../actions"
 import {REQUEST_CHALLENGES, RECEIVE_CHALLENGES} from "../actions"
 import {INIT_CHALLENGE, SET_CHALLENGE, SYNC_CHALLENGES} from "../actions"
 
 /*
     {
-        bigbook: {
+        quizSet: {
             isFetching: Boolean,
-            bigbook: // list of
+            quizSet: // list of
                      // {
                      //     'serial': 1,
                      //     'note': '1. GRE Big Book Test 1 Section 1 no.1',
@@ -29,25 +29,30 @@ import {INIT_CHALLENGE, SET_CHALLENGE, SYNC_CHALLENGES} from "../actions"
  */
 
 const INIT_STATE = {
-    isBigBookFetching: false,
-    bigbook: [],
+    collection: '',
+
+    isQuizSetFetching: false,
+    quizSet: [],
+    quizSetStatus: '',
 
     areChallengesFetching: false,
     challenges: [],
+    challengesStatus: '',
 
     challenge: INIT_CHALLENGE
 }
 
 const reducer = (state = INIT_STATE, action) => {
     switch (action.type) {
-    case REQUEST_BIGBOOK:
+    case REQUEST_QUIZ_SET:
         return Object.assign({}, state, {
-            isBigBookFetching: true
+            isQuizSetFetching: true
         });
-    case RECEIVE_BIGBOOK:
+    case RECEIVE_QUIZ_SET:
         return Object.assign({}, state, {
-            isBigBookFetching: false,
-            bigbook: action.bigbook
+            isQuizSetFetching: false,
+            quizSet: action.quizSet,
+            quizSetStatus: action.quizSetStatus
         })
     case REQUEST_CHALLENGES:
         return Object.assign({}, state, {
@@ -56,7 +61,8 @@ const reducer = (state = INIT_STATE, action) => {
     case RECEIVE_CHALLENGES:
         return Object.assign({}, state, {
             areChallengesFetching: false,
-            challenges: action.challenges
+            challenges: action.challenges,
+            challengesStatus: action.challengesStatus
         })
     case SET_CHALLENGE:
         return Object.assign({}, state, {

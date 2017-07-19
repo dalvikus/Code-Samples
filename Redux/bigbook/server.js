@@ -9,24 +9,30 @@ app.use(bodyParser.urlencoded({     // to support URL-encoded bodies
   extended: true
 })); 
 
-app.use('/bigbook', (req, res) => {
-    console.log('/bigbook')
+app.use('/quiz', (req, res) => {
+    console.log('/quiz')
+    console.log(req.query)
+    res.set('Access-Control-Allow-Origin', '*')
+    const collection = req.query['collection']
+    if (collection === undefined) {
+        res.json({'status': 'oops', 'msg': 'no collection'})
+    } else {
     MongoClient.connect(
 //      'mongodb://localhost:27017/gre',
         'mongodb://bb:bb@ds127391.mlab.com:27391/gre',
         (err, db) => {
             if (err) throw err
 
-            db.collection('bb').find().toArray(
+            db.collection(collection).find().toArray(
                 (err, result) => {
                     if (err) throw err
 
-                    res.set('Access-Control-Allow-Origin', '*')
-                    res.json(result)
+                    res.json({'status': 'ok', 'quiz-set': result})
                 }
             )
         }
     )
+    }
 });
 
 app.options("/*", (req, res, next) => {
@@ -39,14 +45,20 @@ app.options("/*", (req, res, next) => {
 
 app.post('/sync', (req, res) => {
     console.log('/sync')
-
+    console.log(req.query)
+    res.set('Access-Control-Allow-Origin', '*')
+    const collection = req.query['collection']
+    if (collection === undefined) {
+        res.json({'status': 'oops', 'msg': 'no collection'})
+    } else {
+    const challengeCollection = collection + '_challenges'
     MongoClient.connect(
 //      'mongodb://localhost:27017/gre',
         'mongodb://bb:bb@ds127391.mlab.com:27391/gre',
         (err, db) => {
             if (err) throw err
 
-            db.collection('challenges').insertOne(
+            db.collection(challengeCollection).insertOne(
                 {
                     date: Date.now(),
                     challenges: req.body
@@ -54,32 +66,39 @@ app.post('/sync', (req, res) => {
                 (err, result) => {
                     if (err) throw err
 
-                    res.set('Access-Control-Allow-Origin', '*')
-                    res.json(result)
+                    res.json({'status': 'ok'})
                 }
             )
         }
     )
+    }
 });
 
-app.use('/challenges', (req, res) => {
-    console.log('/challenges')
+app.use('/challenge', (req, res) => {
+    console.log('/challenge')
+    console.log(req.query)
+    res.set('Access-Control-Allow-Origin', '*')
+    const collection = req.query['collection']
+    if (collection === undefined) {
+        res.json({'status': 'oops', 'msg': 'no collection'})
+    } else {
+    const challengeCollection = collection + '_challenges'
     MongoClient.connect(
 //      'mongodb://localhost:27017/gre',
         'mongodb://bb:bb@ds127391.mlab.com:27391/gre',
         (err, db) => {
             if (err) throw err
 
-            db.collection('challenges').find({}, {'_id': 0, 'date': 0}).sort({'date': -1}).limit(1).toArray(
+            db.collection(challengeCollection).find({}, {'_id': 0, 'date': 0}).sort({'date': -1}).limit(1).toArray(
                 (err, result) => {
                     if (err) throw err
 
-                    res.set('Access-Control-Allow-Origin', '*')
-                    res.json(result.length === 0 ? [] : result[0]['challenges'])
+                    res.json({'status': 'ok', 'challenges': (result.length === 0 ? [] : result[0]['challenges'])})
                 }
             )
         }
     )
+    }
 });
 
 app.use(

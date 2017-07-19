@@ -8,7 +8,7 @@ import {createLogger} from 'redux-logger'
 
 import reducer from './reducers'
 
-import BigBook from './containers/BigBook';
+import QuizChallenge from './containers/QuizChallenge'
 
 const middleware = [thunk]
 if (process.env.NODE_ENV !== 'production') {
@@ -22,7 +22,7 @@ const store = createStore(
 
 ReactDOM.render(
   <Provider store={store}>
-    <BigBook/>
+    <QuizChallenge collection='bb'/>
   </Provider>,
   document.getElementById('root')
 )
