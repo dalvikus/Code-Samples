@@ -24,6 +24,7 @@ const store = createStore(
 /*
 <script type="text/javascript">
 const conf = {
+    host: 'http://localhost:1337',
     collection: 'bb',
     setExpr: '10',
                 // '': use challenges
@@ -44,6 +45,7 @@ document.cookie = 'conf=' + encodeURIComponent(JSON.stringify(conf)) + '; expire
 </script>
  */
 const CONF_DEFAULT = {
+    host: 'http://localhost:1337',
     collection: 'bb',
     setExpr: '5-10',
                 // '': use challenges

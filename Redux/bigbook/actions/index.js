@@ -1,9 +1,4 @@
-import axios from 'axios'
 import {Answer} from '../Answer'
-
-export const FETCH_QUIZ_SET_URL = 'http://localhost:1337/quiz'
-export const FETCH_CHALLENGES_URL = 'http://localhost:1337/challenge'
-export const SYNC_CHALLENGES_URL = 'http://localhost:1337/sync'
 
 export const INIT_CHALLENGE = {
     indexToChallenges: -1,
@@ -71,7 +66,8 @@ const haveQuizSetReady = (data, collection) => dispatch => {
 export const fetchQuizSet = (conf) => dispatch => {
     dispatch(requestQuizSet())
 
-    const url = FETCH_QUIZ_SET_URL + '?collection=' + encodeURIComponent(conf.collection)
+    const url = conf.host + '/quiz?collection=' + encodeURIComponent(conf.collection)
+/*
     const request = axios.get(url)
     request.then(response => {
       if (response.status !== 200) {
@@ -81,6 +77,15 @@ export const fetchQuizSet = (conf) => dispatch => {
       } else {
         dispatch(haveQuizSetReady(response.data))
       }
+    })
+ */
+    const request = new Request(url)
+    fetch(request).then((resonse) => {
+        return resonse.json()
+    }).then((json) => {
+        dispatch(haveQuizSetReady(json))
+    }).catch((error) => {
+        console.error('ERR: ' + error.message)
     })
 }
 
@@ -114,7 +119,8 @@ export const fetchChallenges = (conf, quizSet) => dispatch => {
  */
   const setExpr = conf.setExpr.trim()
   if (setExpr === '') {
-    const url = FETCH_CHALLENGES_URL + '?collection=' + encodeURIComponent(conf.collection)
+    const url = conf.host + '/challenge?collection=' + encodeURIComponent(conf.collection)
+/*
     const request = axios.get(url)
     request.then(response => {
       if (response.status !== 200) {
@@ -124,6 +130,15 @@ export const fetchChallenges = (conf, quizSet) => dispatch => {
       } else {
         dispatch(haveChallengesReady(response.data))
       }
+    })
+ */
+    const request = new Request(url)
+    fetch(request).then((resonse) => {
+        return resonse.json()
+    }).then((json) => {
+        dispatch(haveChallengesReady(json))
+    }).catch((error) => {
+        console.error('ERR: ' + error.message)
     })
   } else {
     const serials = quizSet.map(e => e.serial).sort((a, b) => {return a - b})
@@ -301,12 +316,12 @@ export const chooseAnswer = (conf, quizSet, challenges, challenge, start, interv
         dispatch(haveChallengeReady(quizSet, challenges, indexToChallenges, answer))
     } else {
         if (conf.option.sync)
-            dispatch(haveSyncChallengesReady(conf.collection, challenges, answer))
+            dispatch(haveSyncChallengesReady(conf, challenges, answer))
         dispatch(syncChallenges(answer, INIT_CHALLENGE, true))
     }
 }
 
-export const haveSyncChallengesReady = (collection, challenges, answer) => dispatch => {
+export const haveSyncChallengesReady = (conf, challenges, answer) => dispatch => {
     const updatedChallenges = challenges.map((challenge, index) => {
         if (index === answer.index) {
             let answers = challenge.answers.slice(0, challenge.answers.length)
@@ -326,7 +341,7 @@ export const haveSyncChallengesReady = (collection, challenges, answer) => dispa
         headers: headers,
         body: JSON.stringify(updatedChallenges),
     }
-    const url = SYNC_CHALLENGES_URL + '?collection=' + encodeURIComponent(collection)
+    const url = conf.host + '/sync?collection=' + encodeURIComponent(conf.collection)
     const request = new Request(url, init)
     fetch(request).then((resonse) => {
         return resonse.json()
@@ -340,7 +355,7 @@ export const haveSyncChallengesReady = (collection, challenges, answer) => dispa
         console.error('ERR: ' + error.message)
     })
 /*
-    const request = axios.post(SYNC_CHALLENGES_URL, challenges)
+    const request = axios.post(url, challenges)
     request.then(response => {
       if (response.status !== 200) {
         console.error(response.status)
