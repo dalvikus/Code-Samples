@@ -2,31 +2,6 @@ import {REQUEST_QUIZ_SET, RECEIVE_QUIZ_SET} from "../actions"
 import {REQUEST_CHALLENGES, RECEIVE_CHALLENGES} from "../actions"
 import {INIT_CHALLENGE, SET_CHALLENGE, SYNC_CHALLENGES} from "../actions"
 
-/*
-    {
-        quizSet: {
-            isFetching: Boolean,
-            quizSet: // list of
-                     // {
-                     //     'serial': 1,
-                     //     'note': '1. GRE Big Book Test 1 Section 1 no.1',
-                     //     'question': 'Nonviolent demonstrations often create such tensions that a community that has constantly refused to ________ its injustices is forced to correct them: the injustices can no longer be ________.',
-                     //     'choices': ['acknowledge ... ignored', 'decrease ... verified', 'tolerate ... accepted', 'address ... eliminated', 'explain ... discussed']
-                     //     'answer': 0,
-                     // }
-                     //
-        },
-        challenges: // list of challenge
-                    //  {
-                    //      bigbook_id: ###,
-                    //      // list of Answers
-                    //  }
-                    //
-
-        challenge_id: # current id of challenge
-        challenge: # challenge
-    }
- */
 
 const INIT_STATE = {
     collection: '',

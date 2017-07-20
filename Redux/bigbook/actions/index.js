@@ -4,11 +4,11 @@ import {Answer} from '../Answer'
 export const FETCH_QUIZ_SET_URL = 'http://localhost:1337/quiz'
 export const FETCH_CHALLENGES_URL = 'http://localhost:1337/challenge'
 export const SYNC_CHALLENGES_URL = 'http://localhost:1337/sync'
-export const TIMEOUT = 3000    // in milliseconds; multiple of 1000
 
 export const INIT_CHALLENGE = {
     indexToChallenges: -1,
     quiz: {
+        'serial': 0,
         'question': '',
         'choices': [],
         'answer': -1
@@ -68,10 +68,10 @@ const haveQuizSetReady = (data, collection) => dispatch => {
         dispatch(requestChallenges(collection))
 }
 
-export const fetchQuizSet = (collection) => dispatch => {
+export const fetchQuizSet = (conf) => dispatch => {
     dispatch(requestQuizSet())
 
-    const url = FETCH_QUIZ_SET_URL + '?collection=' + encodeURIComponent(collection)
+    const url = FETCH_QUIZ_SET_URL + '?collection=' + encodeURIComponent(conf.collection)
     const request = axios.get(url)
     request.then(response => {
       if (response.status !== 200) {
@@ -100,7 +100,7 @@ const haveChallengesReady = (data) => dispatch => {
         , challengesStatus))
 }
 
-export const fetchChallenges = (collection) => dispatch => {
+export const fetchChallenges = (conf, quizSet) => dispatch => {
 /*
     let challenges = [
         {'serial': 377, 'answers': []},
@@ -112,7 +112,9 @@ export const fetchChallenges = (collection) => dispatch => {
     ]
     dispatch(haveChallengesReady({'status': 'ok', 'challenges': challenges}))
  */
-    const url = FETCH_CHALLENGES_URL + '?collection=' + encodeURIComponent(collection)
+  const setExpr = conf.setExpr.trim()
+  if (setExpr === '') {
+    const url = FETCH_CHALLENGES_URL + '?collection=' + encodeURIComponent(conf.collection)
     const request = axios.get(url)
     request.then(response => {
       if (response.status !== 200) {
@@ -123,6 +125,77 @@ export const fetchChallenges = (collection) => dispatch => {
         dispatch(haveChallengesReady(response.data))
       }
     })
+  } else {
+    const serials = quizSet.map(e => e.serial).sort((a, b) => {return a - b})
+    let serialsSet = new Set()
+    if (setExpr === '*') {
+        serialsSet = new Set(serials)
+    } else {
+        setExpr.split(',').forEach((e) => {
+            const a = e.trim().split('-').map(e => e.trim())
+            if (a.length > 2) {
+                console.error('"' + e + '": invalid range expression')
+            } else {
+                if (a.length === 2) {
+                    if (a[0] === '' && a[1] === '') {
+                        for (let i = 0; i < serials.length; ++i)
+                            serialsSet.add(serials[i])
+                    } else if (a[0] === '') {
+                        const n = parseInt(a[1], 10)
+                        if (isNaN(n)) {
+                            console.error('"' + a[1] + '": not a number')
+                        } else {
+                            const i2 = serials.indexOf(n)
+                            for (let i = 0; i <= i2; ++i)
+                                serialsSet.add(serials[i])
+                        }
+                    } else if (a[1] === '') {
+                        const n = parseInt(a[0], 10)
+                        if (isNaN(n)) {
+                            console.error('"' + a[0] + '": not a number')
+                        } else {
+                            const i1 = serials.indexOf(n)
+                            if (i1 >= 0) {
+                                for (let i = i1; i < serials.length; ++i)
+                                    serialsSet.add(serials[i])
+                            }
+                        }
+                    } else {
+                        const n1 = parseInt(a[0], 10)
+                        if (isNaN(n1)) {
+                            console.error('"' + a[0] + '": not a number')
+                        } else {
+                            const i1 = serials.indexOf(n1)
+                            if (i1 >= 0) {
+                                const n2 = parseInt(a[1], 10)
+                                if (isNaN(n2)) {
+                                    console.error('"' + a[1] + '": not a number')
+                                } else {
+                                    const i2 = serials.indexOf(n2)
+                                    for (let i = i1; i <= i2; ++i)
+                                        serialsSet.add(serials[i])
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    const n = parseInt(a[0], 10)
+                    if (isNaN(n)) {
+                        console.error('"' + a[0] + '": not a number')
+                    } else {
+                        serialsSet.add(n)
+                    }
+                }
+            }
+        })
+    }
+    // serialsSet
+    let challenges = []
+    serialsSet.forEach(serial => {
+        challenges.push({'serial': serial, 'answers': []})
+    })
+    dispatch(haveChallengesReady({'status': 'ok', 'challenges': challenges}))
+  }
 }
 
 // The maximum is exclusive and the minimum is inclusive
@@ -157,7 +230,7 @@ export const haveChallengeReady = (quizSet, challenges, indexToChallenges, answe
         throw new RangeError('indexToChallenges(' + indexToChallenges + '): out of range; # of challenges = ' + challenges.length)
 
     let quiz = quizSet[challenges[indexToChallenges].serial - 1]
-    console.log(quiz.choices[quiz.answer])
+////console.log(quiz.choices[quiz.answer])
 
     let a = quiz.choices.map((e, index) => index)
     a = shuffle(a)
@@ -165,11 +238,12 @@ export const haveChallengeReady = (quizSet, challenges, indexToChallenges, answe
     for (let i = 0; i < a.length; ++i)
         choices.push(quiz.choices[a[i]])
     let ai = a.indexOf(quiz.answer)
-    console.log(choices[ai])
+////console.log(choices[ai])
 
     let challenge = {
         indexToChallenges,
         quiz: {
+            serial: quiz.serial,
             question: quiz.question,
             choices: choices,
             answer: ai
@@ -181,7 +255,7 @@ export const haveChallengeReady = (quizSet, challenges, indexToChallenges, answe
         dispatch(syncChallenges(answer, challenge, false))
 }
 
-export const chooseAnswer = (collection, quizSet, challenges, challenge, start, intervalId) => dispatch => {
+export const chooseAnswer = (conf, quizSet, challenges, challenge, start, intervalId) => dispatch => {
     document.getElementById('bar').style.width = '0%'
 
     window.clearInterval(intervalId)
@@ -197,7 +271,6 @@ export const chooseAnswer = (collection, quizSet, challenges, challenge, start, 
             break
         }
     }
-    console.log('confidenceLevel = ' + confidenceLevel)
 
     const choices = document.getElementsByName('choice')
     let selected = -1
@@ -220,14 +293,16 @@ export const chooseAnswer = (collection, quizSet, challenges, challenge, start, 
     let indexToChallenges = challenge.indexToChallenges
     let answer = {
         index: indexToChallenges,
-        answer: new Answer(TIMEOUT / 1000 /* in seconds */, start, end, result, selectedAnswer, confidenceLevel)
+        answer: new Answer(conf.option.timeout /* in seconds */, start, end, result, selectedAnswer, confidenceLevel)
     }
 
     ++indexToChallenges
     if (indexToChallenges !== challenges.length) {
         dispatch(haveChallengeReady(quizSet, challenges, indexToChallenges, answer))
     } else {
-        dispatch(haveSyncChallengesReady(collection, challenges, answer))
+        if (conf.option.sync)
+            dispatch(haveSyncChallengesReady(conf.collection, challenges, answer))
+        dispatch(syncChallenges(answer, INIT_CHALLENGE, true))
     }
 }
 
@@ -261,7 +336,6 @@ export const haveSyncChallengesReady = (collection, challenges, answer) => dispa
             console.error('ERR: failed to sync')
         else
             console.log('INFO: sync done successfully')
-        dispatch(syncChallenges(answer, INIT_CHALLENGE, true))
     }).catch((error) => {
         console.error('ERR: ' + error.message)
     })

@@ -8,6 +8,7 @@ import {createLogger} from 'redux-logger'
 
 import reducer from './reducers'
 
+import {loadCookie} from "./Cookies";
 import QuizChallenge from './containers/QuizChallenge'
 
 const middleware = [thunk]
@@ -20,9 +21,49 @@ const store = createStore(
   applyMiddleware(...middleware)
 )
 
+/*
+<script type="text/javascript">
+const conf = {
+    collection: 'bb',
+    setExpr: '10',
+                // '': use challenges
+                // "*", "...".split(","), "...".split("-")
+                //  "*"
+                //  "3-4"
+                //  "3-"
+                //  "-4"
+                //  "2, 4"
+                //  "2, 4, 10-17"
+    option: {
+        timeout: 30,
+        sync: false
+    }
+}
+document.cookie = 'conf=' + encodeURIComponent(JSON.stringify(conf)) + '; expires=Thu, 18 Dec 2023 12:00:00 UTC; path=/'
+// saveCookie('conf', JSON.stringify(conf))
+</script>
+ */
+const CONF_DEFAULT = {
+    collection: 'bb',
+    setExpr: '5-10',
+                // '': use challenges
+                // "*", "...".split(","), "...".split("-")
+                //  "*"
+                //  "3-4"
+                //  "3-"
+                //  "-4"
+                //  "2, 4"
+                //  "2, 4, 10-17"
+    option: {
+        timeout: 30,
+        sync: false
+    }
+}
+const confStr = loadCookie('conf')
+
 ReactDOM.render(
   <Provider store={store}>
-    <QuizChallenge collection='bb'/>
+    <QuizChallenge conf={confStr === '' ? CONF_DEFAULT : JSON.parse(confStr)}/>
   </Provider>,
   document.getElementById('root')
 )

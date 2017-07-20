@@ -4,6 +4,13 @@ body {
   font-family: sans-serif;
 }
 
+#serial {
+  display: inline;
+}
+#question {
+  display: inline;
+}
+
 #progress {
   width: 50%;
   background-color: #ddd;

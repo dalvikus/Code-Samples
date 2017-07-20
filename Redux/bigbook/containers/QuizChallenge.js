@@ -2,15 +2,16 @@ import React from 'react'
 import {connect} from 'react-redux'
 import '../index.css'
 
-import {TIMEOUT} from '../actions'
 import {fetchQuizSet, fetchChallenges, haveChallengeReady, chooseAnswer} from '../actions'
 
 var start
 var intervalId = -1
 
-const SetData = ({isQuizSetFetching, quizSet, quizSetStatus, areChallengesFetching, challenges, challengesStatus}) => {
+const SetData = ({conf, isQuizSetFetching, quizSet, quizSetStatus, areChallengesFetching, challenges, challengesStatus}) => {
   return (
-    isQuizSetFetching
+    <div>
+    <h1>Collection: {conf.collection}</h1>
+    {isQuizSetFetching
       ? (
           <h2>fetch quiz set...</h2>
         )
@@ -32,16 +33,18 @@ const SetData = ({isQuizSetFetching, quizSet, quizSetStatus, areChallengesFetchi
           }
           </div>
         )
+    }
+    </div>
   )
 }
 
-const Challenge = ({dispatch, collection, quizSet, challenges, challenge}) => {
+const Challenge = ({dispatch, conf, quizSet, challenges, challenge}) => {
     const quiz = challenge.quiz
     return (
       <div>
-        <div>{quiz.question}</div>
+        <div className="question"><div id="serial">{quiz.serial}. </div><div id="question">{quiz.question}</div></div>
         {quiz.choices.map((choice, index) => (
-          <div key={index}>
+          <div id="choices" key={index}>
             <input type='radio' name='choice' value={index}/>{choice}
           </div>
         ))}
@@ -49,16 +52,16 @@ const Challenge = ({dispatch, collection, quizSet, challenges, challenge}) => {
         <div id="progress">
           <div id="bar"></div>
         </div>
-        <div id="confidence">Confidence
+        <div id="confidence">Confidence:
           <input type='radio' name='confidence-level' value='1' />
           <input type='radio' name='confidence-level' value='2' />
           <input type='radio' name='confidence-level' value='3' />
           <input type='radio' name='confidence-level' value='4' />
           <input type='radio' name='confidence-level' value='5' />
         </div>
-        <button onClick={(e) => {
+        <button id="next" onClick={(e) => {
           e.preventDefault()
-          dispatch(chooseAnswer(collection, quizSet, challenges, challenge, start, intervalId))
+          dispatch(chooseAnswer(conf, quizSet, challenges, challenge, start, intervalId))
         }}>next</button>
         </div>
       </div>
@@ -68,18 +71,18 @@ const Challenge = ({dispatch, collection, quizSet, challenges, challenge}) => {
 class QuizChallenge extends React.Component {
 
     componentWillReceiveProps(nextProps) {
-        const {dispatch, areChallengesFetching} = this.props
+        const {conf, dispatch, quizSet, areChallengesFetching} = this.props
         if (nextProps.areChallengesFetching && areChallengesFetching !== nextProps.areChallengesFetching) {
-            dispatch(fetchChallenges(this.props.collection))
+            dispatch(fetchChallenges(conf, quizSet))
         }
     }
 
     componentDidMount() {
-        this.props.dispatch(fetchQuizSet(this.props.collection))
+        this.props.dispatch(fetchQuizSet(this.props.conf))
     }
 
     componentDidUpdate() {
-        const {dispatch, isQuizSetFetching, quizSet, challenges, challenge} = this.props
+        const {dispatch, conf, isQuizSetFetching, quizSet, challenges, challenge} = this.props
         const bar = document.getElementById('bar')
         const confidenceLevels = document.getElementsByName('confidence-level')
         if (!isQuizSetFetching && quizSet.length > 0 && challenges.length > 0 && challenge.indexToChallenges >= 0 && challenge.indexToChallenges < challenges.length) {
@@ -96,16 +99,16 @@ class QuizChallenge extends React.Component {
                 bar.style.width = n + '%'
 
                 if (n === 100) {
-                    dispatch(chooseAnswer(quizSet, challenges, challenge, start, intervalId))
+                    dispatch(chooseAnswer(conf, quizSet, challenges, challenge, start, intervalId))
                 }
-            }, TIMEOUT / 100 /* in percents */)
+            }, conf.option.timeout * 10 /* in percents */)
         }
     }
 
     render() {
         const {
+            conf,
             dispatch,
-            collection,
             isQuizSetFetching, quizSet, quizSetStatus,
             areChallengesFetching, challenges, challengesStatus,
             challenge
@@ -122,6 +125,8 @@ class QuizChallenge extends React.Component {
               !allSet
                 ? (
                     <SetData
+                      conf={conf}
+                      collection={conf.collection}
                       isQuizSetFetching={isQuizSetFetching}
                       quizSet={quizSet}
                       quizSetStatus={quizSetStatus}
@@ -142,7 +147,7 @@ class QuizChallenge extends React.Component {
                       : (
                           <Challenge
                             dispatch={dispatch}
-                            collection={collection}
+                            conf={conf}
                             quizSet={quizSet}
                             challenges={challenges}
                             challenge={challenge}

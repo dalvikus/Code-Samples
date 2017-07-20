@@ -14,7 +14,7 @@ app.use('/quiz', (req, res) => {
     console.log(req.query)
     res.set('Access-Control-Allow-Origin', '*')
     const collection = req.query['collection']
-    if (collection === undefined) {
+    if (collection === undefined || collection === '') {
         res.json({'status': 'oops', 'msg': 'no collection'})
     } else {
     MongoClient.connect(
@@ -48,7 +48,7 @@ app.post('/sync', (req, res) => {
     console.log(req.query)
     res.set('Access-Control-Allow-Origin', '*')
     const collection = req.query['collection']
-    if (collection === undefined) {
+    if (collection === undefined || collection === '') {
         res.json({'status': 'oops', 'msg': 'no collection'})
     } else {
     const challengeCollection = collection + '_challenges'
@@ -79,7 +79,7 @@ app.use('/challenge', (req, res) => {
     console.log(req.query)
     res.set('Access-Control-Allow-Origin', '*')
     const collection = req.query['collection']
-    if (collection === undefined) {
+    if (collection === undefined || collection === '') {
         res.json({'status': 'oops', 'msg': 'no collection'})
     } else {
     const challengeCollection = collection + '_challenges'
