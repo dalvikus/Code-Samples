@@ -2,7 +2,7 @@ import React from 'react'
 import {connect} from 'react-redux'
 import '../index.css'
 
-import {fetchQuizSet, fetchChallenges, haveChallengeReady, chooseAnswer} from '../actions'
+import {fetchImage, fetchQuizSet, fetchChallenges, haveChallengeReady, chooseAnswer} from '../actions'
 
 var start
 var intervalId = -1
@@ -78,6 +78,7 @@ class QuizChallenge extends React.Component {
     }
 
     componentDidMount() {
+        this.props.dispatch(fetchImage(this.props.conf))
         this.props.dispatch(fetchQuizSet(this.props.conf))
     }
 

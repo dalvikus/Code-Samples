@@ -45,7 +45,7 @@ document.cookie = 'conf=' + encodeURIComponent(JSON.stringify(conf)) + '; expire
 </script>
  */
 const CONF_DEFAULT = {
-    host: 'http://localhost:1337',
+    host: 'http://172.30.1.16:1337',
     collection: 'bb',
     setExpr: '5-10',
                 // '': use challenges

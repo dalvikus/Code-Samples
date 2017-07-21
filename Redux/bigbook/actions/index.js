@@ -63,6 +63,45 @@ const haveQuizSetReady = (data, collection) => dispatch => {
         dispatch(requestChallenges(collection))
 }
 
+export const fetchImage = (conf) => dispatch => {
+    const url = conf.host + '/image'
+    const request = new Request(url)
+    fetch(request).then((resonse) => {
+        return resonse.json()
+    }).then((data) => {
+//console.log(data)
+        const failure = data['status'] === undefined || data['status'] !== 'ok'
+        if (failure) {
+            console.error('ERR: "' + url + '"')
+        } else {
+            const img = data['result'][0]
+//document.getElementById('image').src = 'data:' + img['type'] + ';base64,' + img['data']
+const newDiv = document.createElement("div");
+const newContent = document.createTextNode("Hi there and greetings!");
+  newDiv.appendChild(newContent); //add the text node to the newly created div.
+
+  // add the newly created element and its content into the DOM
+const imageDiv = document.getElementById("image-div");
+//document.body.insertBefore(newDiv, imageDiv);
+imageDiv.appendChild(newDiv)
+const imageTag = document.createElement('img')
+imageTag.id = 'image'
+imageTag.src = 'data:' + img['type'] + ';base64,' + img['data']
+console.log(imageTag)
+console.log(imageTag.src.height)
+console.log(imageTag.src.width)
+console.log(imageTag.clientHeight)
+console.log(imageTag.src.width)
+imageDiv.appendChild(imageTag)
+const image = document.getElementById('image')
+console.log(image.clientHeight)
+console.log(image.clientWidth)
+        }
+    }).catch((error) => {
+        console.error('ERR: ' + error.message)
+    })
+}
+
 export const fetchQuizSet = (conf) => dispatch => {
     dispatch(requestQuizSet())
 

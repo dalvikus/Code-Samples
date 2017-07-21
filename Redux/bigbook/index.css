@@ -4,6 +4,10 @@ body {
   font-family: sans-serif;
 }
 
+#image {
+    height: 200px;
+}
+
 #serial {
   display: inline;
 }
