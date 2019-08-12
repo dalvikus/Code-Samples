@@ -1,12 +1,12 @@
 /*
  * Copyright 1993-2009 NVIDIA Corporation.  All rights reserved.
  *
- * NVIDIA Corporation and its licensors retain all intellectual property and 
- * proprietary rights in and to this software and related documentation and 
- * any modifications thereto.  Any use, reproduction, disclosure, or distribution 
- * of this software and related documentation without an express license 
+ * NVIDIA Corporation and its licensors retain all intellectual property and
+ * proprietary rights in and to this software and related documentation and
+ * any modifications thereto.  Any use, reproduction, disclosure, or distribution
+ * of this software and related documentation without an express license
  * agreement from NVIDIA Corporation is strictly prohibited.
- * 
+ *
  */
 
 /* Matrix multiplication: C = A * B.
@@ -234,7 +234,7 @@ runTest(int argc, char** argv)
     // initialize host memory
     randomInit(h_A, size_A);
     randomInit(h_B, size_B);
-    
+
     // allocate device memory
     float* d_A;
     cudaMalloc((void**) &d_A, mem_size_A);
@@ -253,7 +253,7 @@ runTest(int argc, char** argv)
 #if CHECK_RESULT == 1
     // create and start timer
     cudaEventCreate(&start);
-    cudaEventRecord(start, NULL); 
+    cudaEventRecord(start, NULL);
     // compute reference solution
     float* reference = (float*) malloc(mem_size_C);
     computeGold(reference, h_A, h_B, HA, WA, WB);
@@ -268,6 +268,7 @@ runTest(int argc, char** argv)
 
     dim3 threads,grid;
 
+#if 0
     /****************************************************/
     /*  CUDA SDK example                                */
     /****************************************************/
@@ -374,7 +375,7 @@ runTest(int argc, char** argv)
 
     // create and start timer
     cudaEventCreate(&start);
-    cudaEventRecord(start, NULL); 
+    cudaEventRecord(start, NULL);
     // setup execution parameters
     threads = dim3(BLOCK_SIZE, BLOCK_SIZE);
     grid = dim3(WC / threads.x, HC / threads.y);
@@ -406,7 +407,7 @@ runTest(int argc, char** argv)
 
     // create and start timer
     cudaEventCreate(&start);
-    cudaEventRecord(start, NULL); 
+    cudaEventRecord(start, NULL);
     // setup execution parameters
     threads = dim3(BLOCK_SIZE, BLOCK_SIZE);
     grid = dim3(WC / threads.x, HC / threads.y);
@@ -438,7 +439,7 @@ runTest(int argc, char** argv)
 
     // create and start timer
     cudaEventCreate(&start);
-    cudaEventRecord(start, NULL); 
+    cudaEventRecord(start, NULL);
     // setup execution parameters
     threads = dim3(BLOCK_SIZE, BLOCK_SIZE);
     grid = dim3(WC / threads.x, HC / threads.y);
@@ -469,7 +470,7 @@ runTest(int argc, char** argv)
 
     // create and start timer
     cudaEventCreate(&start);
-    cudaEventRecord(start, NULL); 
+    cudaEventRecord(start, NULL);
     // setup execution parameters
     threads = dim3(BLOCK_SIZE, VECTOR_SIZE);
     grid = dim3(WC / (BLOCK_SIZE*VECTOR_SIZE), HC / BLOCK_SIZE);
@@ -502,7 +503,7 @@ runTest(int argc, char** argv)
 
     // create and start timer
     cudaEventCreate(&start);
-    cudaEventRecord(start, NULL); 
+    cudaEventRecord(start, NULL);
     // setup execution parameters
     threads = dim3(BLOCK_SIZE, VECTOR_SIZE);
     grid = dim3(WC / (BLOCK_SIZE*VECTOR_SIZE), HC / BLOCK_SIZE);
@@ -534,7 +535,7 @@ runTest(int argc, char** argv)
 
     // create and start timer
     cudaEventCreate(&start);
-    cudaEventRecord(start, NULL); 
+    cudaEventRecord(start, NULL);
     // setup execution parameters
     threads = dim3(BLOCK_SIZE, VECTOR_SIZE);
     grid = dim3(WC / (BLOCK_SIZE*VECTOR_SIZE), HC / BLOCK_SIZE);
@@ -558,6 +559,120 @@ runTest(int argc, char** argv)
 #if CHECK_RESULT == 1
     // check result
     printDiff(reference, h_C, WC, HC);
+#endif
+#endif
+
+/**
+    256 * 512 * 384 / 243.45 us
+                      254.58 us
+                      240.21 us
+
+    640 * 480 * 320 / 190.64 us
+ */
+#define NUM_ITER 32
+    printf("A[%d][%d] * B[%d][%d] = C[%d][%d]\n", HA, WA, WA, WB, HA, WB);
+
+    // setup execution parameters
+    threads = dim3(BLOCK_SIZE, VECTOR_SIZE);
+    grid = dim3(WC / (BLOCK_SIZE*VECTOR_SIZE), HC / BLOCK_SIZE);
+
+#if 0
+    /****************************************************/
+    /*  Threads perform computation optimizatin         */
+    /****************************************************/
+    // warm up
+    matrixMul_compOpt<<< grid, threads >>>(d_C, d_A, d_B, WA, WB);
+
+    // create and start timer
+    cudaEventCreate(&start);
+    cudaEventRecord(start, NULL);
+    // copy host memory to device
+    cudaMemcpy(d_A, h_A, mem_size_A, cudaMemcpyHostToDevice);
+    cudaMemcpy(d_B, h_B, mem_size_B, cudaMemcpyHostToDevice);
+    for (int i = 0; i < NUM_ITER; ++i) {
+        matrixMul_compOpt<<< grid, threads >>>(d_C, d_A, d_B, WA, WB);
+    }
+    // copy result from device to host
+    cudaMemcpy(h_C, d_C, mem_size_C, cudaMemcpyDeviceToHost);
+    // stop and destroy timer
+    cudaEventCreate(&stop);
+    cudaEventRecord(stop, NULL);
+    cudaEventSynchronize(stop);
+    cudaEventElapsedTime(&msecTotal, start, stop);
+    printf("Threads perform computation optimization GPU\n");
+    printf("Processing time: %f (ms), GFLOPS: %f \n", (msecTotal/NUM_ITER), flop / (msecTotal/NUM_ITER) / 1e+6);
+#if CHECK_RESULT == 1
+    // check result
+    printDiff(reference, h_C, WC, HC);
+#endif
+#endif
+
+#if 0
+    /****************************************************/
+    /*  Loop Unrolling                                  */
+    /****************************************************/
+    // warm up
+    matrixMul_unroll<<< grid, threads >>>(d_C, d_A, d_B, WA, WB);
+
+    // create and start timer
+    cudaEventCreate(&start);
+    cudaEventRecord(start, NULL);
+    // copy host memory to device
+    cudaMemcpy(d_A, h_A, mem_size_A,
+                              cudaMemcpyHostToDevice);
+    cudaMemcpy(d_B, h_B, mem_size_B,
+                              cudaMemcpyHostToDevice);
+    for (int i = 0; i < NUM_ITER; ++i) {
+        matrixMul_unroll<<< grid, threads >>>(d_C, d_A, d_B, WA, WB);
+    }
+    // copy result from device to host
+    cudaMemcpy(h_C, d_C, mem_size_C,
+                              cudaMemcpyDeviceToHost);
+    // stop and destroy timer
+    cudaEventCreate(&stop);
+    cudaEventRecord(stop, NULL);
+    cudaEventSynchronize(stop);
+    cudaEventElapsedTime(&msecTotal, start, stop);
+    printf("Loop unrolling GPU\n");
+    printf("Processing time: %f (ms), GFLOPS: %f \n", (msecTotal/NUM_ITER), flop / (msecTotal/NUM_ITER) / 1e+6);
+#if CHECK_RESULT == 1
+    // check result
+    printDiff(reference, h_C, WC, HC);
+#endif
+#endif
+
+#if 1
+    /****************************************************/
+    /*  Prefetching                                     */
+    /****************************************************/
+    // warm up
+    matrixMul_prefetch<<< grid, threads >>>(d_C, d_A, d_B, WA, WB);
+
+    // create and start timer
+    cudaEventCreate(&start);
+    cudaEventRecord(start, NULL);
+    // copy host memory to device
+    cudaMemcpy(d_A, h_A, mem_size_A,
+                              cudaMemcpyHostToDevice);
+    cudaMemcpy(d_B, h_B, mem_size_B,
+                              cudaMemcpyHostToDevice);
+    for (int i = 0; i < NUM_ITER; ++i) {
+        matrixMul_prefetch<<< grid, threads >>>(d_C, d_A, d_B, WA, WB);
+    }
+    // copy result from device to host
+    cudaMemcpy(h_C, d_C, mem_size_C,
+                              cudaMemcpyDeviceToHost);
+    // stop and destroy timer
+    cudaEventCreate(&stop);
+    cudaEventRecord(stop, NULL);
+    cudaEventSynchronize(stop);
+    cudaEventElapsedTime(&msecTotal, start, stop);
+    printf("Prefetching GPU\n");
+    printf("Processing time: %f (ms), GFLOPS: %f \n", (msecTotal/NUM_ITER), flop / (msecTotal/NUM_ITER) / 1e+6);
+#if CHECK_RESULT == 1
+    // check result
+    printDiff(reference, h_C, WC, HC);
+#endif
 #endif
 
     /****************************************************/
