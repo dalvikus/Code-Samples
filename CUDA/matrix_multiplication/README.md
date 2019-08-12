@@ -24,5 +24,15 @@ In matrix multiplication example, we can skip
 * [Finite Difference Methods in CUDA C/C++, Part 1](https://devblogs.nvidia.com/finite-difference-methods-cuda-cc-part-1/) and [Finite Difference Methods in CUDA C++, Part 2
 ](https://devblogs.nvidia.com/finite-difference-methods-cuda-c-part-2/) because it is another application, which should be studied later.
 
-# Comments on [Ref2]
-It is not clear what are differences in "Tiling", "Memory coalescing" and "Avoiding memory bank conflicts". Comments are added in seperate files("Comments on Matrix Multiplication in CUDA.docx", "Comments on Matrix Multiplication in CUDA.pdf"). "Computation Optimization" should be read along with, for example, [Ref5].
+# Learn CUDA
+## Comments on [Ref2]
+It is not clear what are differences in "Tiling", "Memory coalescing" and "Avoiding memory bank conflicts". Comments are added in seperate files("Comments on Matrix Multiplication in CUDA.docx", "Comments on Matrix Multiplication in CUDA.pdf") with another called _Way 4_.
+
+"Computation Optimization" should be read along with, for example, [Ref5].
+
+## Performance on [Ref2]
+All tests in [Ref2] are done on "GeForce GTX 960M" with compute capability 5.0, but the results are not consistent with ones in [Ref2].
+### Steps
+[cuda.zip] from [Ref2] are downloaded and modified as we proceed to the tests. They are copied under `cuda`. For details, use `git history`.
+### Compared to CUBLAS
+CUBLAS run faster than [Ref2], "Computation Optimization" by 3 times! Measure is done by `nvprof` only for Compute (kernels).
