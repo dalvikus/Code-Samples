@@ -40,3 +40,6 @@ CUBLAS run faster than [Ref2], "Computation Optimization" by 3 times! Measure is
 |:----:|:----:|:----:|:----:|
 |CUBLAS|640 x 480 x 320|5.9|16.7|
 |Ref2|640 x 512 x 384|21.5|5.9|
+
+## Optimization
+Optimization should be done!
