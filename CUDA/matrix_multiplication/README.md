@@ -35,12 +35,18 @@ All tests in [Ref2] are done on "GeForce GTX 960M" with compute capability 5.0, 
 ### Steps
 [cuda.zip] from [Ref2] are downloaded and modified as we proceed to the tests. They are copied under `cuda`. For details, use `git history`.
 ### Compared to CUBLAS
-CUBLAS run faster than [Ref2], "Computation Optimization" by 3 times! Measure is done by `nvprof` only for Compute (kernels).
+CUBLAS run faster than [Ref2], "Computation Optimization" by about 2.5 times! Measure is done by `nvprof` only for Compute (kernels).
 
-||H x K x W|time (ms)|H x K x W / time / 10**6|
+    512 * 1024 * 768 / 1.96 ms
+    256 * 512 * 384 / 243.45 us
+
+    640 * 480 * 320 / 190.64 us
+||H x K x W|time (ms)|H x K x W / time / 10**9|
 |:----:|:----:|:----:|:----:|
-|CUBLAS|640 x 480 x 320|5.9|16.7|
-|Ref2|640 x 512 x 384|21.5|5.9|
+|CUBLAS|640 x 480 x 320|0.19|0.52|
+|Ref2|256 x 512 x 384|0.24|0.21|
+
+0.52/0.21 = 2.47
 
 ## Optimization
 Optimization should be done!
