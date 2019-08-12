@@ -1,7 +1,7 @@
 Primary goal is to learn CUDA programming. A matrix multiplication is an example. Once we understand CUDA programming itself, the next goal is to get the same performance as in CUBLAS. Here are references.
 
 - [Ref1] CUDA C Programming Guide; v10.1, May 2019
-- [Ref2] http://www.es.ele.tue.nl/~mwijtvliet/5KK73/?page=mmcuda; matrix multiplication comparision
+- [Ref2] [Matrix multiplication in CUDA](http://www.es.ele.tue.nl/~mwijtvliet/5KK73/?page=mmcuda); matrix multiplication comparision; at the very end "Example written by Zhenyu Ye (z.ye@tue.nl)"
 - [Ref3] A series of CUDA programming by Mark Harris
     - [An Easy Introduction to CUDA C and C++](https://devblogs.nvidia.com/easy-introduction-cuda-c-and-c/)
         - [An Even Easier Introduction to CUDA](https://devblogs.nvidia.com/even-easier-introduction-cuda/)
