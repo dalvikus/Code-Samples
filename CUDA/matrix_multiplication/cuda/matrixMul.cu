@@ -37,6 +37,7 @@
 #include <matrixMul_tiling.cuh>
 #include <matrixMul_coalescing.cuh>
 #include <matrixMul_noBankConflict.cuh>
+#include <matrixMul_way4.cuh>
 #include <matrixMul_compOpt.cuh>
 #include <matrixMul_unroll.cuh>
 #include <matrixMul_prefetch.cuh>
@@ -431,6 +432,37 @@ runTest(int argc, char** argv)
     printDiff(reference, h_C, WC, HC);
 #endif
 
+    /****************************************************/
+    /*  another way; "Way 4" in "Comments on Matrix Multiplication in CUDA" */
+    /****************************************************/
+
+    // create and start timer
+    cudaEventCreate(&start);
+    cudaEventRecord(start, NULL); 
+    // setup execution parameters
+    threads = dim3(BLOCK_SIZE, BLOCK_SIZE);
+    grid = dim3(WC / threads.x, HC / threads.y);
+    // copy host memory to device
+    cudaMemcpy(d_A, h_A, mem_size_A,
+                              cudaMemcpyHostToDevice);
+    cudaMemcpy(d_B, h_B, mem_size_B,
+                              cudaMemcpyHostToDevice);
+    // naive implementation
+    matrixMul_way4<<< grid, threads >>>(d_C, d_A, d_B, WA, WB);
+    // copy result from device to host
+    cudaMemcpy(h_C, d_C, mem_size_C,
+                              cudaMemcpyDeviceToHost);
+    // stop and destroy timer
+    cudaEventCreate(&stop);
+    cudaEventRecord(stop, NULL);
+    cudaEventSynchronize(stop);
+    cudaEventElapsedTime(&msecTotal, start, stop);
+    printf("\"Way 4\" in \"Comments on Matrix Multiplication in CUDA\"\n");
+    printf("Processing time: %f (ms), GFLOPS: %f \n", msecTotal, flop / msecTotal/ 1e+6);
+#if CHECK_RESULT == 1
+    // check result
+    printDiff(reference, h_C, WC, HC);
+#endif
     /****************************************************/
     /*  Threads perform computation optimizatin         */
     /****************************************************/
