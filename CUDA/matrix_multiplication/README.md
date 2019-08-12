@@ -17,6 +17,7 @@ Primary goal is to learn CUDA programming. A matrix multiplication is an example
 ](https://devblogs.nvidia.com/finite-difference-methods-cuda-c-part-2/)
 - [Ref4] [matrixMulCUBLAS - Matrix Multiplication (CUBLAS)](https://docs.nvidia.com/cuda/cuda-samples/index.html#matrix-multiplication--cublas-); after installation of CUDA Toolkit, we can find it under ```samples/0_Simple/matrixMulCUBLAS/```
 - [Ref5] [Benchmarking GPUs to Tune Dense Linear Algebra](https://dl.acm.org/citation.cfm?id=1413402) by Vasily Volkov and James W. Demmel
+- [Ref6] [SGEMM](https://github.com/NervanaSystems/maxas/wiki/SGEMM); it would be helpful for optimization if read along with [Ref5]
 
 In matrix multiplication example, we can skip
 * [How to Overlap Data Transfers in CUDA C/C++](https://devblogs.nvidia.com/how-overlap-data-transfers-cuda-cc/) because it is related to multiple computes.
