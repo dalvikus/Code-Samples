@@ -471,8 +471,8 @@ runTest(int argc, char** argv)
     cudaEventCreate(&start);
     cudaEventRecord(start, NULL); 
     // setup execution parameters
-    threads = dim3(BLOCK_SIZE, 4);
-    grid = dim3(WC / (BLOCK_SIZE*4), HC / BLOCK_SIZE);
+    threads = dim3(BLOCK_SIZE, VECTOR_SIZE);
+    grid = dim3(WC / (BLOCK_SIZE*VECTOR_SIZE), HC / BLOCK_SIZE);
     // copy host memory to device
     cudaMemcpy(d_A, h_A, mem_size_A,
                               cudaMemcpyHostToDevice);
@@ -504,8 +504,8 @@ runTest(int argc, char** argv)
     cudaEventCreate(&start);
     cudaEventRecord(start, NULL); 
     // setup execution parameters
-    threads = dim3(BLOCK_SIZE, 4);
-    grid = dim3(WC / (BLOCK_SIZE*4), HC / BLOCK_SIZE);
+    threads = dim3(BLOCK_SIZE, VECTOR_SIZE);
+    grid = dim3(WC / (BLOCK_SIZE*VECTOR_SIZE), HC / BLOCK_SIZE);
     // copy host memory to device
     cudaMemcpy(d_A, h_A, mem_size_A,
                               cudaMemcpyHostToDevice);
@@ -536,8 +536,8 @@ runTest(int argc, char** argv)
     cudaEventCreate(&start);
     cudaEventRecord(start, NULL); 
     // setup execution parameters
-    threads = dim3(BLOCK_SIZE, 4);
-    grid = dim3(WC / (BLOCK_SIZE*4), HC / BLOCK_SIZE);
+    threads = dim3(BLOCK_SIZE, VECTOR_SIZE);
+    grid = dim3(WC / (BLOCK_SIZE*VECTOR_SIZE), HC / BLOCK_SIZE);
     // copy host memory to device
     cudaMemcpy(d_A, h_A, mem_size_A,
                               cudaMemcpyHostToDevice);

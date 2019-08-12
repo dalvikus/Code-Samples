@@ -46,7 +46,13 @@ matrixMul_unroll( float* C, float* A, float* B, int wA, int wB)
     // store the sub-matrix of B
     // __shared__ float Bs[BLOCK_SIZE][BLOCK_SIZE];
 
+#if BLOCK_SIZE == 32
+    float cv[BLOCK_SIZE] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+#elif BLOCK_SIZE == 16
     float cv[BLOCK_SIZE] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+#else
+    #error BLOCK_SIZE must be 16 or 32
+#endif
 
     // Index of the first sub-matrix of A processed by the block
     int aBegin = wA * BLOCK_SIZE * by;
@@ -76,13 +82,18 @@ matrixMul_unroll( float* C, float* A, float* B, int wA, int wB)
 	 a += aStep, b += bStep) {
 
 
+#if 0
+      for(int i = 0; i < NUM_VECTORS; i++){
+        As[ (i*VECTOR_SIZE+ty) + BLOCK_SIZE * tx] = A[a + wA * (i*VECTOR_SIZE+ty) + tx];
+      }
+#endif
       // Load the matrices from device memory
       // to shared memory; each thread loads
-      // one element of each matrix
+      // VECTOR_SIZE elements of each matrix
       float *Ap = &A[a + wA * ty +tx];
       float *ap = &As[ty + BLOCK_SIZE * tx];
 #pragma unroll
-      for(int i = 0; i < 16; i+=4){
+      for(int i = 0; i < BLOCK_SIZE; i+=VECTOR_SIZE){
         ap[i] = Ap[wA * i];
       }
       __syncthreads();
@@ -109,6 +120,24 @@ matrixMul_unroll( float* C, float* A, float* B, int wA, int wB)
 	cv[13] +=  ap[13] * bv;
 	cv[14] +=  ap[14] * bv;
 	cv[15] +=  ap[15] * bv;
+#if BLOCK_SIZE == 32
+	cv[16] +=  ap[16] * bv;
+	cv[17] +=  ap[17] * bv;
+	cv[18] +=  ap[18] * bv;
+	cv[19] +=  ap[19] * bv;
+	cv[20] +=  ap[20] * bv;
+	cv[21] +=  ap[21] * bv;
+	cv[22] +=  ap[22] * bv;
+	cv[23] +=  ap[23] * bv;
+	cv[24] +=  ap[24] * bv;
+	cv[25] +=  ap[25] * bv;
+	cv[26] +=  ap[26] * bv;
+	cv[27] +=  ap[27] * bv;
+	cv[28] +=  ap[28] * bv;
+	cv[29] +=  ap[29] * bv;
+	cv[30] +=  ap[30] * bv;
+	cv[31] +=  ap[31] * bv;
+#endif
 	ap += BLOCK_SIZE;
 	bp += wB;
       }

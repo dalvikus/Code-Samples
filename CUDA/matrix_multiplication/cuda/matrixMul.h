@@ -17,9 +17,16 @@
 
 // Thread block size
 #define BLOCK_SIZE 16
+#if BLOCK_SIZE != 32 && BLOCK_SIZE != 16
+    #error BLOCK_SIZE must be 16 or 32
+#endif
 
 // outer product vetor size is VECTOR_SIZE * BLOCK_SIZE
 #define VECTOR_SIZE 4
+#if BLOCK_SIZE % VECTOR_SIZE != 0
+    #error BLOCK_SIZE must be a multiple of VECTOR_SIZE
+#endif
+#define NUM_VECTORS (BLOCK_SIZE / VECTOR_SIZE)
 
 // Matrix dimensions
 // (chosen as multiples of the thread block size for simplicity)
