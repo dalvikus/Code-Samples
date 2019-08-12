@@ -21,3 +21,6 @@ In matrix multiplication example, we can skip
 * [How to Overlap Data Transfers in CUDA C/C++](https://devblogs.nvidia.com/how-overlap-data-transfers-cuda-cc/) because it is related to multiple computes.
 * [Finite Difference Methods in CUDA C/C++, Part 1](https://devblogs.nvidia.com/finite-difference-methods-cuda-cc-part-1/) and [Finite Difference Methods in CUDA C++, Part 2
 ](https://devblogs.nvidia.com/finite-difference-methods-cuda-c-part-2/) because it is another application, which should be studied later.
+
+# Comments on [Ref2]
+It is not clear what are differences in "Tiling", "Memory coalescing" and "Avoiding memory bank conflicts". Comments are added in seperate files("Comments on Matrix Multiplication in CUDA.docx", "Comments on Matrix Multiplication in CUDA.pdf").
